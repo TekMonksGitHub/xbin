@@ -1,0 +1,175 @@
+<!-- 
+(C) 2015 TekMonks. All rights reserved.
+License: GPL2 - see enclosed license.txt file.
+-->
+
+<!doctype html>
+<html>
+<style>
+@import url('https://fonts.googleapis.com/css?family=Raleway');
+
+body {
+margin: 0;
+padding: 0;
+font-family: 'Raleway';
+}
+
+div#container {
+width: 100%;
+height: 100%;
+top: 0px;
+display: flex;
+flex-direction: column;
+}
+
+div#header {
+height: 50px;
+line-height: 50px;
+margin: 0;
+box-sizing: border-box;
+padding: 0;
+display: flex;
+flex-flow: row nowrap;
+background-color: #f5aa078f;
+}
+
+div#header > span:first-child {
+font-size: 1.5em;
+padding-left: 10px;
+cursor: pointer;
+padding-right: 10px;
+width: 1em;
+text-align: center;
+}
+
+div#header > span:first-child:hover {
+transition: all 0.3s ease;
+background-color: rgba(0, 0, 0, 0.185);
+}
+
+div#header > span:last-child {
+font-size: 1.2em;
+width: 100%;
+text-align: center;
+}
+
+div#menu {
+display: flex;
+flex-flow: row wrap;
+justify-content: start;
+opacity: 1;
+background-color: white;
+border-top: 0.8px solid gray;
+border-bottom: 0.8px solid gray;
+opacity: 0;
+transition: opacity 0.1s linear;
+visibility: hidden;
+height: 0px;
+max-height: 0px;
+background-color: rgba(0, 0, 0, 0.024);
+overflow: hidden;
+transition: max-height 0.18s ease-out;
+}
+
+div#menu.visible {
+opacity: 1;
+visibility: visible;
+height: auto;
+}
+
+div#menu > span > img {
+width: 50px;
+}
+
+div#menu > span {
+display: flex;
+flex-direction: column;
+padding: 20px;
+text-align: center;
+cursor: pointer;
+}
+
+div#content {
+width: 100%;
+display: flex;
+flex-direction: row;
+min-height: calc(100vh - 52px);
+height:auto !important;
+}
+
+div#leftbar {
+width: 30vw;
+background-color: #f5be0734;
+box-sizing: border-box;
+padding: 40px;
+text-align: center
+}
+
+div#rightbar {width: 70vw}
+
+div#leftbar > div#lefttextcontent {
+text-align: justify
+}
+
+a, a:visited{
+text-decoration: none;
+color: inherit;
+}
+
+a:hover {text-decoration: underline;}
+
+div#leftbar > img {
+width: 120px;
+height: 120px;
+}
+</style>
+
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="pragma" content="no-cache">
+	<meta http-equiv="expires" content="-1">
+	
+	<title>{{i18n.Title}}</title>
+
+	<script type="module">
+		import {main} from "./js/main.mjs"; window.main=main; 
+		import {file_manager} from "./components/file-manager/file-manager.mjs"; 
+	</script>
+</head>
+
+<body>
+
+
+<div id="container">
+	<div id="header">
+		<span onclick="event.stopPropagation();main.toggleMenu();" id="menubutton">☰</span>
+		<span onclick="event.stopPropagation();">{{url.path}}</span>
+	</div>
+
+	<div id="menu" onclick="event.stopPropagation();">
+		<span><img src="./img/logout.png" onclick="event.stopPropagation();main.logout()">{{i18n.Logout}}</span>
+	</div>
+		
+	<div id="content">
+		<div id="leftbar">
+			<div id="lefttextcontent">
+			<h3>{{i18n.FolderBanner}}<br/></h3>
+			{{i18n.PoweredBy}} <a href="https://github.com/TekMonksGitHub/webscrolls/wiki" target="_blank">WebScrolls</a>
+			<span style="text-align: justify;">
+			<br/><br/><br/><br/><strong>{{i18n.Instructions}}</strong><br/><br/>
+			<ul>
+				<li>{{i18n.DoubleClickToDownload}}</li><br/><br/>
+				<li>{{i18n.DoubleClickToOpenFolder}}</li>
+			</ul>
+			<br/>
+			<p>{{i18n.LicensedSoftware}}</p>
+			</span>
+			</div>
+			<br/><br/><img src="./img/xbin.png">
+		</div>
+		<div id="rightbar"><file-manager path="{{url.path}}" id="fm" defaultShareDuration="5" styleBody="body{height: calc(100vh - 52px);}"></file-manager></div>
+	</div>
+</div>
+
+</body>
+</html>

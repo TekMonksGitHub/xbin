@@ -1,0 +1,54 @@
+<!--
+/* 
+ * (C) 2018 TekMonks. All rights reserved.
+ * License: MIT - see enclosed license.txt file.
+ */
+ -->
+
+<style>
+@import url('https://fonts.googleapis.com/css?family=Raleway:100,100i,200,200i,300,300i,400,400i,500,500i,600,600i,700,700i,800,800i,900,900i&amp;display=swap');
+
+body{
+    margin: 0; padding: 0;
+    font-family: 'Raleway';
+}
+
+button, input{
+    width: 100%;
+    padding: 20px;
+    margin: 0;
+    box-sizing: border-box;
+    border-radius: 10px;
+    border-style: none;
+    outline: none;
+    text-align: center;
+    font-family: 'Raleway';
+}
+
+button:hover, input:hover {
+    filter: brightness(98%);
+    transition: all 0.3s ease;
+}
+
+input, input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus { 
+    background-color: #F0F8FF;
+    -webkit-box-shadow: 0 0 0px 1000px #F0F8FF inset;
+    box-shadow: 0 0 0px 1000px #F0F8FF inset;
+}
+</style>
+
+{{{styleBody}}}
+
+<input type="text" id="userid" placeholder="{{i18n.UserID}}" required><br/><br/>
+<input type="password" id="pass" placeholder="{{i18n.Password}}" required minlength="8" 
+    onkeyup="if (event.keyCode == 13) monkshu_env.components['login-box'].getShadowRootByContainedElement(this).querySelector('#submit').click();"><br/><br/>
+<button id="submit" onclick='monkshu_env.components["login-box"].signin(this)'>{{i18n.SignIn}}</button>
+

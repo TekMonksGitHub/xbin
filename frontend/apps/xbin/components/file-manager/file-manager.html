@@ -1,0 +1,395 @@
+<!--
+/* 
+ * (C) 2018 TekMonks. All rights reserved.
+ * License: MIT - see enclosed license.txt file.
+ */
+ -->
+
+<style>
+@import url('https://fonts.googleapis.com/css?family=Raleway:100,100i,200,200i,300,300i,400,400i,500,500i,600,600i,700,700i,800,800i,900,900i&amp;display=swap');
+
+body{
+    margin: 0; padding: 0;
+    font-family: Raleway;
+    user-select: none;
+}
+
+div#container {
+    display: flex;
+    flex-flow: row wrap;
+    justify-content: start;
+}
+
+div#container > span > img {
+    width: 90px;
+}
+
+div#container > span {
+    display: flex;
+    flex-direction: column;
+    padding: 40px;
+    text-align: center;
+    font-family: Raleway;
+}
+
+div#contextmenu {
+    display: none;
+    flex-direction: column;
+    text-align: left;
+    cursor: default;
+    position: absolute;
+    visibility: hidden;
+    background-color: rgba(255, 255, 255, 1);
+    opacity: 1;
+    z-index: 10;
+    border: 1px solid gray;
+    width: 10em;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+div#contextmenu.visible{
+    opacity: 1;
+    visibility: visible;
+    height: auto;
+    display: flex;
+}
+
+div#contextmenu > span.hidden{
+    display: none;
+}
+
+div#contextmenu > span {
+    padding: 8px 15px 8px 15px;
+    width: auto;
+    font-size: smaller;
+}
+
+div#contextmenu > span:hover {
+    background-color: rgba(0, 0, 0, 0.185)
+}
+
+div#contextmenu > span#deletefile, div#contextmenu > span#deletefile:hover {
+    background-color: #af1d1d;
+    color: #ffffff;
+}
+
+div#contextmenu > span#deletefile {
+    background-color:  #e21111;
+    color: #ffffff;
+}
+
+div#contextmenu > span#hr1, div#contextmenu > span#hr2, div#contextmenu > span#hr3, div#contextmenu > span#hr1:hover, div#contextmenu > span#hr2:hover, div#contextmenu > span#hr3:hover {
+    padding: 0px;
+    width: auto;
+    background-color: #ffffff;
+}
+
+div#contextmenu > span#hr1 > hr, div#contextmenu > span#hr2 > hr {
+    border: 0.5px solid #000000;
+}
+
+input#upload { display: none; }
+
+div#modal {
+    position: fixed;
+    float: left;
+    width: 100vw;
+    height: 100vh;
+    top: 0px;
+    left: 0px;
+    opacity: 0.4;
+    background:rgba(0, 0, 0, 0.418);
+    z-index: 100;
+}
+
+div#progresscontainer, div#filepathcontainer, div#errorcontainer, div#editcontainer, div#sharecontainer {
+    width: 400px;
+    height: 240px;
+    top: calc(50% - 120px);
+    left: calc(50% - 200px);
+    opacity: 0.98;
+    background:rgba(255, 255, 255);
+    padding: 40px;
+    position: absolute;
+    z-index: 101;
+    border-radius: 10px;
+    display: inline-flex;
+    flex-flow: column;
+    text-align: center;
+}
+
+div#errorcontainer {
+    width: 200px;
+    height: 120px;
+    top: calc(50% - 60px);
+    left: calc(50% - 100px);
+}
+
+div#sharecontainer {
+    height: 220px;
+    top: calc(50% - 100px);
+}
+
+div#errorcontainer > span#errordisplay {
+    padding-bottom: 50px;
+    overflow: hidden;
+}
+
+div#sharecontainer > input#sharedisplay {
+    width: 100%;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-sizing: border-box;
+    border-radius: 10px;
+    border-style: none;
+    outline: none;
+    text-align: left;
+    font-family: 'Raleway';
+    background-color: #F0F8FF;
+    box-shadow: 0 0 0px 1000px #F0F8FF inset;
+}
+
+div#sharecontainer > span#copied {
+    font-family: 'Raleway';
+    font-size: small;
+    transition: opacity 1s;
+    opacity: 0;
+}
+
+div#editcontainer {
+    width: 98%;
+    height: 98%;
+    top: 1%;
+    left: 1%;
+    box-sizing: border-box;
+}
+
+div#editcontainer > form > textarea { 
+    width: 100%;
+    height: calc(100vh - 100% - 20px);
+    padding: 20px;
+    margin: 0;
+    box-sizing: border-box;
+    border-radius: 10px;
+    border-style: none;
+    outline: none;
+    text-align: left;
+    font-family: 'Raleway';
+    background-color: #F0F8FF;
+    box-shadow: 0 0 0px 1000px #F0F8FF inset;
+}
+
+div#progresscontainer > div#progress {
+    display: inline-flex;
+    margin-top: 1em;
+}
+
+div#progress > span#name {
+    width: 40%;
+    margin-right: 10px; 
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline-block;
+}
+
+div#progress > span#bar {
+    width: 60%;
+    background-color: #00000054;
+    box-sizing: border-box;
+    height: 1em;
+    display: block;
+    border-radius: 0.1em;
+}
+
+div#progress > span#bar > span#percent {
+    width: 10%;
+    background-color: #000000;
+    box-sizing: border-box;
+    height: 1em;
+    display: block;
+    border-radius: 0.1em;
+}
+
+div#filepathcontainer > form > input[type=text] { 
+    width: 100%;
+    padding: 20px;
+    margin: 0;
+    box-sizing: border-box;
+    border-radius: 10px;
+    border-style: none;
+    outline: none;
+    text-align: left;
+    font-family: 'Raleway';
+    background-color: #F0F8FF;
+    box-shadow: 0 0 0px 1000px #F0F8FF inset;
+}
+
+div#filepathcontainer > form > div, div#editcontainer > form > div, div#sharecontainer > div {
+    display: inline-flex;
+    flex-flow: row nowrap;
+    margin-top: 40px;
+    justify-content: space-between;
+    width: 100%;
+}
+
+div#filepathcontainer > form > div > span, div#editcontainer > form > div > span { 
+    width: calc(50% - 20px);
+    padding: 20px;
+    margin: 0;
+    box-sizing: border-box;
+    border-radius: 30px;
+    border-style: none;
+    outline: none;
+    text-align: center;
+    font-family: 'Raleway';
+    background-color: #F0F8FF;
+    box-shadow: 0 0 0px 1000px #F0F8FF inset;
+    font-size: 0.8em;
+    cursor: default;
+}
+
+div#filepathcontainer > form > div > span.checked, div#editcontainer > form > div > span.checked {
+    background-color: rgb(42, 139, 250);
+    box-shadow: 0 0 0px 1000px rgb(42, 139, 250) inset;
+    color:rgba(255, 255, 255, 1);
+}
+
+div#filepathcontainer > form > div > button, div#editcontainer > form > div > button, div#errorcontainer > div > button, div#sharecontainer > div > button {
+    width: calc(50% - 40px);
+    padding: 20px;
+    box-sizing: border-box;
+    border-radius: 10px;
+    border-style: none;
+    outline: none;
+    text-align: center;
+    font-family: 'Raleway';
+}
+
+div#errorcontainer > div > button {
+    width: 120px;
+}
+
+div#filepathcontainer > form > div > button:hover, div#editcontainer > form > div > button:hover, div#errorcontainer > div > button:hover, div#sharecontainer > div > button:hover {
+    filter: brightness(98%);
+    transition: all 0.3s ease;
+}
+
+span#expiryspan {
+    font-size: smaller;
+    margin-bottom: 20px;
+}
+
+span#expiryspan > input#expiry {
+    width: 2.5em;
+    border-style: none;
+    outline: none;
+    font-family: 'Serif';
+}
+</style>
+
+{{{styleBody}}}
+
+<div id="container">
+    {{#entries}}
+    <span><img src="./img/{{#stats.directory}}folder{{/stats.directory}}{{#stats.file}}file{{/stats.file}}{{#stats.back}}back{{/stats.back}}{{#stats.home}}home{{/stats.home}}{{#stats.upload}}upload{{/stats.upload}}{{#stats.create}}create{{/stats.create}}{{#stats.paste}}paste{{/stats.paste}}.png" 
+        onclick='event.preventDefault(); event.stopPropagation(); monkshu_env.components["file-manager"].handleClick(this, "{{path}}", "{{#stats.directory}}true{{/stats.directory}}{{#stats.home}}true{{/stats.home}}{{#stats.back}}true{{/stats.back}}{{#stats.upload}}false{{/stats.upload}}{{#stats.create}}false{{/stats.create}}{{#stats.paste}}false{{/stats.paste}}", true);' 
+        oncontextmenu='if (monkshu_env.components["file-manager"].isMobile()) return; event.preventDefault(); event.stopPropagation(); monkshu_env.components["file-manager"].handleClick(this, "{{path}}", "{{#stats.directory}}true{{/stats.directory}}{{#stats.home}}true{{/stats.home}}{{#stats.back}}true{{/stats.back}}{{#stats.upload}}false{{/stats.upload}}{{#stats.create}}false{{/stats.create}}{{#stats.paste}}false{{/stats.paste}}");' 
+        id="{{#stats.home}}home{{/stats.home}}{{#stats.back}}back{{/stats.back}}{{#stats.upload}}upload{{/stats.upload}}{{#stats.create}}create{{/stats.create}}{{#stats.paste}}paste{{/stats.paste}}">{{name}}</span>
+    {{/entries}}
+    <input id="upload" type="file" multiple onchange='monkshu_env.components["file-manager"].uploadFiles(this, this.files)' onclick="event.stopPropagation();">
+    <input id="wfUpload" type="file" onchange='monkshu_env.components["file-manager"].attachWorkflow(this, this.files)' onclick="event.stopPropagation();" style="display: none;">
+</div>
+
+<div id="contextmenu">
+    <span id="edit" onclick='event.stopPropagation();monkshu_env.components["file-manager"].menuEventDispatcher("editFile",this)'>{{i18n.EditFile}}</span>
+    <span id="downloadfile" onclick='event.stopPropagation();monkshu_env.components["file-manager"].menuEventDispatcher("downloadFile",this)'>{{i18n.DownloadFile}}</span>
+    <span id="hr1"><hr></span>
+    <span id="cut" onclick='event.stopPropagation();monkshu_env.components["file-manager"].menuEventDispatcher("cut",this)'>{{i18n.Cut}}</span>
+    <span id="copy" onclick='event.stopPropagation();monkshu_env.components["file-manager"].menuEventDispatcher("copy",this)'>{{i18n.Copy}}</span>
+    <span id="upload" onclick='event.stopPropagation();monkshu_env.components["file-manager"].menuEventDispatcher("upload",this)'>{{i18n.UploadMenu}}</span>
+    <span id="create" onclick='event.stopPropagation();monkshu_env.components["file-manager"].menuEventDispatcher("create",this)'>{{i18n.CreateMenu}}</span>
+    <span id="paste" onclick='event.stopPropagation();monkshu_env.components["file-manager"].menuEventDispatcher("paste",this)'>{{i18n.Paste}}</span>
+    <span id="hr2"><hr></span>
+    <span id="sharefile" onclick='event.stopPropagation();monkshu_env.components["file-manager"].menuEventDispatcher("shareFile",this)'>{{i18n.Share}}</span>
+    <span id="renamefile" onclick='event.stopPropagation();monkshu_env.components["file-manager"].menuEventDispatcher("renameFile",this)'>{{i18n.Rename}}</span>
+    <span id="deletefile" onclick='event.stopPropagation();monkshu_env.components["file-manager"].menuEventDispatcher("deleteFile",this)'>{{i18n.DeleteFile}}</span>
+    <span id="hr3"><hr></span>
+    <span id="attachworkflow" onclick='event.stopPropagation();monkshu_env.components["file-manager"].menuEventDispatcher("attachWorkflow",this)'>{{i18n.AttachWorkflow}}</span>
+</div>
+
+<template id="progressdialog">
+<!-- {{=<% %>=}} 
+<div id="modal">&nbsp;</div>
+<div id="progresscontainer">
+    {{#files}}
+    <div id="progress"><span id="name">{{name}}</span><span id="bar"><span id="percent" style="width: {{percent}}%!important"></span></span></div>
+    {{/files}}
+</div>
+<%={{ }}=%> -->
+</template>
+<template id="createfiledialog">
+    <!-- {{=<% %>=}} 
+    <div id="modal">&nbsp;</div>
+    <div id="filepathcontainer"><form onsubmit="_=>{}; return false;">
+        <input type="text" id="path" placeholder="{{i18n.Path}}" required>
+        <div>
+        <span class="checked" id="filetoggle" onclick="this.classList.add('checked'); this.nextSibling.classList.remove('checked'); window.createDir=false;">{{i18n.File}}</span><span id="dirtoggle" onclick="this.classList.add('checked'); this.previousSibling.classList.remove('checked'); window.createDir=true;">{{i18n.Directory}}</span>
+        </div>
+        <div>
+        <button type="submit" onclick='event.stopPropagation();monkshu_env.components["file-manager"].createFile(this, window.createDir);'>{{i18n.OK}}</button>
+        <button onclick='event.stopPropagation();monkshu_env.components["file-manager"].hideDialog(this);'>{{i18n.Cancel}}</button>
+        </div>
+    </form></div>
+    <%={{ }}=%> -->
+</template>
+<template id="renamefiledialog">
+    <!-- {{=<% %>=}} 
+    <div id="modal">&nbsp;</div>
+    <div id="filepathcontainer"><form onsubmit="_=>{}; return false;">
+        <input type="text" id="renamepath" placeholder="{{i18n.NewName}}" value="{{oldName}}" required>
+        <p>&nbsp;</p>
+        <p>&nbsp;</p>
+        <div>
+        <button type="submit" onclick='event.stopPropagation();monkshu_env.components["file-manager"].doRename(this);'>{{i18n.OK}}</button>
+        <button onclick='event.stopPropagation();monkshu_env.components["file-manager"].hideDialog(this);'>{{i18n.Cancel}}</button>
+        </div>
+    </form></div>
+    <%={{ }}=%> -->
+</template>
+<template id="editfiledialog">
+    <!-- {{=<% %>=}} 
+    <div id="modal">&nbsp;</div>
+    <div id="editcontainer"><form onsubmit="_=>{}; return false;">
+        <textarea id="content" required></textarea>
+        <div>
+        <button type="submit" onclick='event.stopPropagation();monkshu_env.components["file-manager"].doReplaceContent(this);'>{{i18n.OK}}</button>
+        <button onclick='event.stopPropagation();monkshu_env.components["file-manager"].hideDialog(this);'>{{i18n.Cancel}}</button>
+        </div>
+    </form></div>
+    <%={{ }}=%> -->
+</template>
+<template id="error">
+    <!-- {{=<% %>=}} 
+    <div id="modal">&nbsp;</div>
+    <div id="errorcontainer">
+    <span id="errordisplay">{{error}}</span>
+    <div><button onclick='event.stopPropagation();monkshu_env.components["file-manager"].hideDialog(this);'>{{i18n.OK}}</button></div>
+    </div>
+    <%={{ }}=%> -->
+</template>
+<template id="sharefiledialog">
+    <!-- {{=<% %>=}} 
+    <div id="modal">&nbsp;</div>
+    <div id="sharecontainer">
+    <input type="text" readonly id="sharedisplay" value="{{link}}">
+    <span id="expiryspan">Share for <input id="expiry" type="number" value="{{shareDuration}}" min="1" onkeyup="if (this.value<0) this.value=this.value*-1;"> days</span>
+    <span id="copied">{{i18n.Copied}}</span>
+    <div>
+    <button onclick='event.stopPropagation();monkshu_env.components["file-manager"].copyShareClicked(this);'>{{i18n.Copy}}</button>
+    <button onclick='event.stopPropagation();monkshu_env.components["file-manager"].shareFile(this, true, "{{id}}");'>{{i18n.Close}}</button>
+    </div>
+    </div>
+    <%={{ }}=%> -->
+</template>
+<div id="templateholder" onclick="event.stopPropagation();"></div>

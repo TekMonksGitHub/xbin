@@ -1,0 +1,67 @@
+<!doctype html>
+<html>
+<style>
+@import url('https://fonts.googleapis.com/css?family=Raleway:100,100i,200,200i,300,300i,400,400i,500,500i,600,600i,700,700i,800,800i,900,900i&amp;display=swap');
+
+ 
+body {
+	margin: 0; padding: 0;
+    font-family: 'Raleway';
+}
+
+.lgbox {
+	position: absolute;
+	top: 25%;
+	left: calc(50% - 150px);
+	width: 300px;
+}
+
+.lgbox > img {
+	width: 300px;
+}
+
+.langbox {
+	position: absolute;
+	bottom: 5%;
+	left: calc(50% - 200px);
+	width: 400px;
+	color: #000000;
+	text-align: center;
+}
+
+.langsel {
+	cursor: pointer;
+	font-size: 11px;
+}
+
+a:link {text-decoration:none; color:black;}    /* unvisited link */
+a:visited {text-decoration:none;} /* visited link */
+a:hover {text-decoration:underline;}   /* mouse over link */
+a:active {text-decoration:underline;}  /* selected link */
+</style>
+
+<head>
+	<meta charset="UTF-8">
+	
+	<title>{{i18n.Title}}</title>
+	
+	<script type="module">
+	import {login_box} from "./components/login-box/login-box.mjs"; 
+	import {language} from "./js/language.mjs"; window.language=language;
+	</script>
+</head>
+
+<body>
+<div class="lgbox">
+	<img src="./img/xbin_w.png"><br/><br/>
+	<login-box roles="[APP_CONSTANTS.GUEST_ROLE, APP_CONSTANTS.USER_ROLE]"></login-box>
+</div>
+
+<div class="langbox">
+	<span class="langsel" onclick="language.changeLanguage('en')">English</span>&nbsp;&nbsp;
+	<span class="langsel" onclick="language.changeLanguage('hi')">हिंदी</span>&nbsp;&nbsp;
+	<span class="langsel" onclick="language.changeLanguage('ja')">日本語</span>
+</div>	
+</body>
+
+</html>

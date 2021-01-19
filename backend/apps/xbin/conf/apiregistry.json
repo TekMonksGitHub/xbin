@@ -1,0 +1,13 @@
+{
+    "/apps/xbin/login" : "/apis/login.js?needsToken=false&addsToken=sub:access",
+    "/apps/xbin/getfiles" : "/apis/getfiles.js?get=true&key=fheiwu98237hjief8923ydewjidw834284hwqdnejwr79389&needsToken=true",
+    "/apps/xbin/uploadfile" : "/apis/uploadfile.js?key=fheiwu98237hjief8923ydewjidw834284hwqdnejwr79389&needsToken=true",
+    "/apps/xbin/deletefile" : "/apis/deletefile.js?get=true&key=fheiwu98237hjief8923ydewjidw834284hwqdnejwr79389&needsToken=true",
+    "/apps/xbin/createfile" : "/apis/createfile.js?get=true&key=fheiwu98237hjief8923ydewjidw834284hwqdnejwr79389&needsToken=true",
+    "/apps/xbin/renamefile" : "/apis/renamefile.js?get=true&key=fheiwu98237hjief8923ydewjidw834284hwqdnejwr79389&needsToken=true",
+    "/apps/xbin/copyfile" : "/apis/copyfile.js?get=true&key=fheiwu98237hjief8923ydewjidw834284hwqdnejwr79389&needsToken=true",
+    "/apps/xbin/operatefile" : "/apis/operatefile.js?key=fheiwu98237hjief8923ydewjidw834284hwqdnejwr79389&needsToken=true",
+    "/apps/xbin/downloadfile" : "/apis/downloadfile.js?key=fheiwu98237hjief8923ydewjidw834284hwqdnejwr79389&needsToken=true",
+    "/apps/xbin/sharefile" : "/apis/sharefile.js?get=true&key=fheiwu98237hjief8923ydewjidw834284hwqdnejwr79389&needsToken=true",
+    "/apps/xbin/downloadsharedfile" : "/apis/downloadsharedfile.js?get=true"
+}
