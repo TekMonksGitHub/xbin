@@ -67,10 +67,12 @@ async function elementRendered(element) {
    if (!isMobile()) shadowRoot.addEventListener("click", e => { e.stopPropagation(); if (menuOpen) hideMenu(container); });
 }
 
-function handleClick(element, path, isDirectory, fromClickEvent) {
+function handleClick(element, path, isDirectory, fromClickEvent, nomenu) {
    selectedPath = path?path.replace(/[\/]+/g,"/"):selectedPath; 
    selectedIsDirectory = (isDirectory!== undefined) ? util.parseBoolean(isDirectory) : selectedIsDirectory;
    selectedElement = element;
+
+   if (nomenu) return;
    
    if (timer) {clearTimeout(timer); if (fromClickEvent) editFile(element); timer=null;}
    else timer = setTimeout(_=> {timer=null;if ((fromClickEvent && isMobile())||!fromClickEvent) showMenu(element);}, 400);
@@ -133,8 +135,6 @@ function showMenu(element, documentMenuOnly) {
       shadowRoot.querySelector("div#contextmenu > span#hr2").classList.add("hidden"); 
       shadowRoot.querySelector("div#contextmenu > span#cut").classList.add("hidden"); 
       shadowRoot.querySelector("div#contextmenu > span#copy").classList.add("hidden");
-      shadowRoot.querySelector("div#contextmenu > span#hr3").classList.add("hidden"); 
-      shadowRoot.querySelector("div#contextmenu > span#attachworkflow").classList.add("hidden"); 
    } else if (element.getAttribute("id") && (element.getAttribute("id") == "home" || element.getAttribute("id") == "back" || element.getAttribute("id") == "upload" || element.getAttribute("id") == "create" || element.getAttribute("id") == "paste")) {
       shadowRoot.querySelector("div#contextmenu > span#upload").classList.add("hidden");
       shadowRoot.querySelector("div#contextmenu > span#create").classList.add("hidden");
@@ -147,8 +147,6 @@ function showMenu(element, documentMenuOnly) {
       shadowRoot.querySelector("div#contextmenu > span#cut").classList.add("hidden"); 
       shadowRoot.querySelector("div#contextmenu > span#copy").classList.add("hidden"); 
       shadowRoot.querySelector("div#contextmenu > span#paste").classList.add("hidden"); 
-      shadowRoot.querySelector("div#contextmenu > span#hr3").classList.add("hidden"); 
-      shadowRoot.querySelector("div#contextmenu > span#attachworkflow").classList.add("hidden"); 
       shadowRoot.querySelector("div#contextmenu > span#edit").classList.remove("hidden");
    } else {
       shadowRoot.querySelector("div#contextmenu > span#edit").classList.remove("hidden");
@@ -160,10 +158,6 @@ function showMenu(element, documentMenuOnly) {
       shadowRoot.querySelector("div#contextmenu > span#hr2").classList.remove("hidden"); 
       shadowRoot.querySelector("div#contextmenu > span#cut").classList.remove("hidden"); 
       shadowRoot.querySelector("div#contextmenu > span#copy").classList.remove("hidden");
-      if (selectedIsDirectory) shadowRoot.querySelector("div#contextmenu > span#hr3").classList.remove("hidden"); 
-      else shadowRoot.querySelector("div#contextmenu > span#hr3").classList.add("hidden");
-      if (selectedIsDirectory) shadowRoot.querySelector("div#contextmenu > span#attachworkflow").classList.remove("hidden");  
-      else shadowRoot.querySelector("div#contextmenu > span#attachworkflow").classList.add("hidden"); 
       if (selectedCopy || selectedCut) shadowRoot.querySelector("div#contextmenu > span#paste").classList.remove("hidden"); 
       else shadowRoot.querySelector("div#contextmenu > span#paste").classList.add("hidden"); 
       shadowRoot.querySelector("div#contextmenu > span#upload").classList.add("hidden");
@@ -322,13 +316,8 @@ async function doRename(element) {
    hideDialog(element);
 }
 
-async function attachWorkflow(element, file) {
-   if (!file) file_manager.getShadowRootByContainedElement(element).querySelector("input#wfUpload").click();
-   else alert(`Workflow ${file[0].name} attached.`);
-}
-
 function isMobile() {
-   return true; //return navigator.maxTouchPoints?true:false;
+   return navigator.maxTouchPoints?true:false;
 }
 
 async function _performRename(oldPath, newPath, element) {
@@ -343,5 +332,5 @@ async function _performCopy(fromPath, toPath, element) {
 
 export const file_manager = { trueWebComponentMode: true, elementConnected, elementRendered, handleClick, 
    showMenu, deleteFile, editFile, downloadFile, cut, copy, paste, upload, uploadFiles, hideDialog, createFile, 
-   create, shareFile, renameFile, doRename, doReplaceContent, menuEventDispatcher, copyShareClicked, isMobile, attachWorkflow }
+   create, shareFile, renameFile, doRename, doReplaceContent, menuEventDispatcher, copyShareClicked, isMobile }
 monkshu_component.register("file-manager", `${APP_CONSTANTS.APP_PATH}/components/file-manager/file-manager.html`, file_manager);

@@ -32,6 +32,12 @@ div#container > span {
     font-family: Raleway;
 }
 
+div#container > span:focus {
+    border-radius: 10px;
+    background-color: #ffffe8;
+    outline: none;
+}
+
 div#contextmenu {
     display: none;
     flex-direction: column;
@@ -292,13 +298,15 @@ span#expiryspan > input#expiry {
 
 <div id="container">
     {{#entries}}
-    <span><img src="./img/{{#stats.directory}}folder{{/stats.directory}}{{#stats.file}}file{{/stats.file}}{{#stats.back}}back{{/stats.back}}{{#stats.home}}home{{/stats.home}}{{#stats.upload}}upload{{/stats.upload}}{{#stats.create}}create{{/stats.create}}{{#stats.paste}}paste{{/stats.paste}}.png" 
+    <span tabindex="0" onkeyup='event.preventDefault(); event.stopPropagation(); if (event.key == "Enter" || event.keyCode == 13) {
+            monkshu_env.components["file-manager"].handleClick(this, "{{path}}", "{{#stats.directory}}true{{/stats.directory}}{{#stats.home}}true{{/stats.home}}{{#stats.back}}true{{/stats.back}}{{#stats.upload}}false{{/stats.upload}}{{#stats.create}}false{{/stats.create}}{{#stats.paste}}false{{/stats.paste}}", true, true);
+            monkshu_env.components["file-manager"].menuEventDispatcher("editFile",this); }'>
+        <img src="./img/{{#stats.directory}}folder{{/stats.directory}}{{#stats.file}}file{{/stats.file}}{{#stats.back}}back{{/stats.back}}{{#stats.home}}home{{/stats.home}}{{#stats.upload}}upload{{/stats.upload}}{{#stats.create}}create{{/stats.create}}{{#stats.paste}}paste{{/stats.paste}}.png" 
         onclick='event.preventDefault(); event.stopPropagation(); monkshu_env.components["file-manager"].handleClick(this, "{{path}}", "{{#stats.directory}}true{{/stats.directory}}{{#stats.home}}true{{/stats.home}}{{#stats.back}}true{{/stats.back}}{{#stats.upload}}false{{/stats.upload}}{{#stats.create}}false{{/stats.create}}{{#stats.paste}}false{{/stats.paste}}", true);' 
         oncontextmenu='if (monkshu_env.components["file-manager"].isMobile()) return; event.preventDefault(); event.stopPropagation(); monkshu_env.components["file-manager"].handleClick(this, "{{path}}", "{{#stats.directory}}true{{/stats.directory}}{{#stats.home}}true{{/stats.home}}{{#stats.back}}true{{/stats.back}}{{#stats.upload}}false{{/stats.upload}}{{#stats.create}}false{{/stats.create}}{{#stats.paste}}false{{/stats.paste}}");' 
         id="{{#stats.home}}home{{/stats.home}}{{#stats.back}}back{{/stats.back}}{{#stats.upload}}upload{{/stats.upload}}{{#stats.create}}create{{/stats.create}}{{#stats.paste}}paste{{/stats.paste}}">{{name}}</span>
     {{/entries}}
     <input id="upload" type="file" multiple onchange='monkshu_env.components["file-manager"].uploadFiles(this, this.files)' onclick="event.stopPropagation();">
-    <input id="wfUpload" type="file" onchange='monkshu_env.components["file-manager"].attachWorkflow(this, this.files)' onclick="event.stopPropagation();" style="display: none;">
 </div>
 
 <div id="contextmenu">
@@ -314,8 +322,6 @@ span#expiryspan > input#expiry {
     <span id="sharefile" onclick='event.stopPropagation();monkshu_env.components["file-manager"].menuEventDispatcher("shareFile",this)'>{{i18n.Share}}</span>
     <span id="renamefile" onclick='event.stopPropagation();monkshu_env.components["file-manager"].menuEventDispatcher("renameFile",this)'>{{i18n.Rename}}</span>
     <span id="deletefile" onclick='event.stopPropagation();monkshu_env.components["file-manager"].menuEventDispatcher("deleteFile",this)'>{{i18n.DeleteFile}}</span>
-    <span id="hr3"><hr></span>
-    <span id="attachworkflow" onclick='event.stopPropagation();monkshu_env.components["file-manager"].menuEventDispatcher("attachWorkflow",this)'>{{i18n.AttachWorkflow}}</span>
 </div>
 
 <template id="progressdialog">
