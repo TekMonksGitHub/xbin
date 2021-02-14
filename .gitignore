@@ -1,2 +1,3 @@
 backend/server/logs
 frontend/server/logs
+debug.log
