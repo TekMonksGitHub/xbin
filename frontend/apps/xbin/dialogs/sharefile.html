@@ -1,0 +1,78 @@
+<style>
+body {width: 50vw}
+
+div#wrapper {
+    display: flex;
+    flex-direction: column;
+}
+
+span#copy {
+    padding: 20px 10px 20px 10px;
+    margin-left: 20px;
+    box-sizing: border-box;
+    border-radius: 10px;
+    border-style: none;
+    outline: none;
+    text-align: center;
+    background-color: lightgray;
+    color: rgba(0, 0, 0, 0.75);
+    font-family: inherit;
+    font-size: smaller;
+    text-transform: uppercase;
+    cursor: default;
+    user-select: none;
+    min-width: 100px;
+}
+
+span#copy:hover {
+    filter: brightness(98%);
+    transition: all 0.3s ease;
+}
+
+input#sharedisplay {
+    width: calc(100% - 8.5em);
+    padding: 20px;
+    margin-bottom: 20px;
+    box-sizing: border-box;
+    border-radius: 10px;
+    border-style: none;
+    outline: none;
+    text-align: left;
+    font-family: 'Raleway';
+    background-color: #F0F8FF;
+    box-shadow: 0 0 0px 1000px #F0F8FF inset;
+}
+
+span#expiryspan {
+    font-size: smaller;
+    margin-bottom: 20px;
+    padding-left: 2px;
+}
+
+span#expiryspan > input#expiry {
+    width: 2.5em;
+    border-style: none;
+    outline: none;
+    font-family: 'Serif';
+}
+
+span#copied {
+    text-align: center;
+    font-family: 'Raleway';
+    font-size: small;
+    transition: opacity 1s;
+    opacity: 0;
+}
+</style>
+
+<div id="wrapper">
+<span id="link">
+    <input type="text" readonly id="sharedisplay" value="{{link}}">
+    <span id="copy" onclick="event.stopPropagation(); 
+        navigator.clipboard.writeText('{{link}}'); const selector = this.parentNode.parentNode;
+        selector.querySelector('span#copied').style.opacity=1;
+        setTimeout(_=>selector.querySelector('span#copied').style.opacity=0, 1300);">Copy Link</span>
+</span>
+<span id="expiryspan">Share for <input id="expiry" type="number" value="{{shareDuration}}" min="1" onkeyup="if (this.value<0) this.value=this.value*-1;"> days</span>
+<span id="copied">{{i18n.Copied}}</span>
+</div>

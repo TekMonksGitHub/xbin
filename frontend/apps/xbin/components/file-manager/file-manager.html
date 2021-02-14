@@ -92,7 +92,9 @@ div#contextmenu > span#hr1, div#contextmenu > span#hr2, div#contextmenu > span#h
 }
 
 div#contextmenu > span#hr1 > hr, div#contextmenu > span#hr2 > hr {
-    border: 0.5px solid #000000;
+    border: none;
+    height: 0.5px;
+    background-color: #4444442f;
 }
 
 input#upload { display: none; }
@@ -109,7 +111,7 @@ div#modal {
     z-index: 100;
 }
 
-div#progresscontainer, div#sharecontainer {
+div#progresscontainer {
     width: 400px;
     height: 240px;
     top: calc(50% - 120px);
@@ -123,32 +125,6 @@ div#progresscontainer, div#sharecontainer {
     display: inline-flex;
     flex-flow: column;
     text-align: center;
-}
-
-div#sharecontainer {
-    height: 220px;
-    top: calc(50% - 100px);
-}
-
-div#sharecontainer > input#sharedisplay {
-    width: 100%;
-    padding: 20px;
-    margin-bottom: 20px;
-    box-sizing: border-box;
-    border-radius: 10px;
-    border-style: none;
-    outline: none;
-    text-align: left;
-    font-family: 'Raleway';
-    background-color: #F0F8FF;
-    box-shadow: 0 0 0px 1000px #F0F8FF inset;
-}
-
-div#sharecontainer > span#copied {
-    font-family: 'Raleway';
-    font-size: small;
-    transition: opacity 1s;
-    opacity: 0;
 }
 
 div#progresscontainer {
@@ -190,42 +166,6 @@ div#progress > span#bar > span#percent {
 }
 
 div#progress > span#percenttext {width: 20%;} 
-
-div#sharecontainer > div {
-    display: inline-flex;
-    flex-flow: row nowrap;
-    margin-top: 40px;
-    justify-content: space-between;
-    width: 100%;
-}
-
-div#sharecontainer > div > button {
-    width: calc(50% - 40px);
-    padding: 20px;
-    box-sizing: border-box;
-    border-radius: 10px;
-    border-style: none;
-    outline: none;
-    text-align: center;
-    font-family: 'Raleway';
-}
-
-div#sharecontainer > div > button:hover {
-    filter: brightness(98%);
-    transition: all 0.3s ease;
-}
-
-span#expiryspan {
-    font-size: smaller;
-    margin-bottom: 20px;
-}
-
-span#expiryspan > input#expiry {
-    width: 2.5em;
-    border-style: none;
-    outline: none;
-    font-family: 'Serif';
-}
 </style>
 
 <script type="module">
@@ -275,20 +215,6 @@ span#expiryspan > input#expiry {
     {{/files}}
 </div>
 <%={{ }}=%> -->
-</template>
-<template id="sharefiledialog">
-    <!-- {{=<% %>=}} 
-    <div id="modal">&nbsp;</div>
-    <div id="sharecontainer">
-    <input type="text" readonly id="sharedisplay" value="{{link}}">
-    <span id="expiryspan">Share for <input id="expiry" type="number" value="{{shareDuration}}" min="1" onkeyup="if (this.value<0) this.value=this.value*-1;"> days</span>
-    <span id="copied">{{i18n.Copied}}</span>
-    <div>
-    <button onclick='event.stopPropagation();monkshu_env.components["file-manager"].copyShareClicked(this);'>{{i18n.Copy}}</button>
-    <button onclick='event.stopPropagation();monkshu_env.components["file-manager"].shareFile(this, true, "{{id}}");'>{{i18n.Close}}</button>
-    </div>
-    </div>
-    <%={{ }}=%> -->
 </template>
 <div id="templateholder" onclick="event.stopPropagation();"></div>
 <dialog-box id="dialog"></dialog-box>

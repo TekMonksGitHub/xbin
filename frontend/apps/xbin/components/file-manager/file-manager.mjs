@@ -293,21 +293,16 @@ function renameFile() {
    });
 }
 
-async function shareFile(element, done, id) {
-   if (!done) {
-      const resp = await apiman.rest(API_SHAREFILE, "GET", {path: selectedPath, expiry: shareDuration}, true);
-      if (!resp || !resp.result) _showErrorDialog(); 
-      else showDialog(element, "sharefiledialog", {link: `${API_DOWNLOADFILE_SHARED}?id=${resp.id}`, id: resp.id, shareDuration});
-   } else {
-      const duration = file_manager.getShadowRootByContainedElement(element).querySelector("input#expiry").value;
-      if (duration != shareDuration) await apiman.rest(API_SHAREFILE, "GET", {id, expiry: duration}, true); hideDialog(element);
-   }
-}
+async function shareFile() {
+   const resp = await apiman.rest(API_SHAREFILE, "GET", {path: selectedPath, expiry: shareDuration}, true);
+   if (!resp || !resp.result) _showErrorDialog(); else dialog().showDialog(
+         `${APP_CONSTANTS.APP_PATH}/dialogs/sharefile.html`, true, false, 
+         {link: `${API_DOWNLOADFILE_SHARED}?id=${resp.id}`, id: resp.id, shareDuration}, "dialog", ["expiry"], 
+         async result => {
 
-function copyShareClicked(element) {
-   const shadowRoot = file_manager.getShadowRootByContainedElement(element);
-   navigator.clipboard.writeText(shadowRoot.querySelector("input#sharedisplay").value);
-   shadowRoot.querySelector("span#copied").style.opacity=1; setTimeout(_=>shadowRoot.querySelector("span#copied").style.opacity=0, DIALOG_HIDE_WAIT);
+      dialog().hideDialog("dialog");
+      if (result.expiry != shareDuration) await apiman.rest(API_SHAREFILE, "GET", {id: resp.id, expiry: result.expiry}, true); 
+   });
 }
 
 function isMobile() {
@@ -326,5 +321,5 @@ async function _performCopy(fromPath, toPath) {
 
 export const file_manager = { trueWebComponentMode: true, elementConnected, elementRendered, handleClick, 
    showMenu, deleteFile, editFile, downloadFile, cut, copy, paste, upload, uploadFiles, hideDialog,  create, 
-   shareFile, renameFile, menuEventDispatcher, copyShareClicked, isMobile }
+   shareFile, renameFile, menuEventDispatcher, isMobile }
 monkshu_component.register("file-manager", `${APP_CONSTANTS.APP_PATH}/components/file-manager/file-manager.html`, file_manager);
