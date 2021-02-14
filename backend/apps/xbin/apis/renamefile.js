@@ -1,11 +1,9 @@
 /* 
  * (C) 2020 TekMonks. All rights reserved.
  */
-const fs = require("fs");
 const path = require("path");
-const util = require("util");
 const sqlite3 = require("sqlite3");
-const renameAsync = util.promisify(fs.rename);
+const fspromises = require("fs").promises;
 const API_CONSTANTS = require(`${__dirname}/lib/constants.js`);
 const CONF = require(`${API_CONSTANTS.CONF_DIR}/xbin.json`);
 
@@ -28,7 +26,7 @@ exports.doService = async jsonReq => {
 	if (!API_CONSTANTS.isSubdirectory(oldPath, CONF.CMS_ROOT)) {LOG.error(`Subdir validation failure: ${jsonReq.old}`); return CONSTANTS.FALSE_RESULT;}
 
 	try {
-		renameAsync(oldPath, newPath);
+		await fspromises.rename(oldPath, newPath);
 		await _initDB(); await dbrunAsync("UPDATE shares SET fullpath = ? WHERE fullpath = ?", [newPath, oldPath]);	// update shares
         return CONSTANTS.TRUE_RESULT;
 	} catch (err) {LOG.error(`Error renaming  path: ${oldPath}, error is: ${err}`); return CONSTANTS.FALSE_RESULT;}

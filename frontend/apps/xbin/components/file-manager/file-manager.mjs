@@ -24,10 +24,10 @@ const API_COPYFILE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/cop
 const API_SHAREFILE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/sharefile";
 const API_DOWNLOADFILE_SHARED = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/downloadsharedfile";
 
-
 const DIALOG_HOST_ELEMENT_ID = "templateholder";
+const dialog = _ => monkshu_env.components['dialog-box'];
 
-const IO_CHUNK_SIZE = 4096;   // 4K read buffer
+const IO_CHUNK_SIZE = 10485760;   // 10M read buffer
 
 async function elementConnected(element) {
    menuOpen = false; 
@@ -83,11 +83,17 @@ function upload(containedElement) {
    file_manager.getShadowRootByContainedElement(containedElement).querySelector("input#upload").click();
 }
 
-function create(containedElement) {
-   showDialog(containedElement, "createfiledialog");
+function create(){
+   dialog().showDialog(`${APP_CONSTANTS.APP_PATH}/dialogs/createfile.html`, true, true, {}, "dialog", 
+         ["createType", "path"], async result => {
+
+      const path = `${selectedPath}/${result.path}`, isDirectory = result.createType == "file" ? false: true
+      const resp = await apiman.rest(API_CREATEFILE, "GET", {path, isDirectory}, true);
+      if (resp.result) {dialog().hideDialog("dialog"); router.reload();} else dialog().error("dialog", await i18n.get("Error"));
+   });
 }
 
-const uploadFiles = async (element, files) => {for (const file of files) await uploadAFile(element, file)}
+const uploadFiles = async (element, files) => {for (const file of files) uploadAFile(element, file)}
 
 async function uploadAFile(element, file) {
    const totalChunks = Math.ceil(file.size / IO_CHUNK_SIZE); const lastChunkSize = file.size - (totalChunks-1)*IO_CHUNK_SIZE;
@@ -95,25 +101,33 @@ async function uploadAFile(element, file) {
 
    const queueReadFileChunk = (fileToRead, chunkNumber, resolve, reject) => {
       const reader = new FileReader();
+      const rejectReadPromises = error => {
+         LOG.error(`Error reading ${fileToRead}, error is: ${error}`); 
+         while (waitingReaders.length) (waitingReaders.pop())(error);   // reject all waiting readers too
+         reject(error);
+      }
       const onloadFunction = async loadResult => {
          const resp = await apiman.rest(API_UPLOADFILE, "POST", {data:loadResult.target.result, path:`${selectedPath}/${fileToRead.name}`}, true);
-         if (!resp.result) reject(); else {
-            resolve(); 
+         if (!resp.result) rejectReadPromises("Error writing to the server."); else {
             showProgress(element, chunkNumber+1, totalChunks, fileToRead.name);
             if (waitingReaders.length) (waitingReaders.pop())();  // issue next chunk read if queued reads
+            resolve();
          }
       }
       reader.onload = onloadFunction;
-      reader.onerror = _loadResult => {waitingOnRead = false; reject();}
-      const sizeToRead = chunkNumber == totalChunks-1 ? lastChunkSize : IO_CHUNK_SIZE;
-      // queue reads if we are waiting for a chunk to be returned, so the writes are in correct order 
-      waitingReaders.unshift(_=>{reader.readAsDataURL(fileToRead.slice(IO_CHUNK_SIZE*chunkNumber, IO_CHUNK_SIZE*chunkNumber+sizeToRead));});
-   }
+      reader.onerror = _ => rejectReadPromises(reader.error);
 
-   const startReaders = _ => {if (waitingReaders.length) (waitingReaders.pop())()}
+      // queue reads if we are waiting for a chunk to be returned, so the writes are in correct order 
+      const sizeToRead = chunkNumber == totalChunks-1 ? lastChunkSize : IO_CHUNK_SIZE;
+      waitingReaders.unshift(abortRead=>{
+         if (!abortRead) reader.readAsDataURL(fileToRead.slice(IO_CHUNK_SIZE*chunkNumber, IO_CHUNK_SIZE*chunkNumber+sizeToRead));
+         else reject(abortRead);
+      });
+   }
 
    let readPromises = []; 
    for (let i = 0; i < totalChunks; i++) readPromises.push(new Promise((resolve, reject) => queueReadFileChunk(file, i, resolve, reject)));
+   const startReaders = _ => {showProgress(element, 0, totalChunks, file.name); (waitingReaders.pop())();}
    startReaders();   // kicks off the first read in the queue, which then fires others 
    return Promise.all(readPromises);
 }
@@ -182,12 +196,12 @@ function menuEventDispatcher(name, element) {
    file_manager[name](element);
 }
 
-async function deleteFile(element) {
+async function deleteFile() {
    let resp = await apiman.rest(API_DELETEFILE, "GET", {path: selectedPath}, true);
-   if (resp.result) router.reload(); else showErrorDialog(element);
+   if (resp.result) router.reload(); else _showErrorDialog();
 }
 
-function editFile(element) {
+function editFile() {
    if (selectedIsDirectory) {
       const urlToLoad = util.replaceURLParamValue(session.get($$.MONKSHU_CONSTANTS.PAGE_URL), "path", selectedPath);
       router.loadPage(urlToLoad);
@@ -200,43 +214,35 @@ function editFile(element) {
 
    if (selectedElement.id == "paste") {paste(selectedElement); return;}
 
-   showDialog(element, "editfiledialog"); editFileLoadData(element);  // now it can only be a file 
+   editFileLoadData();  // now it can only be a file 
 }
 
-async function editFileLoadData(element) {
-   const shadowRoot = file_manager.getShadowRootByContainedElement(element);
+async function editFileLoadData() {
    const resp = await apiman.rest(API_OPERATEFILE, "POST", {path: selectedPath, op: "read"}, true);
-   if (resp.result) shadowRoot.querySelector("#content").innerHTML = resp.data;
+   if (resp.result) dialog().showDialog(`${APP_CONSTANTS.APP_PATH}/dialogs/editfile.html`, true, true, 
+         {fileContents: resp.data}, "dialog", ["filecontents"], async result => {
+
+      const resp = await apiman.rest(API_OPERATEFILE, "POST", {path: selectedPath, op: "write", data: result.filecontents}, true);
+      dialog().hideDialog("dialog"); if (!resp.result) _showErrorDialog();
+   }); else _showErrorDialog();
 }
 
-async function downloadFile(element) {
-   const paths = selectedPath.split("/"); const file = paths[paths.length-1];
-   const shadowRoot = file_manager.getShadowRootByContainedElement(element);
-   try {
-      const link = shadowRoot.createElement("a");
-      link.download = file; link.href = API_DOWNLOADFILE+"?path="+selectedPath;
-      shadowRoot.appendChild(link); link.click(); shadowRoot.removeChild(link);
-   } catch (err) {}
+async function downloadFile(_element) {
+   const paths = selectedPath.split("/"), file = paths[paths.length-1];
+   const result = await apiman.blob(API_DOWNLOADFILE+"?path="+selectedPath, file, "GET", null, true, false);
+   if (!result) dialog().showMessage(await i18n.get("DownloadFailed"), "dialog");
 }
 
 function cut(_element) { selectedCut = selectedPath }
 
 function copy(_element) { selectedCopy = selectedPath }
 
-function paste(element) {
+function paste() {
    const selectedPathToOperate = selectedCut?selectedCut:selectedCopy;
    const baseName = selectedPathToOperate.substring(selectedPathToOperate.lastIndexOf("/")+1);
-   if (selectedCut) _performRename(selectedCut, `${selectedPath}/${baseName}`, element);
-   else if (selectedCopy) _performCopy(selectedCopy, `${selectedPath}/${baseName}`, element);
+   if (selectedCut) _performRename(selectedCut, `${selectedPath}/${baseName}`);
+   else if (selectedCopy) _performCopy(selectedCopy, `${selectedPath}/${baseName}`);
    selectedCut = null; selectedCopy = null;
-}
-
-async function doReplaceContent(element) {
-   const shadowRoot = file_manager.getShadowRootByContainedElement(element);
-   const data = shadowRoot.querySelector("#content").value;
-   const resp = await apiman.rest(API_OPERATEFILE, "POST", {path: selectedPath, op: "write", data}, true);
-   if (!resp.result) showErrorDialog(element);
-   hideDialog(element);
 }
 
 async function showProgress(element, currentBlock, totalBlocks, fileName) {
@@ -255,7 +261,7 @@ function closeProgressAndReloadIfAllFilesUploaded(element, filesAndPercents) {
    setTimeout(_=>{hideDialog(element); router.reload();}, DIALOG_HIDE_WAIT); // hide dialog if all files done, after a certain wait
 }
 
-const showErrorDialog = async (element, hideAction) => showDialog(element, "error", {error:await i18n.get("Error")}, hideAction);
+const _showErrorDialog = async hideAction => dialog().showMessage(await i18n.get("Error"), "dialog", hideAction);
 
 async function showDialog(element, dialogTemplateID, data, hideAction) {
    data = data || {}; const shadowRoot = file_manager.getShadowRootByContainedElement(element);
@@ -275,24 +281,22 @@ function hideDialog(element) {
    const hideAction = hostElement["__com_wsadmin_hideAction"]; if (hideAction) {hideAction(element); delete hostElement["__com_wsadmin_hideAction"]}
 }
 
-async function createFile(element, isDirectory=false) {
-   const path = `${selectedPath}/${file_manager.getShadowRootByContainedElement(element).querySelector("#path").value}`;
-
-   let resp = await apiman.rest(API_CREATEFILE, "GET", {path, isDirectory: isDirectory}, true);
-   if (resp.result) router.reload(); else showErrorDialog(element);
-
-   hideDialog(element);
-}
-
-function renameFile(element) {
+function renameFile() {
    const oldName = selectedPath?selectedPath.substring(selectedPath.lastIndexOf("/")+1):null;
-   showDialog(element, "renamefiledialog", oldName?{oldName}:undefined);
+   dialog().showDialog(`${APP_CONSTANTS.APP_PATH}/dialogs/renamefile.html`, true, true, {oldName}, "dialog", 
+         ["renamepath"], async result => {
+
+      const subpaths = selectedPath.split("/"); subpaths.splice(subpaths.length-1, 1, result.renamepath);
+      const newPath = subpaths.join("/");
+
+      dialog().hideDialog("dialog"); _performRename(selectedPath, newPath); 
+   });
 }
 
 async function shareFile(element, done, id) {
    if (!done) {
       const resp = await apiman.rest(API_SHAREFILE, "GET", {path: selectedPath, expiry: shareDuration}, true);
-      if (!resp || !resp.result) showErrorDialog(element); 
+      if (!resp || !resp.result) _showErrorDialog(); 
       else showDialog(element, "sharefiledialog", {link: `${API_DOWNLOADFILE_SHARED}?id=${resp.id}`, id: resp.id, shareDuration});
    } else {
       const duration = file_manager.getShadowRootByContainedElement(element).querySelector("input#expiry").value;
@@ -306,31 +310,21 @@ function copyShareClicked(element) {
    shadowRoot.querySelector("span#copied").style.opacity=1; setTimeout(_=>shadowRoot.querySelector("span#copied").style.opacity=0, DIALOG_HIDE_WAIT);
 }
 
-async function doRename(element) {
-   const newName = file_manager.getShadowRootByContainedElement(element).querySelector("#renamepath").value;
-   const subpaths = selectedPath.split("/"); subpaths.splice(subpaths.length-1, 1, newName);
-   const newPath = subpaths.join("/");
-
-   _performRename(selectedPath, newPath, element);
-
-   hideDialog(element);
-}
-
 function isMobile() {
-   return navigator.maxTouchPoints?true:false;
+   return true; //return navigator.maxTouchPoints?true:false;
 }
 
-async function _performRename(oldPath, newPath, element) {
+async function _performRename(oldPath, newPath) {
    const resp = await apiman.rest(API_RENAMEFILE, "GET", {old: oldPath, new: newPath}, true);
-   if (!resp || !resp.result) showErrorDialog(element, _=>router.reload()); else router.reload();
+   if (!resp || !resp.result) _showErrorDialog(_=>router.reload()); else router.reload();
 }
 
-async function _performCopy(fromPath, toPath, element) {
+async function _performCopy(fromPath, toPath) {
    const resp = await apiman.rest(API_COPYFILE, "GET", {from: fromPath, to: toPath}, true);
-   if (!resp || !resp.result) showErrorDialog(element, _=>router.reload()); else router.reload();
+   if (!resp || !resp.result) _showErrorDialog(_=>router.reload()); else router.reload();
 }
 
 export const file_manager = { trueWebComponentMode: true, elementConnected, elementRendered, handleClick, 
-   showMenu, deleteFile, editFile, downloadFile, cut, copy, paste, upload, uploadFiles, hideDialog, createFile, 
-   create, shareFile, renameFile, doRename, doReplaceContent, menuEventDispatcher, copyShareClicked, isMobile }
+   showMenu, deleteFile, editFile, downloadFile, cut, copy, paste, upload, uploadFiles, hideDialog,  create, 
+   shareFile, renameFile, menuEventDispatcher, copyShareClicked, isMobile }
 monkshu_component.register("file-manager", `${APP_CONSTANTS.APP_PATH}/components/file-manager/file-manager.html`, file_manager);

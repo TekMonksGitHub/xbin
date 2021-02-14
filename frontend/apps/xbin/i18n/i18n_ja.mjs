@@ -27,6 +27,7 @@ export const i18n = {
 "Path": "名前",
 "IsDirectory": "これはフォルダーですか？",
 "OK": "はい",
+"Save": "変更内容を保存",
 "Cancel": "キャンセル",
 "Close": "閉じる",
 "NewName": "名前",
@@ -41,5 +42,6 @@ export const i18n = {
 "Instructions": "説明書",
 "DoubleClickToDownload": "ダブルクリックかクリックして、[開く]を選択してダウンロードします。",
 "DoubleClickToOpenFolder": "ダブルクリックかクリックして、[開く]を選択して、フォルダを開きます。",
-"LicensedSoftware": "これはライセンスソフトウェアです。TekMonksとソフトウェアライセンスへの契約書を結ぶ必要があります。"
+"LicensedSoftware": "これはライセンスソフトウェアです。TekMonksとソフトウェアライセンスへの契約書を結ぶ必要があります。",
+"DownloadFailed": "ダウンロードに失敗しました"
 }

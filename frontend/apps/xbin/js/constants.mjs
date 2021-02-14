@@ -6,9 +6,11 @@ const FRONTEND = "http://localhost:8080";
 const BACKEND = "http://localhost:9090";
 const APP_NAME = "xbin";
 const APP_PATH = `${FRONTEND}/apps/${APP_NAME}`;
+const API_PATH = `${BACKEND}/apps/${APP_NAME}`;
+const COMPONENTS_PATH = `${FRONTEND}/apps/${APP_NAME}/components`;
 
 export const APP_CONSTANTS = {
-    FRONTEND, BACKEND, APP_PATH, APP_NAME,
+    FRONTEND, BACKEND, APP_PATH, APP_NAME, COMPONENTS_PATH, API_PATH,
     MAIN_HTML: APP_PATH+"/main.html?path=/",
     LOGIN_HTML: APP_PATH+"/login.html",
 
@@ -16,7 +18,7 @@ export const APP_CONSTANTS = {
 
     // Login constants
     MIN_PASS_LENGTH: 8,
-    API_LOGIN: BACKEND+"/apps/"+APP_NAME+"/login",
+    API_LOGIN: API_PATH+"/login",
     BCRYPT_SALT: "$2a$10$VFyiln/PpFyZc.ABoi4ppf",
     USERID: "id",
     USER_ROLE: "user",

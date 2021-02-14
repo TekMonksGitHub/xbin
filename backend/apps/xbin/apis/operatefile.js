@@ -1,11 +1,8 @@
 /* 
  * (C) 2020 TekMonks. All rights reserved.
  */
-const fs = require("fs");
 const path = require("path");
-const util = require("util");
-const readFileAsync = util.promisify(fs.readFile);
-const writeFileAsync = util.promisify(fs.writeFile);
+const fspromises = require("fs").promises;
 const CONF = require(`${API_CONSTANTS.CONF_DIR}/xbin.json`);
 
 exports.doService = async jsonReq => {
@@ -19,8 +16,8 @@ exports.doService = async jsonReq => {
 
 	try {
 		let result = {...CONSTANTS.TRUE_RESULT};
-		if (jsonReq.op == "read") result.data = await readFileAsync(fullpath, "UTF-8");
-		else writeFileAsync(fullpath, jsonReq.data, "UTF-8");
+		if (jsonReq.op == "read") result.data = await fspromises.readFile(fullpath, "UTF-8");
+		else await fspromises.writeFile(fullpath, jsonReq.data, "UTF-8");
 
         return result;
 	} catch (err) {LOG.error(`Error creating  path: ${fullpath}, error is: ${err}`); return CONSTANTS.FALSE_RESULT;}

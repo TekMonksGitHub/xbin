@@ -27,6 +27,7 @@ export const i18n = {
 "Path": "Name",
 "IsDirectory": "Is Directory?",
 "OK": "OK",
+"Save": "Save",
 "Cancel": "Cancel",
 "Close": "Close",
 "NewName": "Name",
@@ -41,5 +42,6 @@ export const i18n = {
 "Instructions": "Instructions",
 "DoubleClickToDownload": "Double click or click and select \"Open\" to download.",
 "DoubleClickToOpenFolder": "Double click or click and select \"Open\" to open a folder.",
-"LicensedSoftware": "Please note this is TekMonks Licensed software."
+"LicensedSoftware": "Please note this is TekMonks Licensed software.",
+"DownloadFailed": "Download failed"
 }

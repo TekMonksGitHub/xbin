@@ -1,0 +1,47 @@
+<style>
+input[type=text] { 
+    width: max(30vw, 20em);
+    padding: 20px;
+    margin: 0;
+    box-sizing: border-box;
+    border-radius: 10px;
+    border-style: none;
+    outline: none;
+    text-align: left;
+    font-family: 'Raleway';
+    background-color: #F0F8FF;
+    box-shadow: 0 0 0px 1000px #F0F8FF inset;
+}
+
+div#togglediv {
+    display: inline-flex;
+    flex-flow: row nowrap;
+    margin-top: 40px;
+    justify-content: space-between;
+    width: 100%;
+}
+
+div#togglediv > span { 
+    width: calc(50% - 20px);
+    padding: 20px;
+    margin: 0;
+    box-sizing: border-box;
+    border-radius: 30px;
+    border-style: none;
+    outline: none;
+    text-align: center;
+    font-family: 'Raleway';
+    background-color: #F0F8FF;
+    box-shadow: 0 0 0px 1000px #F0F8FF inset;
+    font-size: 0.8em;
+    cursor: default;
+}
+
+div#togglediv > span.checked {
+    background-color: rgb(42, 139, 250);
+    box-shadow: 0 0 0px 1000px rgb(42, 139, 250) inset;
+    color:rgba(255, 255, 255, 1);
+}
+</style>
+
+<input type="text" id="renamepath" placeholder="{{i18n.NewName}}" value="{{oldName}}" required>
