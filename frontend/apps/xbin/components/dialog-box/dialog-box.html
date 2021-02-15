@@ -111,13 +111,13 @@ span#close {
 
 <div id="modalcurtain" onclick="event.stopPropagation()"></div>
 <div id="dialog" onclick="event.stopPropagation()"onclick="event.stopPropagation()">
-    <span id="close" onclick="event.stopPropagation(); monkshu_env.components['dialog-box'].hideDialog(this)">X</span>
+    <span id="close" onclick="event.stopPropagation(); monkshu_env.components['dialog-box'].cancel(this)">X</span>
     <div id="error">bad input</div>
     <div id="dialogcontent"></div>
     <div id="buttonbar">
         <span id="ok" onclick="event.stopPropagation(); 
             monkshu_env.components['dialog-box'].submit(this)">{{i18n.OK}}</span>
         <span id="cancel" onclick="event.stopPropagation();
-            monkshu_env.components['dialog-box'].hideDialog(this)">{{i18n.Cancel}}</span>
+            monkshu_env.components['dialog-box'].cancel(this)">{{i18n.Cancel}}</span>
     </div>
 </div>

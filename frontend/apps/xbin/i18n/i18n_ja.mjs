@@ -43,5 +43,11 @@ export const i18n = {
 "DoubleClickToDownload": "ダブルクリックかクリックして、[開く]を選択してダウンロードします。",
 "DoubleClickToOpenFolder": "ダブルクリックかクリックして、[開く]を選択して、フォルダを開きます。",
 "LicensedSoftware": "これはライセンスソフトウェアです。TekMonksとソフトウェアライセンスへの契約書を結ぶ必要があります。",
-"DownloadFailed": "ダウンロードに失敗しました"
+"DownloadFailed": "ダウンロードに失敗しました",
+"DefaultFileInfo": "ここでファイルの情報を表示するには、ファイルを選択してください",
+"Name": "名前",
+"Size": "サイズ",
+"Created": "作成日",
+"Modified": "変更日",
+"Bytes": "バイト"
 }

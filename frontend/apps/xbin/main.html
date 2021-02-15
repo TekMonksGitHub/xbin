@@ -8,120 +8,143 @@ License: GPL2 - see enclosed license.txt file.
 <style>
 @import url('https://fonts.googleapis.com/css?family=Raleway');
 
-body {
-margin: 0;
-padding: 0;
-font-family: 'Raleway';
+::-webkit-scrollbar {width: 5px;}
+ 
+::-webkit-scrollbar-thumb {
+    border-radius: 100px;
+    background: #cdeaf2; 
+    box-shadow: inset 0 0 6px rgba(0,0,0,0.3); 
 }
 
-div#container {
-width: 100%;
-height: 100%;
-top: 0px;
-display: flex;
-flex-direction: column;
+::-webkit-scrollbar-track {
+    background-color: lightgray;
+    border-radius: 10px;
+}
+
+body {
+	margin: 0;
+	padding: 0;
+	font-family: 'Raleway';
+	overflow-y: auto;
+    overflow-x: hidden;
+	color: #444444;
 }
 
 div#header {
-height: 50px;
-line-height: 50px;
-margin: 0;
-box-sizing: border-box;
-padding: 0;
-display: flex;
-flex-flow: row nowrap;
-background-color: #f5aa078f;
+	height: 50px;
+	line-height: 50px;
+	margin: 0;
+	box-sizing: border-box;
+	padding: 0;
+	display: flex;
+	flex-flow: row nowrap;
 }
 
 div#header > span:first-child {
-font-size: 1.5em;
-padding-left: 10px;
-cursor: pointer;
-padding-right: 10px;
-width: 1em;
-text-align: center;
+	font-size: 1.5em;
+	padding-left: 10px;
+	cursor: pointer;
+	padding-right: 10px;
+	width: 1em;
+	text-align: center;
 }
 
 div#header > span:first-child:hover {
-transition: all 0.3s ease;
-background-color: rgba(0, 0, 0, 0.185);
+	transition: all 0.3s ease;
+	background-color: rgba(0, 0, 0, 0.185);
 }
 
 div#header > span:last-child {
-font-size: 1.2em;
-width: 100%;
-text-align: center;
+	font-size: 1.2em;
+	width: 100%;
+	text-align: center;
 }
 
 div#menu {
-display: flex;
-flex-flow: row wrap;
-justify-content: start;
-opacity: 1;
-background-color: white;
-border-top: 0.8px solid gray;
-border-bottom: 0.8px solid gray;
-opacity: 0;
-transition: opacity 0.1s linear;
-visibility: hidden;
-height: 0px;
-max-height: 0px;
-background-color: rgba(0, 0, 0, 0.024);
-overflow: hidden;
-transition: max-height 0.18s ease-out;
+	display: flex;
+	flex-flow: row wrap;
+	justify-content: start;
+	opacity: 1;
+	background-color: white;
+	border-top: 0.8px solid gray;
+	border-bottom: 0.8px solid gray;
+	opacity: 0;
+	transition: opacity 0.1s linear;
+	visibility: hidden;
+	height: 0px;
+	max-height: 0px;
+	background-color: rgba(0, 0, 0, 0.024);
+	overflow: hidden;
+	transition: max-height 0.18s ease-out;
 }
 
 div#menu.visible {
-opacity: 1;
-visibility: visible;
-height: auto;
+	opacity: 1;
+	visibility: visible;
+	height: auto;
 }
 
-div#menu > span > img {
-width: 50px;
-}
+div#menu > span > img {width: 50px;}
 
 div#menu > span {
-display: flex;
-flex-direction: column;
-padding: 20px;
-text-align: center;
-cursor: pointer;
+	display: flex;
+	flex-direction: column;
+	padding: 10px;
+	text-align: center;
+	cursor: pointer;
 }
 
 div#content {
-width: 100%;
-display: flex;
-flex-direction: row;
-min-height: calc(100vh - 52px);
-height:auto !important;
+	display: flex;
+	flex-direction: row;
 }
 
-div#leftbar {
-width: 30vw;
-background-color: #f5be0734;
-box-sizing: border-box;
-padding: 40px;
-text-align: center
+div#rightbar {
+	width: 20vw;
+	margin: 40px;
 }
 
-div#rightbar {width: 70vw}
+div#leftbar {width: 80vw;}
 
-div#leftbar > div#lefttextcontent {
-text-align: justify
+div#rightbar > div#adv, div#rightbar > div#info {
+	margin: 0px 10px 60px 10px;
+	text-align: center;
+	border-radius: 20px;
+	background-color: #cdeaf2;
+	padding: 20px;
+	min-height: 25vh;
+    justify-content: space-around;
+    display: flex;
+    flex-direction: column;
+	overflow: hidden;
+}
+
+div#rightbar > div#info {margin-bottom: 0px;}
+
+div#rightbar img {
+	width: 6em; 
+	height: 6em;
+}
+
+@media (max-width:1000px) {	/* On small screens don't show info bar */
+	div#rightbar {display:none;}
+	div#leftbar {width: 100vw}
 }
 
 a, a:visited{
-text-decoration: none;
-color: inherit;
+	text-decoration: none;
+	color: inherit;
 }
 
 a:hover {text-decoration: underline;}
 
-div#leftbar > img {
-width: 120px;
-height: 120px;
+div#info > table {
+	text-align: left; 
+	border-spacing: 3px 10px; 
+	font-size: 0.7em;
+	font-family: arial;
 }
+
 </style>
 
 <head>
@@ -147,27 +170,42 @@ height: 120px;
 	</div>
 
 	<div id="menu" onclick="event.stopPropagation();">
-		<span><img src="./img/logout.png" onclick="event.stopPropagation();main.logout()">{{i18n.Logout}}</span>
+		<span><img src="./img/logout.svg" onclick="event.stopPropagation();main.logout()">{{i18n.Logout}}</span>
 	</div>
 		
 	<div id="content">
 		<div id="leftbar">
-			<div id="lefttextcontent">
-			<h3>{{i18n.FolderBanner}}<br/></h3>
-			{{i18n.PoweredBy}} <a href="https://github.com/TekMonksGitHub/webscrolls/wiki" target="_blank">WebScrolls</a>
-			<span style="text-align: justify;">
-			<br/><br/><br/><br/><strong>{{i18n.Instructions}}</strong><br/><br/>
-			<ul>
-				<li>{{i18n.DoubleClickToDownload}}</li><br/><br/>
-				<li>{{i18n.DoubleClickToOpenFolder}}</li>
-			</ul>
-			<br/>
-			<p>{{i18n.LicensedSoftware}}</p>
-			</span>
-			</div>
-			<br/><br/><img src="./img/xbin.png">
+			<file-manager path="{{url.path}}" id="fm" defaultShareDuration="5" 
+				styleBody="body{height: calc(100vh - 52px);}" onselect="main.fileSelected(event)"></file-manager>
 		</div>
-		<div id="rightbar"><file-manager path="{{url.path}}" id="fm" defaultShareDuration="5" styleBody="body{height: calc(100vh - 52px);}"></file-manager></div>
+
+		<div id="rightbar">
+			<div id="adv">
+			<div style="height:100%">
+			<img src="./img/xbin.png"><br/><br/>
+			{{i18n.PoweredBy}} <a href="https://github.com/TekMonksGitHub/webscrolls/wiki" target="_blank">WebScrolls</a>
+			</div>
+			</div>
+
+			<div id="info">
+			{{{i18n.DefaultFileInfo}}}
+			</div>
+			<template id="fileinfo">
+			<!-- {{=<% %>=}} 
+			<table>
+				<tr><td>{{i18n.Name}}</td><td>{{name}}</td></tr>
+				<tr><td>{{i18n.Size}}</td><td>{{size}} {{i18n.Bytes}}</td></tr>
+				<tr><td>{{i18n.Created}}</td><td>{{birthtime}}</td></tr>
+				<tr><td>{{i18n.Modified}}</td><td>{{ctime}}</td></tr>
+			</table>
+			<%={{ }}=%> -->
+			</template>
+			<template id="defaultinfo">
+			<!-- {{=<% %>=}} 
+			{{{i18n.DefaultFileInfo}}}
+			<%={{ }}=%> -->
+			</template>
+		</div>
 	</div>
 </div>
 

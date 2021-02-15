@@ -33,8 +33,8 @@ async function elementConnected(element) {
    menuOpen = false; 
 
    const path = element.getAttribute("path") || "/"; selectedPath = path.replace(/[\/]+/g,"/"); selectedIsDirectory = true;
-   let resp = await apiman.rest(API_GETFILES, "GET", {path}, true);
-   if (!resp || !resp.result) return;
+   const resp = await apiman.rest(API_GETFILES, "GET", {path}, true); if (!resp || !resp.result) return; 
+   for (const entry of resp.entries) {entry.stats.name = entry.name; entry.stats.json = JSON.stringify(entry.stats);}
    
    // if a file or folder has been selected, show the paste button
    if (selectedCopy || selectedCut) resp.entries.unshift({name: await i18n.get("Paste", session.get($$.MONKSHU_CONSTANTS.LANG_ID)), path, stats:{paste: true}});
@@ -48,7 +48,7 @@ async function elementConnected(element) {
       resp.entries.unshift({name: await i18n.get("Home", session.get($$.MONKSHU_CONSTANTS.LANG_ID)), path:"/", stats:{home: true}});
    }
 
-   let data = {entries: resp.entries};
+   const data = {entries: resp.entries, COMPONENT_PATH: `${APP_CONSTANTS.COMPONENTS_PATH}/file-manager`};
 
    if (element.getAttribute("styleBody")) data.styleBody = `<style>${element.getAttribute("styleBody")}</style>`;
    shareDuration = element.getAttribute("defaultShareDuration") || DEFAULT_SHARE_EXPIRY; 
@@ -70,7 +70,8 @@ async function elementRendered(element) {
 function handleClick(element, path, isDirectory, fromClickEvent, nomenu) {
    selectedPath = path?path.replace(/[\/]+/g,"/"):selectedPath; 
    selectedIsDirectory = (isDirectory!== undefined) ? util.parseBoolean(isDirectory) : selectedIsDirectory;
-   selectedElement = element;
+   selectedElement = element; const event = element.getAttribute("stats")?JSON.parse(element.getAttribute("stats")):null;  // used below in eval
+   const hostElement = file_manager.getHostElement(element); if (hostElement.getAttribute("onselect")) eval(hostElement.getAttribute("onselect"));
 
    if (nomenu) return;
    
@@ -296,13 +297,13 @@ function renameFile() {
 async function shareFile() {
    const resp = await apiman.rest(API_SHAREFILE, "GET", {path: selectedPath, expiry: shareDuration}, true);
    if (!resp || !resp.result) _showErrorDialog(); else dialog().showDialog(
-         `${APP_CONSTANTS.APP_PATH}/dialogs/sharefile.html`, true, false, 
+         `${APP_CONSTANTS.APP_PATH}/dialogs/sharefile.html`, true, true, 
          {link: `${API_DOWNLOADFILE_SHARED}?id=${resp.id}`, id: resp.id, shareDuration}, "dialog", ["expiry"], 
          async result => {
 
       dialog().hideDialog("dialog");
-      if (result.expiry != shareDuration) await apiman.rest(API_SHAREFILE, "GET", {id: resp.id, expiry: result.expiry}, true); 
-   });
+      if (result.expiry != shareDuration) apiman.rest(API_SHAREFILE, "GET", {id: resp.id, expiry: result.expiry}, true); 
+   }, async _ => apiman.rest(API_SHAREFILE, "GET", {id: resp.id, expiry: 0}, true));
 }
 
 function isMobile() {

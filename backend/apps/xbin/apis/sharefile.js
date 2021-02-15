@@ -32,7 +32,8 @@ exports.doService = async jsonReq => {
 			await dbrunAsync("INSERT INTO shares(fullpath, id, expiry) VALUES (?,?,?)", [fullpath,id,expiry]);
 			return {result: true, id};
 		} else {	// update expiry
-			await dbrunAsync("UPDATE shares SET expiry = ? WHERE id = ?", [Date.now()+(jsonReq.expiry*86400000),jsonReq.id]);
+			if (jsonReq.expiry != 0) await dbrunAsync("UPDATE shares SET expiry = ? WHERE id = ?", [Date.now()+(jsonReq.expiry*86400000),jsonReq.id]);
+			else await dbrunAsync("DELETE FROM shares WHERE id = ?", [jsonReq.id]);
 			return {result: true, id: jsonReq.id};
 		}
 	} catch (err) {LOG.error(`Error sharing  path: ${fullpath}, error is: ${err}`); return CONSTANTS.FALSE_RESULT;}
