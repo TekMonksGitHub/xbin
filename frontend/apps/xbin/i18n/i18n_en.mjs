@@ -49,5 +49,6 @@ export const i18n = {
 "Size": "Size",
 "Created": "Created",
 "Modified": "Modified",
-"Bytes": "Bytes"
+"Bytes": "Bytes",
+"Location": "Location"
 }

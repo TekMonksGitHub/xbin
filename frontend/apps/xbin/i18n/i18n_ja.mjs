@@ -49,5 +49,6 @@ export const i18n = {
 "Size": "サイズ",
 "Created": "作成日",
 "Modified": "変更日",
-"Bytes": "バイト"
+"Bytes": "バイト",
+"Location": "ロケーション"
 }

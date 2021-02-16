@@ -11,20 +11,20 @@ import {monkshu_component} from "/framework/js/monkshu_component.mjs";
 
 let mouseX, mouseY, menuOpen, timer, selectedPath, selectedIsDirectory, selectedElement, filesAndPercents, selectedCut, selectedCopy, shareDuration;
 
-const DIALOG_HIDE_WAIT = 1300, DEFAULT_SHARE_EXPIRY = 5;
-
 const API_GETFILES = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/getfiles";
+const API_COPYFILE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/copyfile";
+const API_SHAREFILE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/sharefile";
 const API_UPLOADFILE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/uploadfile";
 const API_DELETEFILE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/deletefile";
 const API_CREATEFILE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/createfile";
 const API_RENAMEFILE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/renamefile";
 const API_OPERATEFILE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/operatefile";
 const API_DOWNLOADFILE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/downloadfile";
-const API_COPYFILE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/copyfile";
-const API_SHAREFILE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/sharefile";
+const API_DOWNLOADFILE_DND = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/downloaddnd";
 const API_DOWNLOADFILE_SHARED = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/downloadsharedfile";
 
 const DIALOG_HOST_ELEMENT_ID = "templateholder";
+const DIALOG_HIDE_WAIT = 1300, DEFAULT_SHARE_EXPIRY = 5;
 const dialog = _ => monkshu_env.components['dialog-box'];
 
 const IO_CHUNK_SIZE = 10485760;   // 10M read buffer
@@ -79,9 +79,10 @@ function handleClick(element, path, isDirectory, fromClickEvent, nomenu) {
    else timer = setTimeout(_=> {timer=null;if ((fromClickEvent && isMobile())||!fromClickEvent) showMenu(element);}, 400);
 }
 
-function upload(containedElement) {
+function upload(containedElement, files) {
    filesAndPercents = {};  // reset progress indicator bucket
-   file_manager.getShadowRootByContainedElement(containedElement).querySelector("input#upload").click();
+   if (!files) file_manager.getShadowRootByContainedElement(containedElement).querySelector("input#upload").click(); // upload button clicked
+   else uploadFiles(containedElement, files);   // drag and drop happened
 }
 
 function create(){
@@ -228,10 +229,15 @@ async function editFileLoadData() {
    }); else _showErrorDialog();
 }
 
-async function downloadFile(_element) {
+async function downloadFile() {
    const paths = selectedPath.split("/"), file = paths[paths.length-1];
    const result = await apiman.blob(API_DOWNLOADFILE+"?path="+selectedPath, file, "GET", null, true, false);
    if (!result) dialog().showMessage(await i18n.get("DownloadFailed"), "dialog");
+}
+
+function getDragAndDropDownloadURL(path) {
+   const url = `${API_DOWNLOADFILE_DND}?path=${path}&token=${apiman.getJWTToken(API_DOWNLOADFILE_DND)}`;
+   return url;
 }
 
 function cut(_element) { selectedCut = selectedPath }
@@ -322,5 +328,5 @@ async function _performCopy(fromPath, toPath) {
 
 export const file_manager = { trueWebComponentMode: true, elementConnected, elementRendered, handleClick, 
    showMenu, deleteFile, editFile, downloadFile, cut, copy, paste, upload, uploadFiles, hideDialog,  create, 
-   shareFile, renameFile, menuEventDispatcher, isMobile }
+   shareFile, renameFile, menuEventDispatcher, isMobile, getDragAndDropDownloadURL }
 monkshu_component.register("file-manager", `${APP_CONSTANTS.APP_PATH}/components/file-manager/file-manager.html`, file_manager);

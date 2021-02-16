@@ -9,12 +9,12 @@ const statsAsync = require("util").promisify(fs.stat);
 const CONF = require(`${API_CONSTANTS.CONF_DIR}/xbin.json`);
 
 exports.handleRawRequest = async (url, jsonReq, headers, servObject) => {
-	if (!validateRequest(jsonReq)) {LOG.error("Validation failure."); return CONSTANTS.FALSE_RESULT;}
+	if (!validateRequest(jsonReq)) {LOG.error("Validation failure."); _sendError(servObject); return;}
 	
 	LOG.debug("Got downloadfile request for path: " + jsonReq.path);
 
 	const fullpath = path.resolve(`${CONF.CMS_ROOT}/${jsonReq.path}`);
-	if (!API_CONSTANTS.isSubdirectory(fullpath, CONF.CMS_ROOT)) {LOG.error(`Subdir validation failure: ${jsonReq.path}`); return CONSTANTS.FALSE_RESULT;}
+	if (!API_CONSTANTS.isSubdirectory(fullpath, CONF.CMS_ROOT)) {LOG.error(`Subdir validation failure: ${jsonReq.path}`); _sendError(servObject); return;}
 
 	try {
         const stats = await statsAsync(fullpath); if (stats.isDirectory()) fullpath = await _zipDirectory(fullpath);
@@ -28,7 +28,14 @@ exports.handleRawRequest = async (url, jsonReq, headers, servObject) => {
         fs.createReadStream(fullpath, {"flags":"r","autoClose":true}).pipe(servObject.res, {end:true});
 	} catch (err) {
 		LOG.error(`Error in downloadfile: ${err}`);
-		if (!servObject.res.writableEnded) {servObject.server.statusInternalError(servObject, err); servObject.server.end(servObject);}
+		_sendError(servObject);
+	}
+}
+
+function _sendError(servObject) {
+	if (!servObject.res.writableEnded) {
+		servObject.server.statusInternalError(servObject, err); 
+		servObject.server.end(servObject);
 	}
 }
 

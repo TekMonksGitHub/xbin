@@ -18,13 +18,11 @@ div#container {
     display: flex;
     flex-flow: row wrap;
     justify-content: start;
-}
-
-div#container > span > img {
-    width: 90px;
+    height: 100%;
 }
 
 div#container > span {
+    height: fit-content;
     display: flex;
     flex-direction: column;
     padding: 40px;
@@ -38,6 +36,8 @@ div#container > span:focus, div#container > span:hover {
     background-color: #cdeaf260;
     outline: none;
 }
+
+div#container > span > img {width: 90px;}
 
 div#contextmenu {
     display: none;
@@ -163,7 +163,7 @@ div#progress > span#bar, div#progress > span#bar > span#percent {
 
 div#progress > span#bar > span#percent {
     width: 10%;
-    background-color: #000000;
+    background-color: #2f94ad;
 }
 
 div#progress > span#percenttext {width: 20%;} 
@@ -175,16 +175,18 @@ div#progress > span#percenttext {width: 20%;}
 
 {{{styleBody}}}
 
-<div id="container">
+<div id="container" ondragover="event.preventDefault(); event.dataTransfer.dropEffect='copy';"
+        ondrop="event.preventDefault(); monkshu_env.components['file-manager'].upload(this, event.dataTransfer.files)">
     {{#entries}}
-    <span tabindex="0" onkeyup='event.preventDefault(); event.stopPropagation(); if (event.key == "Enter" || event.keyCode == 13) {
-            monkshu_env.components["file-manager"].handleClick(this, "{{path}}", "{{#stats.directory}}true{{/stats.directory}}{{#stats.home}}true{{/stats.home}}{{#stats.back}}true{{/stats.back}}{{#stats.upload}}false{{/stats.upload}}{{#stats.create}}false{{/stats.create}}{{#stats.paste}}false{{/stats.paste}}", true, true);
-            monkshu_env.components["file-manager"].menuEventDispatcher("editFile",this); }'
+    <span tabindex="0" id="{{#stats.home}}home{{/stats.home}}{{#stats.back}}back{{/stats.back}}{{#stats.upload}}upload{{/stats.upload}}{{#stats.create}}create{{/stats.create}}{{#stats.paste}}paste{{/stats.paste}}"
+            onkeyup='event.preventDefault(); event.stopPropagation(); if (event.key == "Enter" || event.keyCode == 13) {
+                monkshu_env.components["file-manager"].handleClick(this, "{{path}}", "{{#stats.directory}}true{{/stats.directory}}{{#stats.home}}true{{/stats.home}}{{#stats.back}}true{{/stats.back}}{{#stats.upload}}false{{/stats.upload}}{{#stats.create}}false{{/stats.create}}{{#stats.paste}}false{{/stats.paste}}", true, true);
+                monkshu_env.components["file-manager"].menuEventDispatcher("editFile",this); }'
             onclick='event.preventDefault(); event.stopPropagation(); monkshu_env.components["file-manager"].handleClick(this, "{{path}}", "{{#stats.directory}}true{{/stats.directory}}{{#stats.home}}true{{/stats.home}}{{#stats.back}}true{{/stats.back}}{{#stats.upload}}false{{/stats.upload}}{{#stats.create}}false{{/stats.create}}{{#stats.paste}}false{{/stats.paste}}", true);' 
             oncontextmenu='if (monkshu_env.components["file-manager"].isMobile()) return; event.preventDefault(); event.stopPropagation(); monkshu_env.components["file-manager"].handleClick(this, "{{path}}", "{{#stats.directory}}true{{/stats.directory}}{{#stats.home}}true{{/stats.home}}{{#stats.back}}true{{/stats.back}}{{#stats.upload}}false{{/stats.upload}}{{#stats.create}}false{{/stats.create}}{{#stats.paste}}false{{/stats.paste}}");'
             {{#stats.json}}stats='{{{.}}}'{{/stats.json}}>
-        <img src="{{COMPONENT_PATH}}/img/{{#stats.directory}}folder{{/stats.directory}}{{#stats.file}}file{{/stats.file}}{{#stats.back}}back{{/stats.back}}{{#stats.home}}home{{/stats.home}}{{#stats.upload}}upload{{/stats.upload}}{{#stats.create}}create{{/stats.create}}{{#stats.paste}}paste{{/stats.paste}}.svg" 
-            id="{{#stats.home}}home{{/stats.home}}{{#stats.back}}back{{/stats.back}}{{#stats.upload}}upload{{/stats.upload}}{{#stats.create}}create{{/stats.create}}{{#stats.paste}}paste{{/stats.paste}}">{{name}}
+        <img src="{{COMPONENT_PATH}}/img/{{#stats.directory}}folder{{/stats.directory}}{{#stats.file}}file{{/stats.file}}{{#stats.back}}back{{/stats.back}}{{#stats.home}}home{{/stats.home}}{{#stats.upload}}upload{{/stats.upload}}{{#stats.create}}create{{/stats.create}}{{#stats.paste}}paste{{/stats.paste}}.svg"
+            ondragstart="event.dataTransfer.setData('DownloadURL',`application/octet-stream:{{name}}:${monkshu_env.components['file-manager'].getDragAndDropDownloadURL('{{path}}')}`)">{{name}}
     </span>
     {{/entries}}
     <input id="upload" type="file" multiple onchange='monkshu_env.components["file-manager"].uploadFiles(this, this.files)' onclick="event.stopPropagation();">

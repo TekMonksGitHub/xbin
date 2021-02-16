@@ -9,5 +9,6 @@
     "/apps/xbin/operatefile" : "/apis/operatefile.js?key=fheiwu98237hjief8923ydewjidw834284hwqdnejwr79389&needsToken=true",
     "/apps/xbin/downloadfile" : "/apis/downloadfile.js?get=true&key=fheiwu98237hjief8923ydewjidw834284hwqdnejwr79389&needsToken=true",
     "/apps/xbin/sharefile" : "/apis/sharefile.js?get=true&key=fheiwu98237hjief8923ydewjidw834284hwqdnejwr79389&needsToken=true",
-    "/apps/xbin/downloadsharedfile" : "/apis/downloadsharedfile.js?get=true"
+    "/apps/xbin/downloadsharedfile" : "/apis/downloadsharedfile.js?get=true",
+    "/apps/xbin/downloaddnd" : "/apis/downloaddnd.js?get=true"
 }

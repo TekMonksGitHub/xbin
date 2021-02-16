@@ -41,21 +41,18 @@ div#header {
 }
 
 div#header > span:first-child {
-	font-size: 1.5em;
-	padding-left: 10px;
+	padding: 8px 22px 0px 6px;
 	cursor: pointer;
-	padding-right: 10px;
 	width: 1em;
-	text-align: center;
 }
 
 div#header > span:first-child:hover {
 	transition: all 0.3s ease;
-	background-color: rgba(0, 0, 0, 0.185);
+	background-color: #cdeaf2;
 }
 
 div#header > span:last-child {
-	font-size: 1.2em;
+	font-size: 0.9em;
 	width: 100%;
 	text-align: center;
 }
@@ -92,6 +89,7 @@ div#menu > span {
 	padding: 10px;
 	text-align: center;
 	cursor: pointer;
+	font-size: 0.9em;
 }
 
 div#content {
@@ -165,8 +163,8 @@ div#info > table {
 
 <div id="container">
 	<div id="header">
-		<span onclick="event.stopPropagation();main.toggleMenu();" id="menubutton">☰</span>
-		<span onclick="event.stopPropagation();">{{url.path}}</span>
+		<span onclick="event.stopPropagation();main.toggleMenu();" id="menubutton"><img src="./img/menu.svg"></span>
+		<span onclick="event.stopPropagation();">{{i18n.Location}} - {{url.path}}</span>
 	</div>
 
 	<div id="menu" onclick="event.stopPropagation();">
@@ -179,7 +177,8 @@ div#info > table {
 				styleBody="body{height: calc(100vh - 52px);}" onselect="main.fileSelected(event)"></file-manager>
 		</div>
 
-		<div id="rightbar">
+		<div id="rightbar" ondragover="event.preventDefault(); event.dataTransfer.effectAllowed = 'none'; event.dataTransfer.dropEffect='none'; return false;" 
+				ondrop="event.preventDefault(); event.dataTransfer.effectAllowed = 'none'; event.dataTransfer.dropEffect='none'; return false;">
 			<div id="adv">
 			<div style="height:100%">
 			<img src="./img/xbin.png"><br/><br/>

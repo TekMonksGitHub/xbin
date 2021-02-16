@@ -7,16 +7,16 @@ import {router} from "/framework/js/router.mjs";
 import {session} from "/framework/js/session.mjs";
 
 function toggleMenu() {
-    const menuIsOpen = document.querySelector("span#menubutton").innerText == "☰";
+    const imgElement = document.querySelector("span#menubutton > img"), menuIsOpen = imgElement.src.indexOf("menu.svg") != -1;
 
     if (menuIsOpen) {    
         const menuDiv = document.querySelector("div#menu"); menuDiv.style.maxHeight = menuDiv.scrollHeight+"px";
         menuDiv.classList.add("visible");
-        document.querySelector("span#menubutton").innerHTML="X";
+        imgElement.src = "./img/menu_close.svg";
     } else {
         let menuDiv = document.querySelector("div#menu"); menuDiv.style.maxHeight = 0; 
         menuDiv.classList.remove("visible");
-        document.querySelector("span#menubutton").innerHTML="☰";
+        imgElement.src = "./img/menu.svg";
     }
 }
 

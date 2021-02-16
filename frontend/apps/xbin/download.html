@@ -1,0 +1,4 @@
+<script>
+    const path = new URL(window.location).search.path;
+    apiman.blob(API_DOWNLOADFILE+"?path="+path, file, "GET", null, true, false);
+</script>
