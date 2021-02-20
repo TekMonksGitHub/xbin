@@ -25,7 +25,7 @@ const API_DOWNLOADFILE_STATUS = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP
 const API_DOWNLOADFILE_SHARED = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/downloadsharedfile";
 
 const DIALOG_SCROLL_ELEMENT_ID = "notificationscrollpositioner", DIALOG_HOST_ELEMENT_ID = "notification", DEFAULT_SHARE_EXPIRY = 5;
-const DIALOG_HIDE_WAIT = 1300, DOWNLOADFILE_REFRESH_INTERVAL = 500, UPLOAD_ICON = "⇧", DOWNLOAD_ICON = "⇩";
+const DOUBLE_CLICK_DELAY=400, DIALOG_HIDE_WAIT = 1300, DOWNLOADFILE_REFRESH_INTERVAL = 500, UPLOAD_ICON = "⇧", DOWNLOAD_ICON = "⇩";
 const dialog = _ => monkshu_env.components['dialog-box'];
 
 const IO_CHUNK_SIZE = 10485760;   // 10M read buffer
@@ -61,7 +61,7 @@ async function elementConnected(element) {
 
 async function elementRendered(element) {
    const shadowRoot = file_manager.getShadowRootByHostId(element.getAttribute("id"));
-   shadowRoot.addEventListener("mousemove", e => {mouseX = e.pageX; mouseY = e.pageY;});
+   shadowRoot.addEventListener("mousemove", e => {mouseX = e.clientX-element.getBoundingClientRect().left; mouseY = e.clientY-element.getBoundingClientRect().top;});
 
    const container = shadowRoot.querySelector("div#container");
    shadowRoot.addEventListener(isMobile()?"click":"contextmenu", e => { e.preventDefault(); if (!menuOpen) showMenu(container, true); else hideMenu(container); });
@@ -77,7 +77,9 @@ function handleClick(element, path, isDirectory, fromClickEvent, nomenu) {
    if (nomenu) return;
    
    if (timer) {clearTimeout(timer); if (fromClickEvent) editFile(element); timer=null;}
-   else timer = setTimeout(_=> {timer=null;if ((fromClickEvent && isMobile())||!fromClickEvent) showMenu(element);}, 400);
+   else timer = setTimeout(_=> { timer=null; 
+      if ((fromClickEvent && isMobile())||!fromClickEvent) if (!menuOpen) showMenu(element); else hideMenu(element);
+   }, DOUBLE_CLICK_DELAY);
 }
 
 function upload(containedElement, files) {
