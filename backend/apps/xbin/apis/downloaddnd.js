@@ -20,4 +20,4 @@ function _sendError(servObject) {
 	}
 }
 
-const validateRequest = jsonReq => (jsonReq && jsonReq.path && jsonReq.token);
+const validateRequest = jsonReq => (jsonReq && jsonReq.path && jsonReq.token && jsonReq.reqid);

@@ -8,11 +8,55 @@
 <style>
 @import url('https://fonts.googleapis.com/css?family=Raleway:100,100i,200,200i,300,300i,400,400i,500,500i,600,600i,700,700i,800,800i,900,900i&amp;display=swap');
 
+::-webkit-scrollbar {width: 5px;}
+ 
+::-webkit-scrollbar-thumb {
+    border-radius: 100px;
+    background: #cdeaf2; 
+    box-shadow: inset 0 0 6px rgba(0,0,0,0.3); 
+}
+
+::-webkit-scrollbar-track {
+    background-color: lightgray;
+    border-radius: 10px;
+}
+
 body{
     margin: 0; padding: 0;
     font-family: Raleway;
     user-select: none;
 }
+
+div#filemanager {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+div#notificationscrollpositioner {
+    border-top: 0.5px solid #2f94ad;
+    border: 0.5px solid #2f94ad;
+    border-radius: 10px 10px 0px 0px;
+    padding: 3px;
+    background: #f3fafc;
+    display: none;
+    z-index: 1;
+    opacity: 0.7;
+}
+
+div#notification {
+    display: none;
+    height: 0vh;
+    width: 100%;
+    transition: height 0.25s ease-in;
+}
+
+div#notification.visible {
+    display: block;
+    height: 20vh;
+}
+
+div#notificationscrollpositioner.visible {display: block;}
 
 div#container {
     display: flex;
@@ -21,23 +65,25 @@ div#container {
     height: 100%;
 }
 
-div#container > span {
+div#container > div {
     height: fit-content;
     display: flex;
     flex-direction: column;
-    padding: 40px;
-    text-align: center;
-    font-family: Raleway;
+    padding: 10px;
+    align-items: center;
     margin: 2px;
+    flex: 1 1 150px;
+    justify-content: center;
+    max-width: 150px;
 }
 
-div#container > span:focus, div#container > span:hover {
+div#container > div:focus, div#container > div:hover {
     border-radius: 10px;
     background-color: #cdeaf260;
     outline: none;
 }
 
-div#container > span > img {width: 90px;}
+div#container > div > img {width: 5em;}
 
 div#contextmenu {
     display: none;
@@ -49,7 +95,7 @@ div#contextmenu {
     background-color: rgba(255, 255, 255, 1);
     opacity: 1;
     z-index: 10;
-    border: 1px solid gray;
+    border: 0.5px solid gray;
     width: 10em;
     border-radius: 5px;
     overflow: hidden;
@@ -69,7 +115,7 @@ div#contextmenu > span.hidden{
 div#contextmenu > span {
     padding: 8px 15px 8px 15px;
     width: auto;
-    font-size: smaller;
+    font-size: 0.8em;
 }
 
 div#contextmenu > span:hover {
@@ -113,34 +159,23 @@ div#modal {
 }
 
 div#progresscontainer {
-    width: 400px;
-    height: 240px;
-    top: calc(50% - 120px);
-    left: calc(50% - 200px);
-    opacity: 0.98;
-    background:rgba(255, 255, 255);
-    padding: 40px;
-    position: absolute;
-    z-index: 101;
-    border-radius: 10px;
+    width: 100%;
+    height: 100%;
+    padding: 20px;
     display: inline-flex;
     flex-flow: column;
-    text-align: center;
-}
-
-div#progresscontainer {
-    width: 40%;
-    top: 50%;
-    left: 50%;
-    font-family: arial;
-    font-size: small;
-    transform: translate(-50%, -50%);
-    height: auto;
+    box-sizing: border-box;
+    justify-content: flex-start;
+    background: #f3fafc;
+    overflow-y: scroll;
+    overflow-x: hidden;
 }
 
 div#progresscontainer > div#progress {
     display: inline-flex;
-    margin: 1em;
+    margin: 0.5em;
+    font-family: arial;
+    font-size: small;
 }
 
 div#progress > span#name {
@@ -166,7 +201,11 @@ div#progress > span#bar > span#percent {
     background-color: #2f94ad;
 }
 
-div#progress > span#percenttext {width: 20%;} 
+div#progress > span#percenttext {width: 10%;} 
+div#progress > span#icon {
+    width: 10%;
+    font-size: 1.1em;
+} 
 </style>
 
 <script type="module">
@@ -175,10 +214,11 @@ div#progress > span#percenttext {width: 20%;}
 
 {{{styleBody}}}
 
+<div id="filemanager">
 <div id="container" ondragover="event.preventDefault(); event.dataTransfer.dropEffect='copy';"
         ondrop="event.preventDefault(); monkshu_env.components['file-manager'].upload(this, event.dataTransfer.files)">
     {{#entries}}
-    <span tabindex="0" id="{{#stats.home}}home{{/stats.home}}{{#stats.back}}back{{/stats.back}}{{#stats.upload}}upload{{/stats.upload}}{{#stats.create}}create{{/stats.create}}{{#stats.paste}}paste{{/stats.paste}}"
+    <div tabindex="0" id="{{#stats.home}}home{{/stats.home}}{{#stats.back}}back{{/stats.back}}{{#stats.upload}}upload{{/stats.upload}}{{#stats.create}}create{{/stats.create}}{{#stats.paste}}paste{{/stats.paste}}"
             onkeyup='event.preventDefault(); event.stopPropagation(); if (event.key == "Enter" || event.keyCode == 13) {
                 monkshu_env.components["file-manager"].handleClick(this, "{{path}}", "{{#stats.directory}}true{{/stats.directory}}{{#stats.home}}true{{/stats.home}}{{#stats.back}}true{{/stats.back}}{{#stats.upload}}false{{/stats.upload}}{{#stats.create}}false{{/stats.create}}{{#stats.paste}}false{{/stats.paste}}", true, true);
                 monkshu_env.components["file-manager"].menuEventDispatcher("editFile",this); }'
@@ -186,10 +226,15 @@ div#progress > span#percenttext {width: 20%;}
             oncontextmenu='if (monkshu_env.components["file-manager"].isMobile()) return; event.preventDefault(); event.stopPropagation(); monkshu_env.components["file-manager"].handleClick(this, "{{path}}", "{{#stats.directory}}true{{/stats.directory}}{{#stats.home}}true{{/stats.home}}{{#stats.back}}true{{/stats.back}}{{#stats.upload}}false{{/stats.upload}}{{#stats.create}}false{{/stats.create}}{{#stats.paste}}false{{/stats.paste}}");'
             {{#stats.json}}stats='{{{.}}}'{{/stats.json}}>
         <img src="{{COMPONENT_PATH}}/img/{{#stats.directory}}folder{{/stats.directory}}{{#stats.file}}file{{/stats.file}}{{#stats.back}}back{{/stats.back}}{{#stats.home}}home{{/stats.home}}{{#stats.upload}}upload{{/stats.upload}}{{#stats.create}}create{{/stats.create}}{{#stats.paste}}paste{{/stats.paste}}.svg"
-            ondragstart="event.dataTransfer.setData('DownloadURL',`application/octet-stream:{{name}}:${monkshu_env.components['file-manager'].getDragAndDropDownloadURL('{{path}}')}`)">{{name}}
-    </span>
+            ondragstart="event.dataTransfer.setData('DownloadURL',`application/octet-stream:{{name}}:${monkshu_env.components['file-manager'].getDragAndDropDownloadURL('{{path}}')}`, this)">{{name}}
+    </div>
     {{/entries}}
     <input id="upload" type="file" multiple onchange='monkshu_env.components["file-manager"].uploadFiles(this, this.files)' onclick="event.stopPropagation();">
+</div>
+
+<div id="notificationscrollpositioner">
+<div id="notification" onclick="event.stopPropagation();"></div>
+</div>
 </div>
 
 <div id="contextmenu">
@@ -209,17 +254,16 @@ div#progress > span#percenttext {width: 20%;}
 
 <template id="progressdialog">
 <!-- {{=<% %>=}} 
-<div id="modal">&nbsp;</div>
 <div id="progresscontainer">
     {{#files}}
     <div id="progress">
         <span id="name">{{name}}</span>
         <span id="bar"><span id="percent" style="width: {{percent}}%!important"></span></span>
         <span id="percenttext">{{percent}}%</span>
+        <span id="icon">{{icon}}</span>
     </div>
     {{/files}}
 </div>
 <%={{ }}=%> -->
 </template>
-<div id="templateholder" onclick="event.stopPropagation();"></div>
 <dialog-box id="dialog"></dialog-box>

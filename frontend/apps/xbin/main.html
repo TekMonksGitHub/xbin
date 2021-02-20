@@ -61,18 +61,14 @@ div#menu {
 	display: flex;
 	flex-flow: row wrap;
 	justify-content: start;
-	opacity: 1;
-	background-color: white;
 	border-top: 0.8px solid gray;
 	border-bottom: 0.8px solid gray;
 	opacity: 0;
-	transition: opacity 0.1s linear;
 	visibility: hidden;
-	height: 0px;
-	max-height: 0px;
 	background-color: rgba(0, 0, 0, 0.024);
 	overflow: hidden;
 	transition: max-height 0.18s ease-out;
+	max-height: 0px;
 }
 
 div#menu.visible {
@@ -92,17 +88,17 @@ div#menu > span {
 	font-size: 0.9em;
 }
 
-div#content {
-	display: flex;
-	flex-direction: row;
-}
-
 div#rightbar {
 	width: 20vw;
-	margin: 40px;
+    position: relative;
+    left: calc(80% - 3em);
+    padding-top: 3em;
 }
 
-div#leftbar {width: 80vw;}
+div#leftbar {
+	width: 100%;
+    position: absolute;
+}
 
 div#rightbar > div#adv, div#rightbar > div#info {
 	margin: 0px 10px 60px 10px;
@@ -174,7 +170,8 @@ div#info > table {
 	<div id="content">
 		<div id="leftbar">
 			<file-manager path="{{url.path}}" id="fm" defaultShareDuration="5" 
-				styleBody="body{height: calc(100vh - 52px);}" onselect="main.fileSelected(event)"></file-manager>
+				styleBody="body{height: calc(100vh - 52px);} div#container{margin-right: calc(20vw + 60px);} @media (max-width:1000px) {div#container{margin-right:0px}}" 
+				onselect="main.fileSelected(event)"></file-manager>
 		</div>
 
 		<div id="rightbar" ondragover="event.preventDefault(); event.dataTransfer.effectAllowed = 'none'; event.dataTransfer.dropEffect='none'; return false;" 

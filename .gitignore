@@ -1,3 +1,5 @@
 backend/server/logs
 frontend/server/logs
 debug.log
+backend/apps/xbin/drive/*
+!backend/apps/xbin/drive/.dummy

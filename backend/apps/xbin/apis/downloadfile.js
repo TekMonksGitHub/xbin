@@ -25,10 +25,13 @@ exports.handleRawRequest = async (url, jsonReq, headers, servObject) => {
 		respHeaders["content-type"] = "application/octet-stream";	// try and add auto GZIP here to save bandwidth
 		servObject.server.statusOK(respHeaders, servObject, true);
 
-        fs.createReadStream(fullpath, {"flags":"r","autoClose":true}).pipe(servObject.res, {end:true});
+		_updateWriteStatus(decodeURIComponent(jsonReq.reqid), stats.size, null);
+        const writable = fs.createReadStream(fullpath, {"flags":"r","autoClose":true}).pipe(servObject.res, {end:true});
+		const old_write = writable.write; writable.write = function(chunk) {_updateWriteStatus(jsonReq.reqid, null, chunk.length); old_write.apply(writable, arguments);}
 	} catch (err) {
 		LOG.error(`Error in downloadfile: ${err}`);
 		_sendError(servObject);
+		_updateWriteStatus(jsonReq.reqid, -1, 0, true);
 	}
 }
 
@@ -46,6 +49,14 @@ async function _zipDirectory(path) {
         archiver.on("end", _=>resolve(tempFilePath)); archiver.on("error", err=>reject(err));
         arhiver.directory(path, false).pipe(out, {end:true}); archive.finalize();
     });
+}
+
+function _updateWriteStatus(reqid, fileSize, bytesWrittenThisChunk, transferFailed) {
+	const statusStorage = CLUSTER_MEMORY.get("__org_xbin_file_writer_req_statuses") || {};
+	if (!statusStorage[reqid] && fileSize) statusStorage[reqid] = {size: fileSize, bytesSent: 0, failed: false};
+	if (statusStorage[reqid] && bytesWrittenThisChunk) statusStorage[reqid].bytesSent += bytesWrittenThisChunk;
+	if (transferFailed) statusStorage[reqid].failed = true;
+	CLUSTER_MEMORY.set("__org_xbin_file_writer_req_statuses", statusStorage);
 }
 
 const validateRequest = jsonReq => (jsonReq && jsonReq.path);

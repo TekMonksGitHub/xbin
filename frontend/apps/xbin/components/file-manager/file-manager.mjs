@@ -9,7 +9,7 @@ import {session} from "/framework/js/session.mjs";
 import {apimanager as apiman} from "/framework/js/apimanager.mjs";
 import {monkshu_component} from "/framework/js/monkshu_component.mjs";
 
-let mouseX, mouseY, menuOpen, timer, selectedPath, selectedIsDirectory, selectedElement, filesAndPercents, selectedCut, selectedCopy, shareDuration;
+let mouseX, mouseY, menuOpen, timer, selectedPath, selectedIsDirectory, selectedElement, filesAndPercents = {}, selectedCut, selectedCopy, shareDuration;
 
 const API_GETFILES = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/getfiles";
 const API_COPYFILE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/copyfile";
@@ -21,10 +21,11 @@ const API_RENAMEFILE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/r
 const API_OPERATEFILE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/operatefile";
 const API_DOWNLOADFILE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/downloadfile";
 const API_DOWNLOADFILE_DND = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/downloaddnd";
+const API_DOWNLOADFILE_STATUS = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/getdownloadstatus";
 const API_DOWNLOADFILE_SHARED = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/downloadsharedfile";
 
-const DIALOG_HOST_ELEMENT_ID = "templateholder";
-const DIALOG_HIDE_WAIT = 1300, DEFAULT_SHARE_EXPIRY = 5;
+const DIALOG_SCROLL_ELEMENT_ID = "notificationscrollpositioner", DIALOG_HOST_ELEMENT_ID = "notification", DEFAULT_SHARE_EXPIRY = 5;
+const DIALOG_HIDE_WAIT = 1300, DOWNLOADFILE_REFRESH_INTERVAL = 500, UPLOAD_ICON = "⇧", DOWNLOAD_ICON = "⇩";
 const dialog = _ => monkshu_env.components['dialog-box'];
 
 const IO_CHUNK_SIZE = 10485760;   // 10M read buffer
@@ -80,7 +81,6 @@ function handleClick(element, path, isDirectory, fromClickEvent, nomenu) {
 }
 
 function upload(containedElement, files) {
-   filesAndPercents = {};  // reset progress indicator bucket
    if (!files) file_manager.getShadowRootByContainedElement(containedElement).querySelector("input#upload").click(); // upload button clicked
    else uploadFiles(containedElement, files);   // drag and drop happened
 }
@@ -111,7 +111,7 @@ async function uploadAFile(element, file) {
       const onloadFunction = async loadResult => {
          const resp = await apiman.rest(API_UPLOADFILE, "POST", {data:loadResult.target.result, path:`${selectedPath}/${fileToRead.name}`}, true);
          if (!resp.result) rejectReadPromises("Error writing to the server."); else {
-            showProgress(element, chunkNumber+1, totalChunks, fileToRead.name);
+            _showProgress(element, chunkNumber+1, totalChunks, fileToRead.name, UPLOAD_ICON);
             if (waitingReaders.length) (waitingReaders.pop())();  // issue next chunk read if queued reads
             resolve();
          }
@@ -129,7 +129,7 @@ async function uploadAFile(element, file) {
 
    let readPromises = []; 
    for (let i = 0; i < totalChunks; i++) readPromises.push(new Promise((resolve, reject) => queueReadFileChunk(file, i, resolve, reject)));
-   const startReaders = _ => {showProgress(element, 0, totalChunks, file.name); (waitingReaders.pop())();}
+   const startReaders = _ => {_showProgress(element, 0, totalChunks, file.name, UPLOAD_ICON); (waitingReaders.pop())();}
    startReaders();   // kicks off the first read in the queue, which then fires others 
    return Promise.all(readPromises);
 }
@@ -229,15 +229,18 @@ async function editFileLoadData() {
    }); else _showErrorDialog();
 }
 
-async function downloadFile() {
-   const paths = selectedPath.split("/"), file = paths[paths.length-1];
-   const result = await apiman.blob(API_DOWNLOADFILE+"?path="+selectedPath, file, "GET", null, true, false);
-   if (!result) dialog().showMessage(await i18n.get("DownloadFailed"), "dialog");
+const _getReqIDForDownloading = path => encodeURIComponent(path+Date.now()+Math.random());
+
+async function downloadFile(element) {
+   const paths = selectedPath.split("/"), file = paths[paths.length-1], reqid = _getReqIDForDownloading(selectedPath);
+   apiman.blob(`${API_DOWNLOADFILE}?path=${selectedPath}&reqid=${reqid}`, file, "GET", null, true, false);
+   _showDownloadProgress(element, selectedPath, reqid);
 }
 
-function getDragAndDropDownloadURL(path) {
-   const url = `${API_DOWNLOADFILE_DND}?path=${path}&token=${apiman.getJWTToken(API_DOWNLOADFILE_DND)}`;
-   return url;
+function getDragAndDropDownloadURL(path, element) {
+   const reqid = _getReqIDForDownloading(path);
+   const url = `${API_DOWNLOADFILE_DND}?path=${path}&token=${apiman.getJWTToken(API_DOWNLOADFILE_DND)}&reqid=${reqid}`;
+   _showDownloadProgress(element, path, reqid); return url;
 }
 
 function cut(_element) { selectedCut = selectedPath }
@@ -252,40 +255,38 @@ function paste() {
    selectedCut = null; selectedCopy = null;
 }
 
-async function showProgress(element, currentBlock, totalBlocks, fileName) {
+function _showDownloadProgress(element, path, reqid) {
+   let interval, done = false;
+   const updateProgress = async _ => {
+      if (done) return;
+      const fileDownloadStatus = await apiman.rest(`${API_DOWNLOADFILE_STATUS}`, "GET", {reqid}, true, false);
+      if (fileDownloadStatus.result) {
+         if (fileDownloadStatus.size!=-1) _showProgress(element, fileDownloadStatus.bytesSent, fileDownloadStatus.size, path, DOWNLOAD_ICON);
+         if (fileDownloadStatus.size == fileDownloadStatus.bytesSent) {done = true; clearInterval(interval);}
+      }
+      else { 
+         if (done) return; else done=true; 
+         dialog().showMessage(await i18n.get("DownloadFailed"), "dialog"); 
+         _hideNotification(element); clearInterval(interval); 
+      }
+   }
+   interval = setInterval(updateProgress, DOWNLOADFILE_REFRESH_INTERVAL);
+}
+
+async function _showProgress(element, currentBlock, totalBlocks, fileName, icon) {
    const templateID = "progressdialog"; 
 
-   filesAndPercents[fileName] = Math.round(currentBlock/totalBlocks*100); 
-   const files = []; for (const file of Object.keys(filesAndPercents)) files.push({name: file, percent: filesAndPercents[file]});
+   if (filesAndPercents[fileName]) delete filesAndPercents[fileName]; filesAndPercents[fileName] = {percent: Math.round(currentBlock/totalBlocks*100), icon}; 
+   const files = []; for (const file of Object.keys(filesAndPercents)) files.unshift({name: file, ...filesAndPercents[file]});
 
-   await showDialog(element, templateID, {files});
+   await _showNotification(element, templateID, {files});
 
-   closeProgressAndReloadIfAllFilesUploaded(element, filesAndPercents);
+   closeProgressAndReloadIfAllFilesUpOrDownloaded(element, filesAndPercents);
 }
 
-function closeProgressAndReloadIfAllFilesUploaded(element, filesAndPercents) {
-   for (const file of Object.keys(filesAndPercents)) if (filesAndPercents[file] != 100) return;
-   setTimeout(_=>{hideDialog(element); router.reload();}, DIALOG_HIDE_WAIT); // hide dialog if all files done, after a certain wait
-}
-
-const _showErrorDialog = async hideAction => dialog().showMessage(await i18n.get("Error"), "dialog", hideAction);
-
-async function showDialog(element, dialogTemplateID, data, hideAction) {
-   data = data || {}; const shadowRoot = file_manager.getShadowRootByContainedElement(element);
-
-   let template = shadowRoot.querySelector(`template#${dialogTemplateID}`).innerHTML; 
-   const matches = /<!--([\s\S]+)-->/g.exec(template);
-   if (!matches) return; template = matches[1]; // can't show progress if the template is bad
-   
-   const rendered = await router.expandPageData(template, session.get($$.MONKSHU_CONSTANTS.PAGE_URL), data);
-   if (hideAction) shadowRoot.querySelector(`#${DIALOG_HOST_ELEMENT_ID}`)["__com_wsadmin_hideAction"] = hideAction;
-   shadowRoot.querySelector(`#${DIALOG_HOST_ELEMENT_ID}`).innerHTML = rendered;
-}
-
-function hideDialog(element) {
-   const hostElement = file_manager.getShadowRootByContainedElement(element).querySelector(`#${DIALOG_HOST_ELEMENT_ID}`);
-   while (hostElement && hostElement.firstChild) hostElement.removeChild(hostElement.firstChild);
-   const hideAction = hostElement["__com_wsadmin_hideAction"]; if (hideAction) {hideAction(element); delete hostElement["__com_wsadmin_hideAction"]}
+function closeProgressAndReloadIfAllFilesUpOrDownloaded(element, filesAndPercents) {
+   for (const file of Object.keys(filesAndPercents)) if (filesAndPercents[file].percent != 100) return;
+   setTimeout(_=>{_hideNotification(element); router.reload();}, DIALOG_HIDE_WAIT); // hide dialog if all files done, after a certain wait
 }
 
 function renameFile() {
@@ -316,6 +317,31 @@ function isMobile() {
    return true; //return navigator.maxTouchPoints?true:false;
 }
 
+
+const _showErrorDialog = async hideAction => dialog().showMessage(await i18n.get("Error"), "dialog", hideAction);
+
+async function _showNotification(element, dialogTemplateID, data) {
+   const templateData = data?{...data} : {}; 
+   const shadowRoot = file_manager.getShadowRootByContainedElement(element);
+
+   let template = shadowRoot.querySelector(`template#${dialogTemplateID}`).innerHTML; 
+   const matches = /<!--([\s\S]+)-->/g.exec(template);
+   if (!matches) return; template = matches[1]; // can't show progress if the template is bad
+
+   const rendered = await router.expandPageData(template, session.get($$.MONKSHU_CONSTANTS.PAGE_URL), templateData);
+   const hostElement = shadowRoot.querySelector(`#${DIALOG_HOST_ELEMENT_ID}`), scrollElement = shadowRoot.querySelector(`#${DIALOG_SCROLL_ELEMENT_ID}`);
+   hostElement.innerHTML = rendered; 
+   if (!hostElement.classList.contains("visible")) hostElement.classList.add("visible"); 
+   if (!scrollElement.classList.contains("visible")) scrollElement.classList.add("visible"); 
+}
+
+function _hideNotification(element) {
+   const shadowRoot = file_manager.getShadowRootByContainedElement(element);
+   const hostElement = shadowRoot.querySelector(`#${DIALOG_HOST_ELEMENT_ID}`), scrollElement = shadowRoot.querySelector(`#${DIALOG_SCROLL_ELEMENT_ID}`);
+   while (hostElement && hostElement.firstChild) hostElement.removeChild(hostElement.firstChild);
+   hostElement.classList.remove("visible"); scrollElement.classList.remove("visible"); 
+}
+
 async function _performRename(oldPath, newPath) {
    const resp = await apiman.rest(API_RENAMEFILE, "GET", {old: oldPath, new: newPath}, true);
    if (!resp || !resp.result) _showErrorDialog(_=>router.reload()); else router.reload();
@@ -327,6 +353,6 @@ async function _performCopy(fromPath, toPath) {
 }
 
 export const file_manager = { trueWebComponentMode: true, elementConnected, elementRendered, handleClick, 
-   showMenu, deleteFile, editFile, downloadFile, cut, copy, paste, upload, uploadFiles, hideDialog,  create, 
-   shareFile, renameFile, menuEventDispatcher, isMobile, getDragAndDropDownloadURL }
+   showMenu, deleteFile, editFile, downloadFile, cut, copy, paste, upload, uploadFiles, create, shareFile, 
+   renameFile, menuEventDispatcher, isMobile, getDragAndDropDownloadURL }
 monkshu_component.register("file-manager", `${APP_CONSTANTS.APP_PATH}/components/file-manager/file-manager.html`, file_manager);
