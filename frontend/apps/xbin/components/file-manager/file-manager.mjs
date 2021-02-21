@@ -11,7 +11,6 @@ import {monkshu_component} from "/framework/js/monkshu_component.mjs";
 
 let user, mouseX, mouseY, menuOpen, timer, selectedPath, selectedIsDirectory, selectedElement, filesAndPercents = {}, selectedCut, selectedCopy, shareDuration;
 
-const PAGE_DOWNLOADFILE_SHARED = APP_CONSTANTS.APP_PATH+"/download.html";
 const API_GETFILES = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/getfiles";
 const API_COPYFILE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/copyfile";
 const API_SHAREFILE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/sharefile";
@@ -23,6 +22,7 @@ const API_OPERATEFILE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/
 const API_DOWNLOADFILE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/downloadfile";
 const API_DOWNLOADFILE_DND = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/downloaddnd";
 const API_DOWNLOADFILE_STATUS = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/getdownloadstatus";
+let PAGE_DOWNLOADFILE_SHARED = `${APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/downloadsharedfile"}`;
 
 const DIALOG_SCROLL_ELEMENT_ID = "notificationscrollpositioner", DIALOG_HOST_ELEMENT_ID = "notification", DEFAULT_SHARE_EXPIRY = 5;
 const DOUBLE_CLICK_DELAY=400, DIALOG_HIDE_WAIT = 1300, DOWNLOADFILE_REFRESH_INTERVAL = 500, UPLOAD_ICON = "⇧", DOWNLOAD_ICON = "⇩";
@@ -38,15 +38,15 @@ async function elementConnected(element) {
    for (const entry of resp.entries) {entry.stats.name = entry.name; entry.stats.json = JSON.stringify(entry.stats);}
    
    // if a file or folder has been selected, show the paste button
-   if (selectedCopy || selectedCut) resp.entries.unshift({name: await i18n.get("Paste", session.get($$.MONKSHU_CONSTANTS.LANG_ID)), path, stats:{paste: true}});
+   if (selectedCopy || selectedCut) resp.entries.unshift({name: await i18n.get("Paste"), path, stats:{paste: true}});
 
-   resp.entries.unshift({name: await i18n.get("Create", session.get($$.MONKSHU_CONSTANTS.LANG_ID)), path, stats:{create: true}});
-   resp.entries.unshift({name: await i18n.get("Upload", session.get($$.MONKSHU_CONSTANTS.LANG_ID)), path, stats:{upload: true}});
+   resp.entries.unshift({name: await i18n.get("Create"), path, stats:{create: true}});
+   resp.entries.unshift({name: await i18n.get("Upload"), path, stats:{upload: true}});
 
    if (!path.match(/^[\/]+$/g)) { // add in back and home buttons
       let parentPath = path.substring(0, path.lastIndexOf("/")); if (parentPath == "") parentPath = "/";
-      resp.entries.unshift({name: await i18n.get("Back", session.get($$.MONKSHU_CONSTANTS.LANG_ID)), path:parentPath, stats:{back: true}});
-      resp.entries.unshift({name: await i18n.get("Home", session.get($$.MONKSHU_CONSTANTS.LANG_ID)), path:"/", stats:{home: true}});
+      resp.entries.unshift({name: await i18n.get("Back"), path:parentPath, stats:{back: true}});
+      resp.entries.unshift({name: await i18n.get("Home"), path:"/", stats:{home: true}});
    }
 
    const data = {entries: resp.entries, COMPONENT_PATH: `${APP_CONSTANTS.COMPONENTS_PATH}/file-manager`};
@@ -56,6 +56,8 @@ async function elementConnected(element) {
    
    if (element.id) { if (!file_manager.datas) file_manager.datas = {}; file_manager.datas[element.id] = data; } 
    else file_manager.data = data;
+
+   if (element.getAttribute("downloadpage")) PAGE_DOWNLOADFILE_SHARED = element.getAttribute("downloadpage");
 }
 
 async function elementRendered(element) {

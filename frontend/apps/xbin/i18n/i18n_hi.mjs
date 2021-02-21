@@ -21,6 +21,7 @@ export const i18n = {
 "DeleteFile": "फ़ाइल हटाएँ",
 "EditFile": "खोलें...",
 "DownloadFile": "डाउनलोड करें",
+"BadDownload": "समस्या: खराब लिंक या शेयर की समय सीमा समाप्त हो गई है",
 "Cut": "काटें",
 "Copy": "कॉपी करें",
 "Paste": "चिपकाएँ",

@@ -21,6 +21,7 @@ export const i18n = {
 "DeleteFile": "ファイルを削除する",
 "EditFile": "開いた...",
 "DownloadFile": "ダウンロードする",
+"BadDownload": "エラー：不正なリンクまたは共有の有効期限が切れています",
 "Cut": "これを切る",
 "Copy": "これをコピー",
 "Paste": "ここに貼り付け",

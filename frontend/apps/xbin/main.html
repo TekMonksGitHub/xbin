@@ -171,7 +171,8 @@ div#info > table {
 		<div id="leftbar">
 			<file-manager path="{{url.path}}" id="fm" defaultShareDuration="5" 
 				styleBody="body{height: calc(100vh - 52px);} div#container{margin-right: calc(20vw + 60px);} @media (max-width:1000px) {div#container{margin-right:0px}}" 
-				onselect="main.fileSelected(event)" user="{{session.id}}"></file-manager>
+				onselect="main.fileSelected(event)" user="{{#_org_monkshu_session}}id{{/_org_monkshu_session}}"
+				downloadpage="./download.html"></file-manager>
 		</div>
 
 		<div id="rightbar" ondragover="event.preventDefault(); event.dataTransfer.effectAllowed = 'none'; event.dataTransfer.dropEffect='none'; return false;" 

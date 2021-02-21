@@ -21,6 +21,7 @@ export const i18n = {
 "DeleteFile": "Delete",
 "EditFile": "Open...",
 "DownloadFile": "Download",
+"BadDownload": "Error: Bad link or share expired",
 "Cut": "Cut",
 "Copy": "Copy",
 "Paste": "Paste",
