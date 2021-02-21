@@ -18,11 +18,13 @@ const init = async _ => {
 
 const main = async _ => {
 	apiman.registerAPIKeys(APP_CONSTANTS.API_KEYS, APP_CONSTANTS.KEY_HEADER);
-	let location = window.location.href;
-	if (!router.isInHistory(location) || !session.get(APP_CONSTANTS.USERID))
-		router.loadPage(APP_CONSTANTS.LOGIN_HTML);
-	else 
-		router.loadPage(location);
+	const decodedURL = router.decodeURL(window.location.href), justURL = decodedURL.split("?")[0];
+
+	if (justURL == APP_CONSTANTS.INDEX_HTML) router.loadPage(APP_CONSTANTS.LOGIN_HTML);
+	else if (securityguard.isAllowed(justURL)) {
+		if (router.getLastSessionURL() && decodedURL == router.getLastSessionURL().toString()) router.reload();
+		else router.loadPage(decodedURL);
+	} else router.loadPage(APP_CONSTANTS.LOGIN_HTML);
 }
 
 export const application = {init, main};

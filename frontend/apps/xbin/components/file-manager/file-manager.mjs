@@ -9,8 +9,9 @@ import {session} from "/framework/js/session.mjs";
 import {apimanager as apiman} from "/framework/js/apimanager.mjs";
 import {monkshu_component} from "/framework/js/monkshu_component.mjs";
 
-let mouseX, mouseY, menuOpen, timer, selectedPath, selectedIsDirectory, selectedElement, filesAndPercents = {}, selectedCut, selectedCopy, shareDuration;
+let user, mouseX, mouseY, menuOpen, timer, selectedPath, selectedIsDirectory, selectedElement, filesAndPercents = {}, selectedCut, selectedCopy, shareDuration;
 
+const PAGE_DOWNLOADFILE_SHARED = APP_CONSTANTS.APP_PATH+"/download.html";
 const API_GETFILES = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/getfiles";
 const API_COPYFILE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/copyfile";
 const API_SHAREFILE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/sharefile";
@@ -22,7 +23,6 @@ const API_OPERATEFILE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/
 const API_DOWNLOADFILE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/downloadfile";
 const API_DOWNLOADFILE_DND = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/downloaddnd";
 const API_DOWNLOADFILE_STATUS = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/getdownloadstatus";
-const API_DOWNLOADFILE_SHARED = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/downloadsharedfile";
 
 const DIALOG_SCROLL_ELEMENT_ID = "notificationscrollpositioner", DIALOG_HOST_ELEMENT_ID = "notification", DEFAULT_SHARE_EXPIRY = 5;
 const DOUBLE_CLICK_DELAY=400, DIALOG_HIDE_WAIT = 1300, DOWNLOADFILE_REFRESH_INTERVAL = 500, UPLOAD_ICON = "⇧", DOWNLOAD_ICON = "⇩";
@@ -31,7 +31,7 @@ const dialog = _ => monkshu_env.components['dialog-box'];
 const IO_CHUNK_SIZE = 10485760;   // 10M read buffer
 
 async function elementConnected(element) {
-   menuOpen = false; 
+   menuOpen = false; user = element.getAttribute("user");
 
    const path = element.getAttribute("path") || "/"; selectedPath = path.replace(/[\/]+/g,"/"); selectedIsDirectory = true;
    const resp = await apiman.rest(API_GETFILES, "GET", {path}, true); if (!resp || !resp.result) return; 
@@ -54,9 +54,8 @@ async function elementConnected(element) {
    if (element.getAttribute("styleBody")) data.styleBody = `<style>${element.getAttribute("styleBody")}</style>`;
    shareDuration = element.getAttribute("defaultShareDuration") || DEFAULT_SHARE_EXPIRY; 
    
-   if (element.id) {
-       if (!file_manager.datas) file_manager.datas = {}; file_manager.datas[element.id] = data;
-   } else file_manager.data = data;
+   if (element.id) { if (!file_manager.datas) file_manager.datas = {}; file_manager.datas[element.id] = data; } 
+   else file_manager.data = data;
 }
 
 async function elementRendered(element) {
@@ -78,7 +77,8 @@ function handleClick(element, path, isDirectory, fromClickEvent, nomenu) {
    
    if (timer) {clearTimeout(timer); if (fromClickEvent) editFile(element); timer=null;}
    else timer = setTimeout(_=> { timer=null; 
-      if ((fromClickEvent && isMobile())||!fromClickEvent) if (!menuOpen) showMenu(element); else hideMenu(element);
+      if ((fromClickEvent && isMobile())||!fromClickEvent) {if (!menuOpen) showMenu(element); else hideMenu(element); return;}
+      if (fromClickEvent && menuOpen) hideMenu(element); // menu is open and user clicked anywhere, close it
    }, DOUBLE_CLICK_DELAY);
 }
 
@@ -111,7 +111,7 @@ async function uploadAFile(element, file) {
          reject(error);
       }
       const onloadFunction = async loadResult => {
-         const resp = await apiman.rest(API_UPLOADFILE, "POST", {data:loadResult.target.result, path:`${selectedPath}/${fileToRead.name}`}, true);
+         const resp = await apiman.rest(API_UPLOADFILE, "POST", {data:loadResult.target.result, path:`${selectedPath}/${fileToRead.name}`, user}, true);
          if (!resp.result) rejectReadPromises("Error writing to the server."); else {
             _showProgress(element, chunkNumber+1, totalChunks, fileToRead.name, UPLOAD_ICON);
             if (waitingReaders.length) (waitingReaders.pop())();  // issue next chunk read if queued reads
@@ -240,10 +240,12 @@ async function downloadFile(element) {
 }
 
 function getDragAndDropDownloadURL(path, element) {
-   const reqid = _getReqIDForDownloading(path);
+   const reqid = _getReqIDForDownloading(path); element["data-reqid"] = reqid;
    const url = `${API_DOWNLOADFILE_DND}?path=${path}&token=${apiman.getJWTToken(API_DOWNLOADFILE_DND)}&reqid=${reqid}`;
-   _showDownloadProgress(element, path, reqid); return url;
+   return url;
 }
+
+const showDownloadProgress = (path, element) => _showDownloadProgress(element, path, element["data-reqid"]);
 
 function cut(_element) { selectedCut = selectedPath }
 
@@ -304,19 +306,19 @@ function renameFile() {
 }
 
 async function shareFile() {
+   const paths = selectedPath.split("/"), name = paths[paths.length-1];
    const resp = await apiman.rest(API_SHAREFILE, "GET", {path: selectedPath, expiry: shareDuration}, true);
    if (!resp || !resp.result) _showErrorDialog(); else dialog().showDialog(
-         `${APP_CONSTANTS.APP_PATH}/dialogs/sharefile.html`, true, true, 
-         {link: `${API_DOWNLOADFILE_SHARED}?id=${resp.id}`, id: resp.id, shareDuration}, "dialog", ["expiry"], 
-         async result => {
-
-      dialog().hideDialog("dialog");
-      if (result.expiry != shareDuration) apiman.rest(API_SHAREFILE, "GET", {id: resp.id, expiry: result.expiry}, true); 
-   }, async _ => apiman.rest(API_SHAREFILE, "GET", {id: resp.id, expiry: 0}, true));
+      `${APP_CONSTANTS.APP_PATH}/dialogs/sharefile.html`, true, true, 
+      {link: router.encodeURL(`${PAGE_DOWNLOADFILE_SHARED}?id=${resp.id}&name=${name}`), id: resp.id, shareDuration}, 
+      "dialog", ["expiry"], async result => {
+            dialog().hideDialog("dialog");
+            if (result.expiry != shareDuration) apiman.rest(API_SHAREFILE, "GET", {id: resp.id, expiry: result.expiry}, true); 
+      }, async _ => apiman.rest(API_SHAREFILE, "GET", {id: resp.id, expiry: 0}, true));
 }
 
 function isMobile() {
-   return true; //return navigator.maxTouchPoints?true:false;
+   return navigator.maxTouchPoints?true:false;
 }
 
 
@@ -356,5 +358,5 @@ async function _performCopy(fromPath, toPath) {
 
 export const file_manager = { trueWebComponentMode: true, elementConnected, elementRendered, handleClick, 
    showMenu, deleteFile, editFile, downloadFile, cut, copy, paste, upload, uploadFiles, create, shareFile, 
-   renameFile, menuEventDispatcher, isMobile, getDragAndDropDownloadURL }
+   renameFile, menuEventDispatcher, isMobile, getDragAndDropDownloadURL, showDownloadProgress }
 monkshu_component.register("file-manager", `${APP_CONSTANTS.APP_PATH}/components/file-manager/file-manager.html`, file_manager);

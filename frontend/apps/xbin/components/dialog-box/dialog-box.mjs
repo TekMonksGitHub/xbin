@@ -30,11 +30,11 @@ async function showDialog(templatePath, showOK, showCancel, data, hostID, retVal
 function hideDialog(element) {
     const shadowRoot = element instanceof Element ? dialog_box.getShadowRootByContainedElement(element): 
         dialog_box.getShadowRootByHostId(element);
-    const hostElement = shadowRoot.querySelector("div#dialogcontent");
+    const hostElement = shadowRoot.querySelector("div#dialogcontent"); 
     while (hostElement && hostElement.firstChild) hostElement.removeChild(hostElement.firstChild);  // deletes everything
     const modalCurtain = shadowRoot.querySelector("div#modalcurtain");
     const dialog = shadowRoot.querySelector("div#dialog");
-    dialog.classList.remove("visible"); modalCurtain.classList.remove("visible");
+    dialog.classList.remove("visible"); modalCurtain.classList.remove("visible"); 
 }
 
 /**

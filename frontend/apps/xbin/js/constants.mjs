@@ -25,7 +25,7 @@ export const APP_CONSTANTS = {
     GUEST_ROLE: "guest",
     PERMISSIONS_MAP: {
         user:[APP_PATH+"/main.html", APP_PATH+"/login.html", $$.MONKSHU_CONSTANTS.ERROR_THTML], 
-        guest:[APP_PATH+"/login.html", $$.MONKSHU_CONSTANTS.ERROR_THTML]
+        guest:[APP_PATH+"/download.html", APP_PATH+"/login.html", $$.MONKSHU_CONSTANTS.ERROR_THTML]
     },
     API_KEYS: {"*":"fheiwu98237hjief8923ydewjidw834284hwqdnejwr79389"},
     KEY_HEADER: "X-API-Key"
