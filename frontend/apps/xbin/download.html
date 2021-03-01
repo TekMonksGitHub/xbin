@@ -33,7 +33,7 @@ div#dwbox {
     flex-direction: column;
     align-items: center;
 }
-
+div#dwbox > a {cursor: default;}
 div#dwbox > a > img#logo {
 	width: 300px;
     margin-bottom: 40px;
@@ -47,6 +47,7 @@ div#dwbox > div#background {
     display: flex;
     flex-direction: column;
     align-items: center;
+    cursor: pointer;
 }
 @media (max-width:1000px) {	/* On small screens don't show background */
     div#dwbox > div#background {background-color: inherit}

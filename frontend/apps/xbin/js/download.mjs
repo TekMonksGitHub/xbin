@@ -11,7 +11,8 @@ const API_CHECKSHARE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/c
 function downloadFile() {
     const params = new URL(router.getCurrentURL()).searchParams, id = params.get("id"), name = params.get("name");
     const downloadLink = `${APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/downloadsharedfile"}?id=${id}`;
-    apiman.blob(downloadLink, name, "GET");
+    const link = document.createElement("a"); link.download = name; link.href = downloadLink; link.style.display="none";
+    link.click(); 
 }
 
 async function checkShare() {

@@ -7,10 +7,16 @@ const archiver = require("archiver");
 const utils = require(`${CONSTANTS.LIBDIR}/utils.js`);
 const statsAsync = require("util").promisify(fs.stat);
 const CONF = require(`${API_CONSTANTS.CONF_DIR}/xbin.json`);
+const securid = require(`${API_CONSTANTS.API_DIR}/getsecurid.js`);
 
-exports.handleRawRequest = async (url, jsonReq, headers, servObject) => {
+
+exports.handleRawRequest = async function(url, jsonReq, headers, servObject) {
 	if (!validateRequest(jsonReq)) {LOG.error("Validation failure."); _sendError(servObject); return;}
-	
+	if (!securid.check(jsonReq.securid)) {LOG.error("SecurID validation failure."); _sendError(servObject, true); return;}
+	await this.downloadFile(url, jsonReq, headers, servObject);
+}
+
+exports.downloadFile = async (url, jsonReq, headers, servObject) => {
 	LOG.debug("Got downloadfile request for path: " + jsonReq.path);
 
 	const fullpath = path.resolve(`${CONF.CMS_ROOT}/${jsonReq.path}`);
@@ -35,9 +41,10 @@ exports.handleRawRequest = async (url, jsonReq, headers, servObject) => {
 	}
 }
 
-function _sendError(servObject) {
+function _sendError(servObject, unauthorized) {
 	if (!servObject.res.writableEnded) {
-		servObject.server.statusInternalError(servObject, err); 
+		if (unauthorized) servObject.server.statusUnauthorized(servObject); 
+		else servObject.server.statusInternalError(servObject); 
 		servObject.server.end(servObject);
 	}
 }
@@ -59,4 +66,4 @@ function _updateWriteStatus(reqid, fileSize, bytesWrittenThisChunk, transferFail
 	CLUSTER_MEMORY.set("__org_xbin_file_writer_req_statuses", statusStorage);
 }
 
-const validateRequest = jsonReq => (jsonReq && jsonReq.path);
+const validateRequest = jsonReq => (jsonReq && jsonReq.path && jsonReq.securid && jsonReq.reqid);

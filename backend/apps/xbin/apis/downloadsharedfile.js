@@ -18,7 +18,7 @@ function _initDB() {
 }
 
 exports.handleRawRequest = async (url, jsonReq, headers, servObject) => {
-	if (!validateRequest(jsonReq)) {LOG.error("Validation failure."); return CONSTANTS.FALSE_RESULT;}
+	if (!validateRequest(jsonReq)) {LOG.error("Validation failure."); _sendError(servObject); return;}
 	
 	LOG.debug("Got download shared file request for id: " + jsonReq.id);
 
@@ -30,11 +30,19 @@ exports.handleRawRequest = async (url, jsonReq, headers, servObject) => {
         if (Date.now() > share.expiry) throw ({code: 404, message: "Not found"});   // has expired
         
         const relativepath = share.fullpath.substring(path.resolve(`${CONF.CMS_ROOT}/`).length);
-        return downloadfile.handleRawRequest(url, {path: relativepath}, headers, servObject);
+        return downloadfile.downloadFile(url, {path: relativepath, reqid:"__never_use_none"}, headers, servObject);
 	} catch (err) {
         LOG.error(`Share ID resulted in DB error ${err}`); 
         throw ({code: 404, message: "Not found"}); 
     }
+}
+
+function _sendError(servObject, unauthorized) {
+	if (!servObject.res.writableEnded) {
+		if (unauthorized) servObject.server.statusUnauthorized(servObject); 
+		else servObject.server.statusInternalError(servObject); 
+		servObject.server.end(servObject);
+	}
 }
 
 const validateRequest = jsonReq => (jsonReq && jsonReq.id);

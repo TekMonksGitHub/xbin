@@ -21,6 +21,7 @@ const API_RENAMEFILE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/r
 const API_OPERATEFILE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/operatefile";
 const API_DOWNLOADFILE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/downloadfile";
 const API_DOWNLOADFILE_DND = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/downloaddnd";
+const API_DOWNLOADFILE_GETSECURID = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/getsecurid";
 const API_DOWNLOADFILE_STATUS = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/getdownloadstatus";
 let PAGE_DOWNLOADFILE_SHARED = `${APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/downloadsharedfile"}`;
 
@@ -237,13 +238,17 @@ const _getReqIDForDownloading = path => encodeURIComponent(path+Date.now()+Math.
 
 async function downloadFile(element) {
    const paths = selectedPath.split("/"), file = paths[paths.length-1], reqid = _getReqIDForDownloading(selectedPath);
-   apiman.blob(`${API_DOWNLOADFILE}?path=${selectedPath}&reqid=${reqid}`, file, "GET", null, true, false);
+   const link = document.createElement("a"), securid = await apiman.rest(API_DOWNLOADFILE_GETSECURID, "GET", {path: selectedPath, reqid}, true, false);
+   if (!securid.result) {_showErrorDialog(); return;};
+   link.download = file; link.href = `${API_DOWNLOADFILE}?path=${selectedPath}&reqid=${reqid}&securid=${securid.id}`; link.click(); 
+
    _showDownloadProgress(element, selectedPath, reqid);
 }
 
 function getDragAndDropDownloadURL(path, element) {
    const reqid = _getReqIDForDownloading(path); element["data-reqid"] = reqid;
-   const url = `${API_DOWNLOADFILE_DND}?path=${path}&token=${apiman.getJWTToken(API_DOWNLOADFILE_DND)}&reqid=${reqid}`;
+   const securid = apiman.rest(API_DOWNLOADFILE_GETSECURID, "GET", {path: selectedPath, reqid}, true, false);
+   const url = `${API_DOWNLOADFILE_DND}?path=${path}&securid=${securid}&reqid=${reqid}`;
    return url;
 }
 
