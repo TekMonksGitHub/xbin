@@ -271,7 +271,7 @@ function _showDownloadProgress(element, path, reqid) {
    const updateProgress = async _ => {
       if (done) return;
       const fileDownloadStatus = await apiman.rest(`${API_DOWNLOADFILE_STATUS}`, "GET", {reqid}, true, false);
-      if (fileDownloadStatus.result) {
+      if (fileDownloadStatus && fileDownloadStatus.result) {
          if (fileDownloadStatus.size!=-1) _showProgress(element, fileDownloadStatus.bytesSent, fileDownloadStatus.size, path, DOWNLOAD_ICON);
          if (fileDownloadStatus.size == fileDownloadStatus.bytesSent) {done = true; clearInterval(interval);}
       }
