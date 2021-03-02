@@ -1,5 +1,6 @@
 {
     "CMS_ROOT": "C:/Users/Rohit Kapoor/source/xbin/backend/apps/xbin/drive",
-    "DEFAULT_SHARED_FILE_EXPIRY": 2,
-    "SECURID_EXPIRY": 5000
+    "DEFAULT_SHARED_FILE_EXPIRY": 5,
+    "SECURID_EXPIRY": 5000,
+    "DOWNLOAD_READ_BUFFER_SIZE": 10485760
 }

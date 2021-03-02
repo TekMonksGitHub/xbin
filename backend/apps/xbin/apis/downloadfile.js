@@ -32,7 +32,8 @@ exports.downloadFile = async (url, jsonReq, headers, servObject) => {
 		servObject.server.statusOK(respHeaders, servObject, true);
 
 		_updateWriteStatus(decodeURIComponent(jsonReq.reqid), stats.size, null);
-        const writable = fs.createReadStream(fullpath, {"flags":"r","autoClose":true}).pipe(servObject.res, {end:true});
+        const writable = fs.createReadStream(fullpath, {highWaterMark: CONF.DOWNLOAD_READ_BUFFER_SIZE||10485760, 
+			flags:"r", autoClose:true}).pipe(servObject.res, {end:true});
 		const old_write = writable.write; writable.write = function(chunk) {_updateWriteStatus(jsonReq.reqid, null, chunk.length); return old_write.apply(writable, arguments);}
 	} catch (err) {
 		LOG.error(`Error in downloadfile: ${err}`);
