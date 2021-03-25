@@ -4,6 +4,7 @@
 const util = require("util");
 const path = require("path");
 const sqlite3 = require("sqlite3");
+const cms = require(`${API_CONSTANTS.LIB_DIR}/cms.js`);
 const CONF = require(`${API_CONSTANTS.CONF_DIR}/xbin.json`);
 const downloadfile = require(`${API_CONSTANTS.API_DIR}/downloadfile.js`);
 
@@ -29,7 +30,7 @@ exports.handleRawRequest = async (url, jsonReq, headers, servObject) => {
         if (!share) throw ({code: 404, message: "Not found"}); 
         if (Date.now() > share.expiry) throw ({code: 404, message: "Not found"});   // has expired
         
-        const relativepath = share.fullpath.substring(path.resolve(`${CONF.CMS_ROOT}/`).length);
+        const relativepath = share.fullpath.substring(path.resolve(`${cms.getCMSRoot(headers)}/`).length);
         return downloadfile.downloadFile(url, {path: relativepath, reqid:"__never_use_none"}, headers, servObject);
 	} catch (err) {
         LOG.error(`Share ID resulted in DB error ${err}`); 

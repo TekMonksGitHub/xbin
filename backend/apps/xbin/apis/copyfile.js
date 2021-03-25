@@ -3,15 +3,16 @@
  */
 const path = require("path");
 const utils = require(`${CONSTANTS.LIBDIR}/utils.js`);
+const cms = require(`${API_CONSTANTS.LIB_DIR}/cms.js`);
 const CONF = require(`${API_CONSTANTS.CONF_DIR}/xbin.json`);
 
-exports.doService = async jsonReq => {
+exports.doService = async (jsonReq, _, headers) => {
 	if (!validateRequest(jsonReq)) { LOG.error("Validation failure."); return CONSTANTS.FALSE_RESULT; }
 	
 	LOG.debug(`Got copyfile request from: ${jsonReq.from}, to: ${jsonReq.to}`);
 
-	const fromPath = path.resolve(`${CONF.CMS_ROOT}/${jsonReq.from}`); 
-	const toPath = path.resolve(`${CONF.CMS_ROOT}/${jsonReq.to}`);
+	const fromPath = path.resolve(`${cms.getCMSRoot(headers)}/${jsonReq.from}`); 
+	const toPath = path.resolve(`${cms.getCMSRoot(headers)}/${jsonReq.to}`);
 	if (!API_CONSTANTS.isSubdirectory(fromPath, CONF.CMS_ROOT)) {LOG.error(`Subdir validation failure: ${jsonReq.from}`); return CONSTANTS.FALSE_RESULT;}
 	if (!API_CONSTANTS.isSubdirectory(toPath, CONF.CMS_ROOT)) {LOG.error(`Subdir validation failure: ${jsonReq.to}`); return CONSTANTS.FALSE_RESULT;}
 

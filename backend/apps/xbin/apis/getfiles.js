@@ -6,14 +6,15 @@ const path = require("path");
 const util = require("util");
 const statAsync = util.promisify(fs.stat);
 const readdirAsync = util.promisify(fs.readdir);
+const cms = require(`${API_CONSTANTS.LIB_DIR}/cms.js`);
 const CONF = require(`${API_CONSTANTS.CONF_DIR}/xbin.json`);
 
-exports.doService = async jsonReq => {
+exports.doService = async (jsonReq, _, headers) => {
 	if (!validateRequest(jsonReq)) {LOG.error("Validation failure."); return CONSTANTS.FALSE_RESULT;}
 	
 	LOG.debug("Got getfiles request for path: " + jsonReq.path);
 
-	const fullpath = path.resolve(`${CONF.CMS_ROOT}/${jsonReq.path}`);
+	const fullpath = path.resolve(`${cms.getCMSRoot(headers)}/${jsonReq.path}`);
 	if (!API_CONSTANTS.isSubdirectory(fullpath, CONF.CMS_ROOT)) {LOG.error(`Subdir validation failure: ${jsonReq.path}`); return CONSTANTS.FALSE_RESULT;}
 
 	try {

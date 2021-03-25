@@ -90,13 +90,13 @@ function upload(containedElement, files) {
    else uploadFiles(containedElement, files);   // drag and drop happened
 }
 
-function create(){
+function create(element) {
    dialog().showDialog(`${APP_CONSTANTS.APP_PATH}/dialogs/createfile.html`, true, true, {}, "dialog", 
          ["createType", "path"], async result => {
 
       const path = `${selectedPath}/${result.path}`, isDirectory = result.createType == "file" ? false: true
-      const resp = await apiman.rest(API_CREATEFILE, "GET", {path, isDirectory}, true);
-      if (resp.result) {dialog().hideDialog("dialog"); router.reload();} else dialog().error("dialog", await i18n.get("Error"));
+      const resp = await apiman.rest(API_CREATEFILE, "GET", {path, isDirectory}, true), hostID = file_manager.getHostElementID(element);
+      if (resp.result) {dialog().hideDialog("dialog"); file_manager.reload(hostID);} else dialog().error("dialog", await i18n.get("Error"));
    });
 }
 
@@ -107,14 +107,14 @@ async function uploadAFile(element, file) {
    const waitingReaders = [];
 
    const queueReadFileChunk = (fileToRead, chunkNumber, resolve, reject) => {
-      const reader = new FileReader();
+      const reader = new FileReader(), savePath = selectedPath;
       const rejectReadPromises = error => {
          LOG.error(`Error reading ${fileToRead}, error is: ${error}`); 
          while (waitingReaders.length) (waitingReaders.pop())(error);   // reject all waiting readers too
          reject(error);
       }
       const onloadFunction = async loadResult => {
-         const resp = await apiman.rest(API_UPLOADFILE, "POST", {data:loadResult.target.result, path:`${selectedPath}/${fileToRead.name}`, user}, true);
+         const resp = await apiman.rest(API_UPLOADFILE, "POST", {data:loadResult.target.result, path:`${savePath}/${fileToRead.name}`, user}, true);
          if (!resp.result) rejectReadPromises("Error writing to the server."); else {
             _showProgress(element, chunkNumber+1, totalChunks, fileToRead.name, UPLOAD_ICON);
             if (waitingReaders.length) (waitingReaders.pop())();  // issue next chunk read if queued reads
@@ -203,9 +203,9 @@ function menuEventDispatcher(name, element) {
    file_manager[name](element);
 }
 
-async function deleteFile() {
+async function deleteFile(element) {
    let resp = await apiman.rest(API_DELETEFILE, "GET", {path: selectedPath}, true);
-   if (resp.result) router.reload(); else _showErrorDialog();
+   if (resp.result) file_manager.reload(file_manager.getHostElementID(element)); else _showErrorDialog();
 }
 
 function editFile() {
@@ -258,11 +258,11 @@ function cut(_element) { selectedCut = selectedPath }
 
 function copy(_element) { selectedCopy = selectedPath }
 
-function paste() {
+function paste(element) {
    const selectedPathToOperate = selectedCut?selectedCut:selectedCopy;
    const baseName = selectedPathToOperate.substring(selectedPathToOperate.lastIndexOf("/")+1);
-   if (selectedCut) _performRename(selectedCut, `${selectedPath}/${baseName}`);
-   else if (selectedCopy) _performCopy(selectedCopy, `${selectedPath}/${baseName}`);
+   if (selectedCut) _performRename(selectedCut, `${selectedPath}/${baseName}`, element);
+   else if (selectedCopy) _performCopy(selectedCopy, `${selectedPath}/${baseName}`, element);
    selectedCut = null; selectedCopy = null;
 }
 
@@ -297,10 +297,10 @@ async function _showProgress(element, currentBlock, totalBlocks, fileName, icon)
 
 function closeProgressAndReloadIfAllFilesUpOrDownloaded(element, filesAndPercents) {
    for (const file of Object.keys(filesAndPercents)) if (filesAndPercents[file].percent != 100) return;
-   setTimeout(_=>{_hideNotification(element); router.reload();}, DIALOG_HIDE_WAIT); // hide dialog if all files done, after a certain wait
+   setTimeout(_=>{_hideNotification(element); file_manager.reload(file_manager.getHostElementID(element));}, DIALOG_HIDE_WAIT); // hide dialog if all files done, after a certain wait
 }
 
-function renameFile() {
+function renameFile(element) {
    const oldName = selectedPath?selectedPath.substring(selectedPath.lastIndexOf("/")+1):null;
    dialog().showDialog(`${APP_CONSTANTS.APP_PATH}/dialogs/renamefile.html`, true, true, {oldName}, "dialog", 
          ["renamepath"], async result => {
@@ -308,7 +308,7 @@ function renameFile() {
       const subpaths = selectedPath.split("/"); subpaths.splice(subpaths.length-1, 1, result.renamepath);
       const newPath = subpaths.join("/");
 
-      dialog().hideDialog("dialog"); _performRename(selectedPath, newPath); 
+      dialog().hideDialog("dialog"); _performRename(selectedPath, newPath, element); 
    });
 }
 
@@ -353,14 +353,14 @@ function _hideNotification(element) {
    hostElement.classList.remove("visible"); scrollElement.classList.remove("visible"); 
 }
 
-async function _performRename(oldPath, newPath) {
-   const resp = await apiman.rest(API_RENAMEFILE, "GET", {old: oldPath, new: newPath}, true);
-   if (!resp || !resp.result) _showErrorDialog(_=>router.reload()); else router.reload();
+async function _performRename(oldPath, newPath, element) {
+   const resp = await apiman.rest(API_RENAMEFILE, "GET", {old: oldPath, new: newPath}, true), hostID = file_manager.getHostElementID(element);
+   if (!resp || !resp.result) _showErrorDialog(_=>file_manager.reload(hostID)); else file_manager.reload(hostID);
 }
 
-async function _performCopy(fromPath, toPath) {
-   const resp = await apiman.rest(API_COPYFILE, "GET", {from: fromPath, to: toPath}, true);
-   if (!resp || !resp.result) _showErrorDialog(_=>router.reload()); else router.reload();
+async function _performCopy(fromPath, toPath, element) {
+   const resp = await apiman.rest(API_COPYFILE, "GET", {from: fromPath, to: toPath}, true), hostID = file_manager.getHostElementID(element)
+   if (!resp || !resp.result) _showErrorDialog(_=>file_manager.reload(hostID)); else file_manager.reload(hostID);
 }
 
 export const file_manager = { trueWebComponentMode: true, elementConnected, elementRendered, handleClick, 

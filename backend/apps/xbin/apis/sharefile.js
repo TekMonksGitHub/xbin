@@ -4,6 +4,7 @@
 const path = require("path");
 const crypto = require("crypto");
 const sqlite3 = require("sqlite3");
+const cms = require(`${API_CONSTANTS.LIB_DIR}/cms.js`);
 const CONF = require(`${API_CONSTANTS.CONF_DIR}/xbin.json`);
 
 let xbinDB, dbrunAsync;
@@ -16,7 +17,7 @@ function _initDB() {
 	});
 }
 
-exports.doService = async jsonReq => {
+exports.doService = async (jsonReq, _, headers) => {
 	if (!validateRequest(jsonReq)) {LOG.error("Validation failure."); return CONSTANTS.FALSE_RESULT;}
 
 	try {
@@ -24,7 +25,7 @@ exports.doService = async jsonReq => {
 		if (jsonReq.path) {	// create initial share
 			LOG.debug("Got share file request for path: " + jsonReq.path);
 
-			const fullpath = path.resolve(`${CONF.CMS_ROOT}/${jsonReq.path}`);
+			const fullpath = path.resolve(`${cms.getCMSRoot(headers)}/${jsonReq.path}`);
 			if (!API_CONSTANTS.isSubdirectory(fullpath, CONF.CMS_ROOT)) {LOG.error(`Subdir validation failure: ${jsonReq.path}`); return CONSTANTS.FALSE_RESULT;}
 			
 			const expiry = Date.now()+((jsonReq.expiry||CONF.DEFAULT_SHARED_FILE_EXPIRY)*86400000);	

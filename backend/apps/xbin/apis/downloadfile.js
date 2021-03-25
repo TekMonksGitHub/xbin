@@ -6,20 +6,21 @@ const path = require("path");
 const archiver = require("archiver");
 const utils = require(`${CONSTANTS.LIBDIR}/utils.js`);
 const statsAsync = require("util").promisify(fs.stat);
+const cms = require(`${API_CONSTANTS.LIB_DIR}/cms.js`);
 const CONF = require(`${API_CONSTANTS.CONF_DIR}/xbin.json`);
 const securid = require(`${API_CONSTANTS.API_DIR}/getsecurid.js`);
 
 
-exports.handleRawRequest = async function(url, jsonReq, headers, servObject) {
+exports.handleRawRequest = async function(jsonObj, servObject, headers, url) {
 	if (!validateRequest(jsonReq)) {LOG.error("Validation failure."); _sendError(servObject); return;}
 	if (!securid.check(jsonReq.securid)) {LOG.error("SecurID validation failure."); _sendError(servObject, true); return;}
-	await this.downloadFile(url, jsonReq, headers, servObject);
+	await this.downloadFile(jsonObj, servObject, headers, url);
 }
 
-exports.downloadFile = async (url, jsonReq, headers, servObject) => {
+exports.downloadFile = async (jsonReq, servObject, headers, url) => {
 	LOG.debug("Got downloadfile request for path: " + jsonReq.path);
 
-	const fullpath = path.resolve(`${CONF.CMS_ROOT}/${jsonReq.path}`);
+	const fullpath = path.resolve(`${cms.getCMSRoot(headers)}/${jsonReq.path}`);
 	if (!API_CONSTANTS.isSubdirectory(fullpath, CONF.CMS_ROOT)) {LOG.error(`Subdir validation failure: ${jsonReq.path}`); _sendError(servObject); return;}
 
 	try {

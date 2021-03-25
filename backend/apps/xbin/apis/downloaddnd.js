@@ -3,11 +3,11 @@
  */
 const downloadfile = require(`${API_CONSTANTS.API_DIR}/downloadfile.js`);
 
-exports.handleRawRequest = async (url, jsonReq, headers, servObject) => {
+exports.handleRawRequest = async (jsonObj, servObject, headers, url) => {
 	if (!validateRequest(jsonReq) ) {LOG.error("Validation failure."); _sendError(servObject); return;}
 	
 	LOG.debug("Got DND downloadfile request for path: " + jsonReq.path);
-    downloadfile.handleRawRequest(url, jsonReq, headers, servObject);
+    downloadfile.handleRawRequest(jsonObj, servObject, headers, url);
 }
 
 function _sendError(servObject) {
