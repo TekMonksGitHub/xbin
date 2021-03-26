@@ -1,4 +1,10 @@
-/* 
+/**
+ * Filemanager component. Can be used only one instance per page for now, due to 
+ * local variables inside the component.
+ * 
+ * Future versions may be multi-instance capable via using component memory instead
+ * of local variabless
+ *  
  * (C) 2020 TekMonks. All rights reserved.
  * License: MIT - see enclosed license.txt file.
  */

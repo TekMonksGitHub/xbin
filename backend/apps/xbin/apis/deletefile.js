@@ -10,7 +10,6 @@ const rmdirAsync = util.promisify(fs.rmdir);
 const unlinkAsync = util.promisify(fs.unlink);
 const readdirAsync = util.promisify(fs.readdir);
 const cms = require(`${API_CONSTANTS.LIB_DIR}/cms.js`);
-const CONF = require(`${API_CONSTANTS.CONF_DIR}/xbin.json`);
 
 let xbinDB;
 
@@ -28,7 +27,7 @@ exports.doService = async (jsonReq, _, headers) => {
 	LOG.debug("Got deletefile request for path: " + jsonReq.path);
 
 	const fullpath = path.resolve(`${cms.getCMSRoot(headers)}/${jsonReq.path}`);
-	if (!API_CONSTANTS.isSubdirectory(fullpath, CONF.CMS_ROOT)) {LOG.error(`Subdir validation failure: ${jsonReq.path}`); return CONSTANTS.FALSE_RESULT;}
+	if (!cms.isSecure(headers, fullpath)) {LOG.error(`Path security validation failure: ${jsonReq.path}`); return CONSTANTS.FALSE_RESULT;}
 
 	try {
 		await rmrf(fullpath); 

@@ -5,7 +5,6 @@ const path = require("path");
 const sqlite3 = require("sqlite3");
 const fspromises = require("fs").promises;
 const cms = require(`${API_CONSTANTS.LIB_DIR}/cms.js`);
-const CONF = require(`${API_CONSTANTS.CONF_DIR}/xbin.json`);
 
 let xbinDB;
 
@@ -23,7 +22,7 @@ exports.doService = async (jsonReq, _, headers) => {
 	LOG.debug("Got renamefile request for path: " + jsonReq.old);
 
 	const oldPath = path.resolve(`${cms.getCMSRoot(headers)}/${jsonReq.old}`); const newPath = path.resolve(`${cms.getCMSRoot(headers)}/${jsonReq.new}`);
-	if (!API_CONSTANTS.isSubdirectory(oldPath, CONF.CMS_ROOT)) {LOG.error(`Subdir validation failure: ${jsonReq.old}`); return CONSTANTS.FALSE_RESULT;}
+	if (!cms.isSecure(headers, oldPath)) {LOG.error(`Path security validation failure: ${jsonReq.old}`); return CONSTANTS.FALSE_RESULT;}
 
 	try {
 		await fspromises.rename(oldPath, newPath);

@@ -5,7 +5,6 @@ const util = require("util");
 const path = require("path");
 const sqlite3 = require("sqlite3");
 const cms = require(`${API_CONSTANTS.LIB_DIR}/cms.js`);
-const CONF = require(`${API_CONSTANTS.CONF_DIR}/xbin.json`);
 const downloadfile = require(`${API_CONSTANTS.API_DIR}/downloadfile.js`);
 
 let xbinDB;

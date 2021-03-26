@@ -13,6 +13,8 @@ exports.getCMSRoot = function(headers) {
 }
 
 exports.initID = async function(headers) {
-    try {await fspromises.access(this.getCMSRoot(headers), fs.F_OK)} catch (err) {
-        await fspromises.mkdir(this.getCMSRoot(headers), {recursive: true});}
+    try { await fspromises.access(this.getCMSRoot(headers), fs.F_OK) } catch (err) {
+    	await fspromises.mkdir(this.getCMSRoot(headers), {recursive: true}); }
 }
+
+exports.isSecure = (headers, path) => API_CONSTANTS.isSubdirectory(path, this.getCMSRoot(headers));

@@ -21,7 +21,7 @@ exports.downloadFile = async (jsonReq, servObject, headers, url) => {
 	LOG.debug("Got downloadfile request for path: " + jsonReq.path);
 
 	const fullpath = path.resolve(`${cms.getCMSRoot(headers)}/${jsonReq.path}`);
-	if (!API_CONSTANTS.isSubdirectory(fullpath, CONF.CMS_ROOT)) {LOG.error(`Subdir validation failure: ${jsonReq.path}`); _sendError(servObject); return;}
+	if (!cms.isSecure(headers, fullpath)) {LOG.error(`Path security validation failure: ${jsonReq.path}`); _sendError(servObject); return;}
 
 	try {
         const stats = await statsAsync(fullpath); if (stats.isDirectory()) fullpath = await _zipDirectory(fullpath);

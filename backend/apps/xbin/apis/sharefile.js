@@ -26,7 +26,7 @@ exports.doService = async (jsonReq, _, headers) => {
 			LOG.debug("Got share file request for path: " + jsonReq.path);
 
 			const fullpath = path.resolve(`${cms.getCMSRoot(headers)}/${jsonReq.path}`);
-			if (!API_CONSTANTS.isSubdirectory(fullpath, CONF.CMS_ROOT)) {LOG.error(`Subdir validation failure: ${jsonReq.path}`); return CONSTANTS.FALSE_RESULT;}
+			if (!cms.isSecure(headers, fullpath)) {LOG.error(`Path security validation failure: ${jsonReq.path}`); return CONSTANTS.FALSE_RESULT;}
 			
 			const expiry = Date.now()+((jsonReq.expiry||CONF.DEFAULT_SHARED_FILE_EXPIRY)*86400000);	
 			const id = crypto.createHash("sha512").update(fullpath+expiry+(Math.random()*(1000000 - 1)+1)).digest("hex");

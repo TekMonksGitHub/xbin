@@ -4,7 +4,6 @@
 const path = require("path");
 const fspromises = require("fs").promises;
 const cms = require(`${API_CONSTANTS.LIB_DIR}/cms.js`);
-const CONF = require(`${API_CONSTANTS.CONF_DIR}/xbin.json`);
 
 exports.doService = async (jsonReq, _, headers) => {
 	if (!validateRequest(jsonReq)) {LOG.error("Validation failure."); return CONSTANTS.FALSE_RESULT;}
@@ -13,7 +12,7 @@ exports.doService = async (jsonReq, _, headers) => {
 	LOG.debug("Got operatefile request for path: " + jsonReq.path);
 
 	const fullpath = path.resolve(`${cms.getCMSRoot(headers)}/${jsonReq.path}`);
-	if (!API_CONSTANTS.isSubdirectory(fullpath, CONF.CMS_ROOT)) {LOG.error(`Subdir validation failure: ${jsonReq.path}`); return CONSTANTS.FALSE_RESULT;}
+	if (!cms.isSecure(headers, fullpath)) {LOG.error(`Subdir validation failure: ${jsonReq.path}`); return CONSTANTS.FALSE_RESULT;}
 
 	try {
 		let result = {...CONSTANTS.TRUE_RESULT};
