@@ -293,7 +293,7 @@ function _showDownloadProgress(element, path, reqid) {
 async function _showProgress(element, currentBlock, totalBlocks, fileName, icon) {
    const templateID = "progressdialog"; 
 
-   if (filesAndPercents[fileName]) delete filesAndPercents[fileName]; filesAndPercents[fileName] = {percent: Math.round(currentBlock/totalBlocks*100), icon}; 
+   filesAndPercents[fileName] = {percent: Math.round(currentBlock/totalBlocks*100), icon}; 
    const files = []; for (const file of Object.keys(filesAndPercents)) files.unshift({name: file, ...filesAndPercents[file]});
 
    await _showNotification(element, templateID, {files});
