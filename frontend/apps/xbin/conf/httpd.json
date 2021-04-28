@@ -1,0 +1,4 @@
+{
+    "extensions": ["proxy"],
+    "proxies": [{"/apps/xbin/proxiedapis/.*":"localhost:9090"}]
+}
