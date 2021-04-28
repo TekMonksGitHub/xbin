@@ -15,7 +15,7 @@ import {session} from "/framework/js/session.mjs";
 import {apimanager as apiman} from "/framework/js/apimanager.mjs";
 import {monkshu_component} from "/framework/js/monkshu_component.mjs";
 
-let user, mouseX, mouseY, menuOpen, timer, selectedPath, selectedIsDirectory, selectedElement, filesAndPercents = {}, selectedCut, selectedCopy, shareDuration;
+let user, mouseX, mouseY, menuOpen, timer, selectedPath, selectedIsDirectory, selectedElement, filesAndPercents = {}, selectedCut, selectedCopy, shareDuration, showNotification;
 
 const API_GETFILES = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/getfiles";
 const API_COPYFILE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/copyfile";
@@ -31,9 +31,10 @@ const API_DOWNLOADFILE_GETSECURID = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS
 const API_DOWNLOADFILE_STATUS = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/getdownloadstatus";
 let PAGE_DOWNLOADFILE_SHARED = `${APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/downloadsharedfile"}`;
 
-const DIALOG_SCROLL_ELEMENT_ID = "notificationscrollpositioner", DIALOG_HOST_ELEMENT_ID = "notification", DEFAULT_SHARE_EXPIRY = 5;
-const DOUBLE_CLICK_DELAY=400, DIALOG_HIDE_WAIT = 1300, DOWNLOADFILE_REFRESH_INTERVAL = 500, UPLOAD_ICON = "⇧", DOWNLOAD_ICON = "⇩";
+const DIALOG_SCROLL_ELEMENT_ID = "notificationscrollpositioner", DIALOG_HOST_ELEMENT_ID = "notification", PROGRESS_TEMPLATE="progressdialog", DEFAULT_SHARE_EXPIRY = 5;
+const DOUBLE_CLICK_DELAY=400, DOWNLOADFILE_REFRESH_INTERVAL = 500, UPLOAD_ICON = "⇧", DOWNLOAD_ICON = "⇩";
 const dialog = _ => monkshu_env.components['dialog-box'];
+const isMobile = _ => true;//navigator.maxTouchPoints?true:false;
 
 const IO_CHUNK_SIZE = 10485760;   // 10M read buffer
 
@@ -74,6 +75,8 @@ async function elementRendered(element) {
    const container = shadowRoot.querySelector("div#container");
    shadowRoot.addEventListener(isMobile()?"click":"contextmenu", e => { e.preventDefault(); if (!menuOpen) showMenu(container, true); else hideMenu(container); });
    if (!isMobile()) shadowRoot.addEventListener("click", e => { e.stopPropagation(); if (menuOpen) hideMenu(container); });
+
+   if (showNotification) _showNotification(container, PROGRESS_TEMPLATE);
 }
 
 function handleClick(element, path, isDirectory, fromClickEvent, nomenu) {
@@ -106,11 +109,17 @@ function create(element) {
    });
 }
 
-const uploadFiles = async (element, files) => {for (const file of files) uploadAFile(element, file)}
+const uploadFiles = async (element, files) => {
+   for (const file of files) {
+      if (Object.keys(filesAndPercents).includes(file.name) && filesAndPercents[file.name].percent != 100 && !filesAndPercents[file.name].cancelled) {LOG.info(`Skipped ${file.name}, already being uploaded.`); continue;}  // already being uploaded
+      else _uploadAFile(element, file);
+   }
+}
 
-async function uploadAFile(element, file) {
+async function _uploadAFile(element, file) {
    const totalChunks = Math.ceil(file.size / IO_CHUNK_SIZE); const lastChunkSize = file.size - (totalChunks-1)*IO_CHUNK_SIZE;
-   const waitingReaders = [];
+   if (filesAndPercents[file.name]?.cancelled) filesAndPercents[file.name].cancelled = false; // being reuploaded
+   const waitingReaders = [];  
 
    const queueReadFileChunk = (fileToRead, chunkNumber, resolve, reject) => {
       const reader = new FileReader(), savePath = selectedPath;
@@ -123,7 +132,8 @@ async function uploadAFile(element, file) {
          const resp = await apiman.rest(API_UPLOADFILE, "POST", {data:loadResult.target.result, path:`${savePath}/${fileToRead.name}`, user}, true);
          if (!resp.result) rejectReadPromises("Error writing to the server."); else {
             _showProgress(element, chunkNumber+1, totalChunks, fileToRead.name, UPLOAD_ICON);
-            if (waitingReaders.length) (waitingReaders.pop())();  // issue next chunk read if queued reads
+            if (!filesAndPercents[fileToRead.name]?.cancelled && (waitingReaders.length)) (waitingReaders.pop())();  // issue next chunk read if queued reads
+            else if (filesAndPercents[fileToRead.name]?.cancelled) await apiman.rest(API_DELETEFILE, "GET", {path: `${savePath}/${fileToRead.name}`}, true);
             resolve();
          }
       }
@@ -171,7 +181,7 @@ function showMenu(element, documentMenuOnly) {
       shadowRoot.querySelector("div#contextmenu > span#deletefile").classList.add("hidden"); 
       shadowRoot.querySelector("div#contextmenu > span#downloadfile").classList.add("hidden");  
       shadowRoot.querySelector("div#contextmenu > span#hr2").classList.add("hidden"); 
-      shadowRoot.querySelector("div#contextmenu > span#cut").classList.add("hidden"); 
+      shadowRoot.querySelector("div#contextmenu > span#cut").classList_.add("hidden"); 
       shadowRoot.querySelector("div#contextmenu > span#copy").classList.add("hidden"); 
       shadowRoot.querySelector("div#contextmenu > span#paste").classList.add("hidden"); 
       shadowRoot.querySelector("div#contextmenu > span#edit").classList.remove("hidden");
@@ -245,16 +255,16 @@ const _getReqIDForDownloading = path => encodeURIComponent(path+Date.now()+Math.
 async function downloadFile(element) {
    const paths = selectedPath.split("/"), file = paths[paths.length-1], reqid = _getReqIDForDownloading(selectedPath);
    const link = document.createElement("a"), securid = await apiman.rest(API_DOWNLOADFILE_GETSECURID, "GET", {path: selectedPath, reqid}, true, false);
-   if (!securid.result) {_showErrorDialog(); return;};
-   link.download = file; link.href = `${API_DOWNLOADFILE}?path=${selectedPath}&reqid=${reqid}&securid=${securid.id}`; link.click(); 
+   if (!securid.result) {_showErrorDialog(); return;}; const auth = apiman.getJWTToken(API_DOWNLOADFILE);
+   link.download = file; link.href = `${API_DOWNLOADFILE}?path=${selectedPath}&reqid=${reqid}&securid=${securid.id}&auth=${auth}`; link.click(); 
 
    _showDownloadProgress(element, selectedPath, reqid);
 }
 
-function getDragAndDropDownloadURL(path, element) {
-   const reqid = _getReqIDForDownloading(path); element["data-reqid"] = reqid;
-   const securid = apiman.rest(API_DOWNLOADFILE_GETSECURID, "GET", {path: selectedPath, reqid}, true, false);
-   const url = `${API_DOWNLOADFILE_DND}?path=${path}&securid=${securid}&reqid=${reqid}`;
+async function getDragAndDropDownloadURL(path, element) {
+   const reqid = _getReqIDForDownloading(path), auth = apiman.getJWTToken(API_DOWNLOADFILE_DND); element["data-reqid"] = reqid;
+   const securid = await apiman.rest(API_DOWNLOADFILE_GETSECURID, "GET", {path: selectedPath, reqid}, true, false); if (!securid.result) {_showErrorDialog(); return "";}
+   const url = `${API_DOWNLOADFILE_DND}?path=${path}&securid=${securid.id}&reqid=${reqid}&auth=${auth}`;
    return url;
 }
 
@@ -283,27 +293,24 @@ function _showDownloadProgress(element, path, reqid) {
       }
       else { 
          if (done) return; else done=true; 
-         dialog().showMessage(await i18n.get("DownloadFailed"), "dialog"); 
-         _hideNotification(element); clearInterval(interval); 
+         dialog().showMessage(await i18n.get("DownloadFailed"), "dialog"); clearInterval(interval); 
       }
    }
    interval = setInterval(updateProgress, DOWNLOADFILE_REFRESH_INTERVAL);
 }
 
 async function _showProgress(element, currentBlock, totalBlocks, fileName, icon) {
-   const templateID = "progressdialog"; 
+   if (filesAndPercents[fileName]?.cancelled) return; // already cancelled
 
-   filesAndPercents[fileName] = {percent: Math.round(currentBlock/totalBlocks*100), icon}; 
-   const files = []; for (const file of Object.keys(filesAndPercents)) files.unshift({name: file, ...filesAndPercents[file]});
+   filesAndPercents[fileName] = {name: fileName, percent: Math.floor(currentBlock/totalBlocks*100), icon, cancellable:icon==UPLOAD_ICON?true:null}; 
+   await _showNotification(element, PROGRESS_TEMPLATE);
 
-   await _showNotification(element, templateID, {files});
-
-   closeProgressAndReloadIfAllFilesUpOrDownloaded(element, filesAndPercents);
+   _reloadIfAllFilesUpOrDownloaded(element, filesAndPercents);
 }
 
-function closeProgressAndReloadIfAllFilesUpOrDownloaded(element, filesAndPercents) {
+function _reloadIfAllFilesUpOrDownloaded(element, filesAndPercents) {
    for (const file of Object.keys(filesAndPercents)) if (filesAndPercents[file].percent != 100) return;
-   setTimeout(_=>{_hideNotification(element); file_manager.reload(file_manager.getHostElementID(element));}, DIALOG_HIDE_WAIT); // hide dialog if all files done, after a certain wait
+   file_manager.reload(file_manager.getHostElementID(element)); 
 }
 
 function renameFile(element) {
@@ -330,15 +337,12 @@ async function shareFile() {
       }, async _ => apiman.rest(API_SHAREFILE, "GET", {id: resp.id, expiry: 0}, true));
 }
 
-function isMobile() {
-   return navigator.maxTouchPoints?true:false;
-}
-
-
 const _showErrorDialog = async hideAction => dialog().showMessage(await i18n.get("Error"), "dialog", hideAction);
 
-async function _showNotification(element, dialogTemplateID, data) {
-   const templateData = data?{...data} : {}; 
+async function _showNotification(element, dialogTemplateID) {
+   showNotification = true;
+   const templateData = {files:[]}; for (const file of Object.keys(filesAndPercents))
+      templateData.files.unshift({name: file, ...filesAndPercents[file], cancelled: filesAndPercents[file].cancelled?true:null});
    const shadowRoot = file_manager.getShadowRootByContainedElement(element);
 
    let template = shadowRoot.querySelector(`template#${dialogTemplateID}`).innerHTML; 
@@ -352,11 +356,16 @@ async function _showNotification(element, dialogTemplateID, data) {
    if (!scrollElement.classList.contains("visible")) scrollElement.classList.add("visible"); 
 }
 
-function _hideNotification(element) {
+function hideNotification(element) {
+   showNotification = false;
    const shadowRoot = file_manager.getShadowRootByContainedElement(element);
    const hostElement = shadowRoot.querySelector(`#${DIALOG_HOST_ELEMENT_ID}`), scrollElement = shadowRoot.querySelector(`#${DIALOG_SCROLL_ELEMENT_ID}`);
    while (hostElement && hostElement.firstChild) hostElement.removeChild(hostElement.firstChild);
    hostElement.classList.remove("visible"); scrollElement.classList.remove("visible"); 
+}
+
+function cancelFile(file, element) {
+   filesAndPercents[file].cancelled = true; _showNotification(element, PROGRESS_TEMPLATE);  // updates the view
 }
 
 async function _performRename(oldPath, newPath, element) {
@@ -371,5 +380,6 @@ async function _performCopy(fromPath, toPath, element) {
 
 export const file_manager = { trueWebComponentMode: true, elementConnected, elementRendered, handleClick, 
    showMenu, deleteFile, editFile, downloadFile, cut, copy, paste, upload, uploadFiles, create, shareFile, 
-   renameFile, menuEventDispatcher, isMobile, getDragAndDropDownloadURL, showDownloadProgress }
+   renameFile, menuEventDispatcher, isMobile, getDragAndDropDownloadURL, showDownloadProgress, hideNotification,
+   cancelFile }
 monkshu_component.register("file-manager", `${APP_CONSTANTS.APP_PATH}/components/file-manager/file-manager.html`, file_manager);

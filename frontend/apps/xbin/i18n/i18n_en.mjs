@@ -30,6 +30,7 @@ export const i18n = {
 "OK": "OK",
 "Save": "Save",
 "Cancel": "Cancel",
+"Cancelled": "Cancelled",
 "Close": "Close",
 "NewName": "Name",
 "Rename": "Rename...",

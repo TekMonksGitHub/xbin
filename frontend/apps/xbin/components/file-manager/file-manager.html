@@ -38,10 +38,27 @@ div#notificationscrollpositioner {
     border: 0.5px solid #2f94ad;
     border-radius: 10px 10px 0px 0px;
     padding: 3px;
+    box-sizing: border-box;
     background: #f3fafc;
     display: none;
     z-index: 1;
     opacity: 0.7;
+    position: relative;
+    width: 80%;
+    left: 10%;
+}
+@media (max-width:1000px) {	/* On small screens widen notifications */
+	div#notificationscrollpositioner {
+        width: 100%;
+        left: 0%;
+    }
+}
+div#notificationscrollpositioner.visible {display: block;}
+
+span#closenotification {
+    position: absolute;
+    top: 10px;
+    right: 10px;
 }
 
 div#notification {
@@ -55,8 +72,6 @@ div#notification.visible {
     display: block;
     height: 20vh;
 }
-
-div#notificationscrollpositioner.visible {display: block;}
 
 div#container {
     display: flex;
@@ -171,41 +186,44 @@ div#progresscontainer {
     overflow-y: auto;
     overflow-x: hidden;
 }
-
 div#progresscontainer > div#progress {
     display: inline-flex;
     margin: 0.5em;
     font-family: arial;
     font-size: small;
 }
-
 div#progress > span#name {
-    width: 40%;
+    width: 25%;
     margin-right: 0.5em; 
     overflow: hidden;
     text-overflow: ellipsis;
     display: inline-block;
 }
-
 div#progress > span#bar, div#progress > span#bar > span#percent {
-    width: 40%;
+    width: 55%;
     background-color: #00000054;
     box-sizing: border-box;
-    height: 1.1em;
+    height: 1.1em !important;
     display: block;
     border-radius: 0.5em;
-    margin-right: 0.5em;
+    margin-right: 20px;
+    color: ivory;
+    font-weight: 400;
+    text-align: center;
 }
-
 div#progress > span#bar > span#percent {
-    width: 10%;
     background-color: #2f94ad;
 }
-
-div#progress > span#percenttext {width: 10%;} 
+div#progress > span#bar.cancelled {
+    background-color: #b93131;
+}
+div#progress > span#percenttext {
+    width: 3em;
+} 
 div#progress > span#icon {
     width: 10%;
     font-size: 1.1em;
+    text-align: center;
 } 
 </style>
 
@@ -228,15 +246,16 @@ div#progress > span#icon {
             oncontextmenu='if (monkshu_env.components["file-manager"].isMobile()) return; event.preventDefault(); event.stopPropagation(); monkshu_env.components["file-manager"].handleClick(this, "{{path}}", "{{#stats.directory}}true{{/stats.directory}}{{#stats.home}}true{{/stats.home}}{{#stats.back}}true{{/stats.back}}{{#stats.upload}}false{{/stats.upload}}{{#stats.create}}false{{/stats.create}}{{#stats.paste}}false{{/stats.paste}}");'
             {{#stats.json}}stats='{{{.}}}'{{/stats.json}}>
         <img src="{{COMPONENT_PATH}}/img/{{#stats.directory}}folder{{/stats.directory}}{{#stats.file}}file{{/stats.file}}{{#stats.back}}back{{/stats.back}}{{#stats.home}}home{{/stats.home}}{{#stats.upload}}upload{{/stats.upload}}{{#stats.create}}create{{/stats.create}}{{#stats.paste}}paste{{/stats.paste}}.svg"
-            ondragstart="event.dataTransfer.setData('DownloadURL',`application/octet-stream:{{name}}:${monkshu_env.components['file-manager'].getDragAndDropDownloadURL('{{path}}', this)}`)"
+            ondragstart="event.dataTransfer.setData('DownloadURL',`application/octet-stream:{{name}}:${await monkshu_env.components['file-manager'].getDragAndDropDownloadURL('{{path}}', this)}`)"
             ondragend="monkshu_env.components['file-manager'].showDownloadProgress('{{path}}', this)">{{name}}
     </div>
     {{/entries}}
-    <input id="upload" type="file" multiple onchange='monkshu_env.components["file-manager"].uploadFiles(this, this.files)' onclick="event.stopPropagation();">
+    <input id="upload" type="file" multiple onchange='monkshu_env.components["file-manager"].uploadFiles(this, this.files)' onclick="event.stopPropagation(); this.value = null;">
 </div>
 
 <div id="notificationscrollpositioner">
-<div id="notification" onclick="event.stopPropagation();"></div>
+    <span id="closenotification" onclick='event.stopPropagation();monkshu_env.components["file-manager"].hideNotification(this);'>✕</span>
+    <div id="notification" onclick="event.stopPropagation();"></div>
 </div>
 </div>
 
@@ -261,9 +280,11 @@ div#progress > span#icon {
     {{#files}}
     <div id="progress">
         <span id="name">{{name}}</span>
-        <span id="bar"><span id="percent" style="width: {{percent}}%!important"></span></span>
+        <span id="bar" {{#cancelled}}class="cancelled"{{/cancelled}}>{{^cancelled}}<span id="percent" style="width: {{percent}}%!important"></span>{{/cancelled}}{{#cancelled}}{{i18n.Cancelled}}{{/cancelled}}</span>
         <span id="percenttext">{{percent}}%</span>
         <span id="icon">{{icon}}</span>
+        {{#cancellable}}<span id="cancel" onclick='event.stopPropagation(); this.innerHTML = "!"; 
+            monkshu_env.components["file-manager"].cancelFile("{{name}}", this)'>ⓧ</span>{{/cancellable}}
     </div>
     {{/files}}
 </div>

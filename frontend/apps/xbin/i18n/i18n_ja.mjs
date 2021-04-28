@@ -30,6 +30,7 @@ export const i18n = {
 "OK": "はい",
 "Save": "変更内容を保存",
 "Cancel": "キャンセル",
+"Cancelled": "キャンセルされました",
 "Close": "閉じる",
 "NewName": "名前",
 "Rename": "新しい名前...",

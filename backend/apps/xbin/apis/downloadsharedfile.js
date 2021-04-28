@@ -17,7 +17,7 @@ function _initDB() {
 	});
 }
 
-exports.handleRawRequest = async (url, jsonReq, headers, servObject) => {
+exports.handleRawRequest = async (jsonReq, servObject, headers, url) => {
 	if (!validateRequest(jsonReq)) {LOG.error("Validation failure."); _sendError(servObject); return;}
 	
 	LOG.debug("Got download shared file request for id: " + jsonReq.id);
@@ -29,8 +29,7 @@ exports.handleRawRequest = async (url, jsonReq, headers, servObject) => {
         if (!share) throw ({code: 404, message: "Not found"}); 
         if (Date.now() > share.expiry) throw ({code: 404, message: "Not found"});   // has expired
         
-        const relativepath = share.fullpath.substring(path.resolve(`${cms.getCMSRoot(headers)}/`).length);
-        return downloadfile.downloadFile(url, {path: relativepath, reqid:"__never_use_none"}, headers, servObject);
+        return downloadfile.downloadFile({fullpath: share.fullpath, reqid:"__never_use_none"}, servObject, headers, url);
 	} catch (err) {
         LOG.error(`Share ID resulted in DB error ${err}`); 
         throw ({code: 404, message: "Not found"}); 

@@ -12,19 +12,21 @@ const securid = require(`${API_CONSTANTS.API_DIR}/getsecurid.js`);
 
 
 exports.handleRawRequest = async function(jsonObj, servObject, headers, url) {
-	if (!validateRequest(jsonReq)) {LOG.error("Validation failure."); _sendError(servObject); return;}
-	if (!securid.check(jsonReq.securid)) {LOG.error("SecurID validation failure."); _sendError(servObject, true); return;}
+	if (!validateRequest(jsonObj)) {LOG.error("Validation failure."); _sendError(servObject); return;}
+	if (!securid.check(jsonObj.securid)) {LOG.error("SecurID validation failure."); _sendError(servObject, true); return;}
+
+	const headersMod = {...headers, "authorization": `Bearer ${jsonObj.auth}`};
+	jsonObj.fullpath = path.resolve(`${cms.getCMSRoot(headersMod)}/${jsonObj.path}`);
+	if (!cms.isSecure(headersMod, jsonObj.fullpath)) {LOG.error(`Path security validation failure: ${jsonObj.path}`); _sendError(servObject); return;}
+
 	await this.downloadFile(jsonObj, servObject, headers, url);
 }
 
-exports.downloadFile = async (jsonReq, servObject, headers, url) => {
-	LOG.debug("Got downloadfile request for path: " + jsonReq.path);
-
-	const fullpath = path.resolve(`${cms.getCMSRoot(headers)}/${jsonReq.path}`);
-	if (!cms.isSecure(headers, fullpath)) {LOG.error(`Path security validation failure: ${jsonReq.path}`); _sendError(servObject); return;}
+exports.downloadFile = async (fileReq, servObject, headers, url) => {
+	LOG.debug("Got downloadfile request for path: " + fileReq.fullpath);
 
 	try {
-        const stats = await statsAsync(fullpath); if (stats.isDirectory()) fullpath = await _zipDirectory(fullpath);
+        let fullpath = fileReq.fullpath; const stats = await statsAsync(fullpath); if (stats.isDirectory()) fullpath = await _zipDirectory(fullpath);
 
 		let respHeaders = {}; APIREGISTRY.injectResponseHeaders(url, {}, headers, respHeaders, servObject);
 		respHeaders["content-disposition"] = "attachment;filename=" + path.basename(fullpath);
@@ -32,14 +34,14 @@ exports.downloadFile = async (jsonReq, servObject, headers, url) => {
 		respHeaders["content-type"] = "application/octet-stream";	// try and add auto GZIP here to save bandwidth
 		servObject.server.statusOK(respHeaders, servObject, true);
 
-		_updateWriteStatus(decodeURIComponent(jsonReq.reqid), stats.size, null);
+		_updateWriteStatus(decodeURIComponent(fileReq.reqid), stats.size, null);
         const writable = fs.createReadStream(fullpath, {highWaterMark: CONF.DOWNLOAD_READ_BUFFER_SIZE||10485760, 
 			flags:"r", autoClose:true}).pipe(servObject.res, {end:true});
-		const old_write = writable.write; writable.write = function(chunk) {_updateWriteStatus(jsonReq.reqid, null, chunk.length); return old_write.apply(writable, arguments);}
+		const old_write = writable.write; writable.write = function(chunk) {_updateWriteStatus(fileReq.reqid, null, chunk.length); return old_write.apply(writable, arguments);}
 	} catch (err) {
 		LOG.error(`Error in downloadfile: ${err}`);
 		_sendError(servObject);
-		_updateWriteStatus(jsonReq.reqid, -1, 0, true);
+		_updateWriteStatus(fileReq.reqid, -1, 0, true);
 	}
 }
 
