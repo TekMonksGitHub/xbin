@@ -246,7 +246,7 @@ div#progress > span#icon {
             oncontextmenu='if (monkshu_env.components["file-manager"].isMobile()) return; event.preventDefault(); event.stopPropagation(); monkshu_env.components["file-manager"].handleClick(this, "{{path}}", "{{#stats.directory}}true{{/stats.directory}}{{#stats.home}}true{{/stats.home}}{{#stats.back}}true{{/stats.back}}{{#stats.upload}}false{{/stats.upload}}{{#stats.create}}false{{/stats.create}}{{#stats.paste}}false{{/stats.paste}}");'
             {{#stats.json}}stats='{{{.}}}'{{/stats.json}}>
         <img src="{{COMPONENT_PATH}}/img/{{#stats.directory}}folder{{/stats.directory}}{{#stats.file}}file{{/stats.file}}{{#stats.back}}back{{/stats.back}}{{#stats.home}}home{{/stats.home}}{{#stats.upload}}upload{{/stats.upload}}{{#stats.create}}create{{/stats.create}}{{#stats.paste}}paste{{/stats.paste}}.svg"
-            ondragstart="event.dataTransfer.setData('DownloadURL',`application/octet-stream:{{name}}:${await monkshu_env.components['file-manager'].getDragAndDropDownloadURL('{{path}}', this)}`)"
+            ondragstart="event.dataTransfer.setData('DownloadURL',`application/octet-stream:{{name}}:${monkshu_env.components['file-manager'].getDragAndDropDownloadURL('{{path}}', this)}`)"
             ondragend="monkshu_env.components['file-manager'].showDownloadProgress('{{path}}', this)">{{name}}
     </div>
     {{/entries}}
