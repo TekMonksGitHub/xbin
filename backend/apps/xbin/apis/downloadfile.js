@@ -26,7 +26,8 @@ exports.downloadFile = async (fileReq, servObject, headers, url) => {
 	LOG.debug("Got downloadfile request for path: " + fileReq.fullpath);
 
 	try {
-        let fullpath = fileReq.fullpath; const stats = await statsAsync(fullpath); if (stats.isDirectory()) fullpath = await _zipDirectory(fullpath);
+		let fullpath = fileReq.fullpath; let stats = await statsAsync(fullpath);
+		if (stats.isDirectory()) {fullpath = await _zipDirectory(fullpath); stats = await statsAsync(fullpath);}
 
 		let respHeaders = {}; APIREGISTRY.injectResponseHeaders(url, {}, headers, respHeaders, servObject);
 		respHeaders["content-disposition"] = "attachment;filename=" + path.basename(fullpath);
@@ -56,9 +57,9 @@ function _sendError(servObject, unauthorized) {
 async function _zipDirectory(path) {
     return new Promise((resolve, reject) => {
         const tempFilePath = utils.getTempFile("zip"); const out = fs.createWriteStream(tempFilePath);
-        const arhiver = archiver("zip", { zlib: { level: 9 }});
-        archiver.on("end", _=>resolve(tempFilePath)); archiver.on("error", err=>reject(err));
-        arhiver.directory(path, false).pipe(out, {end:true}); archive.finalize();
+        const archive = archiver("zip", { zlib: { level: 9 }});
+        out.on("close", _=>resolve(tempFilePath)); archive.on("error", err=>reject(err));
+        archive.directory(path, false).pipe(out, {end:true}); archive.finalize();
     });
 }
 
