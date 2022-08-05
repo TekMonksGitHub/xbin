@@ -21,13 +21,20 @@ License: See enclosed license.txt file.
     border-radius: 10px;
 }
 
-body {
+html, body {
 	margin: 0;
 	padding: 0;
 	font-family: 'Raleway';
 	overflow-y: auto;
     overflow-x: hidden;
 	color: #444444;
+	height: 100%;
+}
+
+div#container {
+	display: flex;
+    flex-direction: column;
+    height: 100%;
 }
 
 div#header {
@@ -88,6 +95,11 @@ div#menu > span {
 	font-size: 0.9em;
 }
 
+div#content {
+	flex-grow: 1;
+    position: relative;
+}
+
 div#rightbar {
 	width: 20vw;
     position: relative;
@@ -98,6 +110,7 @@ div#rightbar {
 div#leftbar {
 	width: 100%;
     position: absolute;
+	height: 100%;
 }
 
 div#rightbar > div#adv, div#rightbar > div#info {

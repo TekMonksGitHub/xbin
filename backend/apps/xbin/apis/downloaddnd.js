@@ -5,7 +5,7 @@ const getsecurid = require(`${API_CONSTANTS.API_DIR}/getsecurid.js`);
 const downloadfile = require(`${API_CONSTANTS.API_DIR}/downloadfile.js`);
 const jwtTokenManager = require(`${CONSTANTS.LIBDIR}/apiregistry.js`).getExtension("jwtTokenManager");
 
-exports.handleRawRequest = async (jsonObj, servObject, headers, url) => {
+exports.handleRawRequest = async (jsonObj, servObject, headers, url, _apiconf) => {
 	if (!validateRequest(jsonObj) ) {LOG.error("Validation failure."); _sendError(servObject, "Validation failure."); return;}
 	if (!jwtTokenManager.checkToken(jsonObj.auth)) {LOG.error("Validation failure, wrong AUTH."); _sendError(servObject, "Validation failure."); return;}
 	

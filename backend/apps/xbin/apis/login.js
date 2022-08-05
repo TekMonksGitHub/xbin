@@ -24,7 +24,7 @@ function init() {
 	});
 }
 
-exports.doService = async (jsonReq, _servObject, headers, _url) => {
+exports.doService = async (jsonReq, _servObject, _headers, _url, _apiconf) => {
 	if (!validateRequest(jsonReq)) {LOG.error("Validation failure."); return CONSTANTS.FALSE_RESULT;}
 	
 	LOG.debug("Got login request for ID: " + jsonReq.id);

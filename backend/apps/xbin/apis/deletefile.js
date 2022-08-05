@@ -1,14 +1,9 @@
 /* 
  * (C) 2020 TekMonks. All rights reserved.
  */
-const fs = require("fs");
 const path = require("path");
-const util = require("util");
 const sqlite3 = require("sqlite3");
-const statAsync = util.promisify(fs.stat);
-const rmdirAsync = util.promisify(fs.rmdir);
-const unlinkAsync = util.promisify(fs.unlink);
-const readdirAsync = util.promisify(fs.readdir);
+const fspromises = require("fs").promises;
 const cms = require(`${API_CONSTANTS.LIB_DIR}/cms.js`);
 
 let xbinDB;
@@ -31,20 +26,24 @@ exports.doService = async (jsonReq, _, headers) => {
 
 	try {
 		await rmrf(fullpath); 
-		await _initDB(); await dbrunAsync("DELETE FROM shares WHERE fullpath = ?", [fullpath]);	// can't be shared if deleted
 		return CONSTANTS.TRUE_RESULT;
 	} catch (err) {LOG.error(`Error deleting  path: ${fullpath}, error is: ${err}`); return CONSTANTS.FALSE_RESULT;}
 }
 
 async function rmrf(path) {
-	if ((await statAsync(path)).isFile()) {await unlinkAsync(path); return;}
+	if ((await fspromises.stat(path)).isFile()) {await unlinkFileAndRemoveFromDB(path); return;}
 
-	const entries = await readdirAsync(path);
+	const entries = await fspromises.readdir(path);
 	for (const entry of entries) {
-		const stats = await statAsync(`${path}/${entry}`);
-		if (stats.isFile()) await unlinkAsync(`${path}/${entry}`); else if (stats.isDirectory()) await rmrf(`${path}/${entry}`);
+		const stats = await fspromises.stat(`${path}/${entry}`);
+		if (stats.isFile()) await unlinkFileAndRemoveFromDB(`${path}/${entry}`); else if (stats.isDirectory()) await rmrf(`${path}/${entry}`);
 	}
-	await rmdirAsync(path);
+	await fspromises.rmdir(path);
+}
+
+async function unlinkFileAndRemoveFromDB(path) {
+	await _initDB(); await dbrunAsync("DELETE FROM shares WHERE fullpath = ?", [path]);	
+	await fspromises.unlink(path);
 }
 
 const validateRequest = jsonReq => (jsonReq && jsonReq.path);

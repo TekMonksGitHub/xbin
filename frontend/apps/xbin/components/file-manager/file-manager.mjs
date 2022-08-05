@@ -181,7 +181,7 @@ function showMenu(element, documentMenuOnly) {
       shadowRoot.querySelector("div#contextmenu > span#deletefile").classList.add("hidden"); 
       shadowRoot.querySelector("div#contextmenu > span#downloadfile").classList.add("hidden");  
       shadowRoot.querySelector("div#contextmenu > span#hr2").classList.add("hidden"); 
-      shadowRoot.querySelector("div#contextmenu > span#cut").classList_.add("hidden"); 
+      shadowRoot.querySelector("div#contextmenu > span#cut").classList.add("hidden"); 
       shadowRoot.querySelector("div#contextmenu > span#copy").classList.add("hidden"); 
       shadowRoot.querySelector("div#contextmenu > span#paste").classList.add("hidden"); 
       shadowRoot.querySelector("div#contextmenu > span#edit").classList.remove("hidden");

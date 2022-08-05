@@ -2,9 +2,7 @@
  * (C) 2020 TekMonks. All rights reserved.
  */
 const util = require("util");
-const path = require("path");
 const sqlite3 = require("sqlite3");
-const cms = require(`${API_CONSTANTS.LIB_DIR}/cms.js`);
 const downloadfile = require(`${API_CONSTANTS.API_DIR}/downloadfile.js`);
 
 let xbinDB;
