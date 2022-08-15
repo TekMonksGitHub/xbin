@@ -1,54 +1,100 @@
 <!--
 /* 
  * (C) 2018 TekMonks. All rights reserved.
- * License: MIT - see enclosed license.txt file.
+ * License: See enclosed license file.
  */
  -->
 
 <style>
-@import url('https://fonts.googleapis.com/css?family=Raleway:100,100i,200,200i,300,300i,400,400i,500,500i,600,600i,700,700i,800,800i,900,900i&amp;display=swap');
-
-body{
+body {
     margin: 0; padding: 0;
-    font-family: 'Raleway';
+    font-family: inherit;
+    font-size: inherit;
+    height: fit-content;
 }
 
-button, input{
-    width: 100%;
-    padding: 20px;
+input {
+    width: 90%;
+    padding: 10px;
+    margin: 0;
+    border-style: none;
+    outline: none;
+    text-align: left;
+    background-color: transparent;
+    transition: background-color 5000s ease-in-out 0s;
+    margin: 20px 5% 0px 5%;
+    border-bottom: 1px solid darkgray;
+    font-family: inherit;
+    font-size: smaller;
+    border-radius: 0;
+}
+
+button {
+    width: 80%;
+    padding: 10px;
     margin: 0;
     box-sizing: border-box;
     border-radius: 10px;
     border-style: none;
     outline: none;
     text-align: center;
-    font-family: 'Raleway';
+    background-color: rgb(51, 204, 102);
+    color: white;
+    position: relative;
+    margin: 30px 0% 20px 0%;
+    font-family: inherit;
+    font-size: inherit;
+    text-transform: uppercase;
 }
 
-button:hover, input:hover {
+button:hover {
     filter: brightness(98%);
     transition: all 0.3s ease;
 }
 
-input, input:-webkit-autofill,
-input:-webkit-autofill:hover, 
-input:-webkit-autofill:focus,
-textarea:-webkit-autofill,
-textarea:-webkit-autofill:hover,
-textarea:-webkit-autofill:focus,
-select:-webkit-autofill,
-select:-webkit-autofill:hover,
-select:-webkit-autofill:focus { 
-    background-color: #F0F8FF;
-    -webkit-box-shadow: 0 0 0px 1000px #F0F8FF inset;
-    box-shadow: 0 0 0px 1000px #F0F8FF inset;
+div.container {
+    display: flex;
+    flex-direction: column;
+    background-color: #ffffff;
+}
+
+span#notifier {
+    color: #e40000;
+    padding: 0;
+    margin: 0;
+    display: none;
+}
+
+span#notifier2 {
+    color: #003de4;
+    padding: 0;
+    margin: 0;
+    display: none;
+}
+
+span#notifier>span:hover {
+    text-decoration: underline;
+    cursor: default;
 }
 </style>
 
+<script type="module">
+    import {password_box} from "./components/password-box/password-box.mjs"; 
+</script>
+
 {{{styleBody}}}
 
-<input type="text" id="userid" placeholder="{{i18n.UserID}}" required><br/><br/>
-<input type="password" id="pass" placeholder="{{i18n.Password}}" required minlength="8" 
-    onkeyup="if (event.keyCode == 13) monkshu_env.components['login-box'].getShadowRootByContainedElement(this).querySelector('#submit').click();"><br/><br/>
-<button id="submit" onclick='monkshu_env.components["login-box"].signin(this)'>{{i18n.SignIn}}</button>
-
+<div id="container">
+<span id="notifier">{{i18n.BadLogin}}<span onclick="monkshu_env.components['login-box'].resetAccount(this)">{{i18n.LoginReset}}</span></span>
+<span id="notifier2">{{i18n.LoginWasReset}}</span>
+<input type="text" id="userid" placeholder="{{i18n.UserID}}" 
+    oninvalid="this.setCustomValidity('{{i18n.FillField}}')" oninput="setCustomValidity('')"
+    required>
+<password-box style="width:90%; padding-top: 20px;" id="pass" placeholder="{{i18n.Password}}" 
+    required="true" minlength="{{minlength}}" customValidity="{{i18n.FillField}}" styleBody="span#container{width: 90%; padding-top: 1.5em;}"></password-box>
+<input type="text" id="otp" placeholder="{{i18n.Otp}}" 
+    oninvalid="this.setCustomValidity('{{i18n.FillField}}')" oninput="setCustomValidity('')"
+    required
+    onkeyup="if (event.keyCode == 13) monkshu_env.components['login-box'].getShadowRootByContainedElement(this).querySelector('#submit').click();">
+<button type="submit" id="submit" onclick="monkshu_env.components['login-box'].signin(this);">{{i18n.SignIn}}</button>
+</div>

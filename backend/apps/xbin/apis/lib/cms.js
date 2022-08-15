@@ -5,18 +5,16 @@ const fspromises = require("fs").promises;
 const login = require(`${API_CONSTANTS.API_DIR}/login.js`);
 const CONF = require(`${API_CONSTANTS.CONF_DIR}/xbin.json`);
 
-exports.getCMSRoot = function(headers) {
+exports.getCMSRoot = async function(headers) {
 	let loginID = login.getID(headers); if (!loginID) throw "No login for CMS root"; else loginID = loginID.toLowerCase();
 	let org = login.getOrg(headers); org = org?org.toLowerCase():"unknown";
-	if (loginID) return `${CONF.CMS_ROOT}/${convertToPathFriendlyString(org)}/${convertToPathFriendlyString(loginID)}`;
-	else throw "Bad user or no user logged in";
-}
-
-exports.initID = async function(headers) {
-    try { await fspromises.access(this.getCMSRoot(headers), fs.F_OK) } catch (err) {
-    	await fspromises.mkdir(this.getCMSRoot(headers), {recursive: true}); }
+	if (loginID) {
+		const cmsRootToReturn = `${CONF.CMS_ROOT}/${convertToPathFriendlyString(org)}/${convertToPathFriendlyString(loginID)}`;
+		try { await fspromises.access(cmsRootToReturn, fs.F_OK) } catch (err) { await fspromises.mkdir(cmsRootToReturn, {recursive: true}); }
+		return cmsRootToReturn;
+	} else throw "Bad user or no user logged in";
 }
 
 const convertToPathFriendlyString = s => Buffer.from(s).toString("base64url");
 
-exports.isSecure = (headers, path) => API_CONSTANTS.isSubdirectory(path, this.getCMSRoot(headers));
+exports.isSecure = async (headers, path) => API_CONSTANTS.isSubdirectory(path, await this.getCMSRoot(headers));

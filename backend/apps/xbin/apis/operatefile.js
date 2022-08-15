@@ -11,8 +11,8 @@ exports.doService = async (jsonReq, _, headers) => {
 	
 	LOG.debug("Got operatefile request for path: " + jsonReq.path);
 
-	const fullpath = path.resolve(`${cms.getCMSRoot(headers)}/${jsonReq.path}`);
-	if (!cms.isSecure(headers, fullpath)) {LOG.error(`Subdir validation failure: ${jsonReq.path}`); return CONSTANTS.FALSE_RESULT;}
+	const fullpath = path.resolve(`${await cms.getCMSRoot(headers)}/${jsonReq.path}`);
+	if (!await cms.isSecure(headers, fullpath)) {LOG.error(`Subdir validation failure: ${jsonReq.path}`); return CONSTANTS.FALSE_RESULT;}
 
 	try {
 		let result = {...CONSTANTS.TRUE_RESULT};

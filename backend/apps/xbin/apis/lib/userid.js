@@ -1,53 +1,54 @@
 /* 
  * (C) 2015 TekMonks. All rights reserved.
- * License: See enclosed LICENSE file.
+ * See enclosed LICENSE file.
  */
-const bcrypt = require("bcryptjs");
-const sqlite3 = require("sqlite3");
-let usersDB;
+const util = require("util");
+const bcryptjs = require("bcryptjs");
+const db = require(`${APP_CONSTANTS.LIB_DIR}/db.js`);
+const getUserHash = async text => await (util.promisify(bcryptjs.hash))(text, 12);
 
-exports.getUserHash = data => {
-	return new Promise((resolve, reject) => bcrypt.hash(data, API_CONSTANTS.SALT_PW, (err, hash) => {
-		if (err) reject("BCRYPT internal error."); else {
-			// URL encoding removes characters which are illegal for paths, like "\" or "/" etc.
-			let encoded_hash = encodeURIComponent(hash);
+exports.register = async (id, name, org, pwph, totpSecret, role, approved) => {
+	const existsID = await exports.existsID(id);
+	if (existsID.result) return({result:false}); 
+	const pwphHashed = await getUserHash(pwph);
 
-			// On Windows directory names can't end with the . character. So replace it with %2E
-			// which is its URL encoded notation, if that's the case.
-			if (encoded_hash.substr(-1) == '.')
-				encoded_hash = encoded_hash.substring(0, encoded_hash.length - 1) + '%2E';
-			
-			resolve(encoded_hash);		
-		}
-	}));
+	return {result: await db.runCmd("INSERT INTO users (id, name, org, pwph, totpsec, role, approved) VALUES (?,?,?,?,?,?,?)", 
+		[id, name, org, pwphHashed, totpSecret, role, approved?1:0])};
 }
 
-exports.register = (id, name) => {
-	return new Promise((resolve, _) => {
-		exports.exists(id)
-		.then(exists => exists?resolve(false):initDB(true))
-		.then(_ => exports.getUserHash(id))
-		.then(id => usersDB.run(`INSERT INTO users(name, id) VALUES (?,?)`, [name,id], err => err?resolve(false):resolve(true)) )
-		.catch(_ => resolve(false));
-	});
+exports.delete = async id => {
+	const existsID = await exports.existsID(id);
+	if (!existsID.result) return({result:false}); 
+
+	return {result: await db.runCmd("DELETE FROM users where id = ?", [id])};
 }
 
-exports.exists = exports.login = id => {
-	return new Promise((resolve, _) => {
-		initDB()
-		.then(_ => exports.getUserHash(id))
-		.then(id => usersDB.all(`SELECT name, id FROM users WHERE id = '${id}' COLLATE NOCASE;`, (err, rows) => {
-			if (err || !rows.length) resolve({result: false});
-			else resolve({result: true, name: rows[0].name});
-		}))
-		.catch(_ => resolve({result: false}));
-	});
+exports.update = async (oldid, id, name, org, pwph, totpSecret, role, approved) => {
+	const pwphHashed = await getUserHash(pwph);
+	return {result: await db.runCmd("UPDATE users SET id=?, name=?, org=?, pwph=?, totpsec=?, role = ?, approved = ? WHERE id=?", 
+		[id, name, org, pwphHashed, totpSecret, role, approved?1:0, oldid])};
 }
 
-function initDB() {
-	return new Promise((resolve, reject) => {
-		if (!usersDB) usersDB = new sqlite3.Database(API_CONSTANTS.APP_DB, sqlite3.OPEN_READWRITE, err => {
-			if (!err) resolve(); else reject(err);
-		}); else resolve();
-	});
+exports.checkPWPH = async (id, pwph) => {
+	const idEntry = await exports.existsID(id); if (!idEntry.result) return {result: false}; else delete idEntry.result;
+	return {result: await (util.promisify(bcryptjs.compare))(pwph, idEntry.pwph), ...idEntry}; 
+}
+
+exports.getTOTPSec = exports.existsID = async id => {
+	const rows = await db.getQuery("SELECT * FROM users WHERE id = ? COLLATE NOCASE", [id]);
+	if (rows && rows.length) return {result: true, ...(rows[0])}; else return {result: false};
+}
+
+exports.changepwph = async (id, pwph) => {
+	const pwphHashed = await getUserHash(pwph);
+	return {result: await db.runCmd("UPDATE users SET pwph = ? WHERE id = ? COLLATE NOCASE", [pwphHashed, id])};
+}
+
+exports.getUsersForOrg = async org => {
+	const users = await db.getQuery("SELECT id, name, org, role, approved FROM users WHERE org = ? COLLATE NOCASE", [org]);
+	if (users && users.length) return {result: true, users}; else return {result: false};
+}
+
+exports.approve = async id => {
+	return {result: await db.runCmd("UPDATE users SET approved=1 WHERE id=?", [id])};
 }

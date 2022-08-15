@@ -1,0 +1,51 @@
+<style>
+div#main {
+    background: linear-gradient(0.25turn, #03B3FF, 60%, #03b3ff1a);
+    width: 100%;
+    height: 100%;
+    border-radius: 0.5em;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4em;
+    box-sizing: border-box;
+}
+
+div#text {
+    display: flex;
+    flex-direction: column;
+}
+span#text1 {
+    font-weight: lighter;
+    font-family: 'Red Hat Text';
+    font-size: -webkit-xxx-large;
+    color: #FFFFFF;
+}
+span#text2 {
+    font-weight: lighter;
+    font-family: 'Red Hat Text';
+    font-size: larger;
+    color: #FFFFFF;
+    margin-top: 1em;
+}
+
+img#img {
+    width: 15em;
+    height: 15em;
+}
+</style>
+{{{APP_CONSTANTS.MOBILE_MEDIA_QUERY_START}}}
+    div#main {background: linear-gradient(0.5turn, #03B3FF, 50%, #03b3ff1a); flex-direction: column; padding: 1em;}
+    div#text {text-align: center;}
+    span#text1 {font-size: xx-large;}
+    img#img {width: 50%; height: 50%;}
+{{{APP_CONSTANTS.MOBILE_MEDIA_QUERY_END}}}
+
+
+<div id="main">
+    <div id="text">
+    <span id="text1">Work anywhere</span>
+    <span id="text2">No ongoing meetings</span>
+    </div>
+    <img id="img" src="{{APP_CONSTANTS.APP_PATH}}/img/handsonglobe.svg">
+</div>

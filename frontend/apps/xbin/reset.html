@@ -1,0 +1,171 @@
+<style>
+@import url('./fonts/appfonts.css');
+
+body {
+	margin: 0; 
+	padding: 0; 
+	font-family: 'Red Hat Text'; 
+	background-color: rgb(79, 180, 237);
+}
+
+a:link {text-decoration:none; color:black;}    /* unvisited link */
+a:visited {text-decoration:none;} /* visited link */
+a:hover {text-decoration:underline;}   /* mouse over link */
+a:active {text-decoration:underline;}  /* selected link */
+
+div#bodydiv {
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	min-height: 100%;
+}
+
+body::after {
+	content: "";
+	background: url(./img/logob.png);
+	background-size: auto 100%;
+	width: 100%;
+	height: 100%;
+	background-repeat: no-repeat;
+	opacity: 0.05;
+	position: absolute;
+	z-index: -1;   
+	top: 0;
+	left: 0;
+}
+
+div#header {
+	display: flex;
+	flex-direction: row;
+	justify-content: flex-start;
+	align-items: center;
+	margin: 1em;
+	width: calc(100% - 2em);
+	height: 4em;
+}
+span#imgheader {text-align: center;}
+img.logo {
+	height: 25px;
+	cursor: pointer;
+}
+
+div#maincontent {
+	display: flex;
+	justify-content: space-around;
+	align-items: center;
+	width: 100%;
+	flex-direction: row;
+}
+
+.lgbox {
+	width: 25em;
+	background-color: #ffffff;
+	border-radius: 20px;
+	box-shadow: -2px 6px 53px -23px rgba(0,0,0,0.75);
+	padding: 2em;
+	text-align: center;
+	font-size: smaller;
+	margin-bottom: 1em;
+}
+
+div.lgbox > span {
+	font-weight: 600;
+	font-size: small;
+}
+
+.advtextbox{
+	color: #ffffff;
+	text-align: center;
+	max-width: 30em;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	height: fit-content;
+	margin-bottom: min(10%, 4em);
+}
+.advtextbox > h1 {
+	font-weight: 250;
+	margin: 0em;
+}
+.advtextbox > h2 {
+	font-weight: 250;
+	font-size: medium;
+	margin: 0em;
+}
+.advtextbox > p {
+	font-weight: 400;
+	background-color: #ffffff;
+	color: #444444;
+	border-radius: 0.8em;
+	padding: 1em;
+	font-size: smaller;
+	margin: 1em 0em 0em 0em;
+	cursor: default;
+}
+
+.langbox {
+	color: white;
+	text-align: center;
+	cursor: default;
+	margin-bottom: 0.5em;
+}
+.langsel {
+	cursor: pointer;
+	font-size: x-small;
+}
+</style>
+{{{APP_CONSTANTS.MOBILE_MEDIA_QUERY_START}}}
+	div#maincontent {flex-direction: column;}
+	div#header {justify-content: space-around;}
+	span#signin {text-align: center;}
+	.lgbox {padding: 1em; box-shadow: none;}
+{{{APP_CONSTANTS.MOBILE_MEDIA_QUERY_END}}}
+
+<!doctype html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	{{{headers}}}
+	
+	<title>{{i18n.Title}}</title>
+	
+	<script type="module">
+	import {loginmanager} from "./js/loginmanager.mjs"; loginmanager.checkResetSecurity();
+	import {register_box} from "./components/register-box/register-box.mjs"; 
+	import {language} from "./js/language.mjs"; window.language=language;
+	</script>
+</head>
+
+<body>
+<div id="bodydiv">
+<div id="header">
+<span id="imgheader">
+	<img class="logo" src="./img/logo.png" onclick="window.open('http://teleworkr.com', '_blank')"></img>
+</span>
+</div>
+
+<div id="maincontent">
+<div class="advtextbox">
+	<h1>{{i18n.logintagline}}</h1>
+	<h2>{{i18n.loginsubtag}}</h2>
+	<p onclick="window.open('http://teleworkr.com', '_blank')">{{i18n.learn}}</p>
+</div>
+
+<div class="lgbox">
+	<span><br><br>{{i18n.ResetMsg}}<br><br></span>
+	<register-box id="reset" roles='["{{APP_CONSTANTS.GUEST_ROLE}}", "{{APP_CONSTANTS.USER_ROLE}}"]' type="reset" 
+		email="{{url.e}}" time="{{url.t}}" minlength="{{APP_CONSTANTS.MIN_PASS_LENGTH}}" routeOnSuccess="./main.html" 
+		dataOnSuccess='{"showDialog":{"message": "{{i18n.ResetSuccess}}"}}'></register-box>
+</div>
+</div>
+
+<div class="langbox">
+	<span class="langsel" onclick="language.changeLanguage('en')">English</span>&nbsp;&nbsp;
+	<span class="langsel" onclick="language.changeLanguage('hi')">हिंदी</span>&nbsp;&nbsp;
+	<span class="langsel" onclick="language.changeLanguage('ja')">日本語</span>
+	<span class="langsel" onclick="language.changeLanguage('th')">&nbsp;ภาษาไทย</span>
+	<span class="langsel" onclick="language.changeLanguage('zh')">中文</span>
+</div>	
+</div>
+
+</html>

@@ -1,0 +1,54 @@
+<style>
+span::-webkit-scrollbar {
+    width: 0.5em !important;
+    height: 0.5em !important;
+    scroll-behavior: smooth !important;
+}
+
+span::-webkit-scrollbar-track {
+    -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3) !important;
+    box-shadow: inset 0 0 6px rgba(253, 240, 240, 0.3) !important;
+    margin: 10px 10px;
+    border-radius: 10px !important;
+}
+
+span::-webkit-scrollbar-thumb {
+    background-color: darkgrey !important;
+    border-radius: 10px !important;
+    background-clip: padding-box;
+}
+
+body {
+    width: 350px;
+}
+
+span#error {
+    font: inherit;
+    font-size: smaller;
+    text-align: center;
+    width: 350px;
+    display: inline-block;
+    overflow-x: auto;
+}
+
+div#error {display:none;}
+</style>
+{{{CONF.MOBILE_MEDIA_QUERY_START}}}
+    div#dialog {box-sizing: border-box; padding: 2em;}
+    body {width: 100%; min-width: 0;}
+    span#close {display:none;}
+    div#buttonbar {position: absolute; width: calc(100% - 4em); bottom: 2em; justify-content: space-around;}
+    span#error {width: 100%;}
+{{{CONF.MOBILE_MEDIA_QUERY_END}}}
+{{{CONF.MOBILE_MEDIA_QUERY_LANDSCAPE_START}}}
+    div#dialog {min-height: 12em; width: 50vw;}
+{{{CONF.MOBILE_MEDIA_QUERY_LANDSCAPE_END}}}
+{{{CONF.MOBILE_MEDIA_QUERY_PORTRAIT_START}}}
+    div#dialog {width: 96vw; min-height: 12em;}
+{{{CONF.MOBILE_MEDIA_QUERY_PORTRAIT_END}}}
+
+<span id="error">{{{error}}}</span>
+
+<script>
+function onOK(element) {monkshu_env.components["dialog-box"].submit(element);}
+</script>

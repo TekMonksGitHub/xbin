@@ -6,8 +6,6 @@
  -->
 
 <style>
-@import url('https://fonts.googleapis.com/css?family=Raleway:100,100i,200,200i,300,300i,400,400i,500,500i,600,600i,700,700i,800,800i,900,900i&amp;display=swap');
-
 ::-webkit-scrollbar {width: 5px;}
  
 ::-webkit-scrollbar-thumb {
@@ -23,7 +21,6 @@
 
 html, body {
     margin: 0; padding: 0;
-    font-family: Raleway;
     user-select: none;
     height: 100%;
 }
@@ -74,14 +71,15 @@ div#notification.visible {
     height: 20vh;
 }
 
-div#container {
+div#filelistingscontainer {
     display: flex;
     flex-flow: row wrap;
     justify-content: start;
     height: 100%;
+    color: #168cd0;
 }
 
-div#container > div {
+div#filelistingscontainer > div {
     height: fit-content;
     display: flex;
     flex-direction: column;
@@ -94,13 +92,13 @@ div#container > div {
     text-align: center;
 }
 
-div#container > div:focus, div#container > div:hover {
+div#filelistingscontainer > div:focus, div#filelistingscontainer > div:hover {
     border-radius: 10px;
     background-color: #cdeaf260;
     outline: none;
 }
 
-div#container > div > img {width: 5em;}
+div#filelistingscontainer > div > img {width: 5em;}
 
 div#contextmenu {
     display: none;
@@ -235,7 +233,7 @@ div#progress > span#icon {
 {{{styleBody}}}
 
 <div id="filemanager">
-<div id="container" ondragover="event.preventDefault(); event.dataTransfer.dropEffect='copy';"
+<div id="filelistingscontainer" ondragover="event.preventDefault(); event.dataTransfer.dropEffect='copy';"
         ondrop="event.preventDefault(); monkshu_env.components['file-manager'].upload(this, event.dataTransfer.files)">
     {{#entries}}
     <div tabindex="0" id="{{#stats.home}}home{{/stats.home}}{{#stats.back}}back{{/stats.back}}{{#stats.upload}}upload{{/stats.upload}}{{#stats.create}}create{{/stats.create}}{{#stats.paste}}paste{{/stats.paste}}"

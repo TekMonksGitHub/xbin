@@ -1,0 +1,155 @@
+<!--
+/* A user manager component.
+ * (C) 2021 TekMonks. All rights reserved.
+ * License: See enclosed license file.
+ */
+ -->
+
+<style>
+div::-webkit-scrollbar {
+    width: 0.5em !important;
+    height: 0.5em !important;
+    scroll-behavior: smooth !important;
+}
+
+div::-webkit-scrollbar-track {
+    -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3) !important;
+    box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3) !important;
+    margin: 15vh 15vw;
+    border-radius: 10px !important;
+}
+
+div::-webkit-scrollbar-thumb {
+    background-color: darkgrey !important;
+    border-radius: 10px !important;
+    background-clip: padding-box;
+}
+
+body{
+    margin: 0; padding: 0;
+    font-family: inherit;
+    font-size: inherit;
+    height: 100%;
+}
+
+div#container {
+    overflow-y: auto;
+    height: 100%;
+}
+
+span#header {
+    margin: 2em 1em 2em 1em;
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    height: 2.5em;
+}
+
+span#header > img {
+    position: absolute;
+    top: 0.3em;
+    left: 0.5em;
+    display: inline-block;
+}
+
+span#header > input {
+    width: 80%;
+    border-radius: 0.5em;
+    padding: 1em;
+    border: 1px solid #bbbbbb;
+    outline: none;
+    color: #444444;
+    padding-left: 3em;
+    margin-right: 5%;
+    font-size: medium;
+}
+
+span#header > button {
+    width: 20%;
+    max-width: 10em;
+    padding: 1em 0px;
+    box-sizing: border-box;
+    border-radius: 0.5em;
+    border-style: none;
+    background-color: rgb(51, 204, 102);
+    color: white;
+    font-family: inherit;
+    text-transform: uppercase;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    font-size: medium;
+    padding: 0em 1em;
+}
+
+span#header > button:hover {
+    filter: brightness(98%);
+    transition: all 0.3s ease;
+}
+
+div#userlist {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 8.2em);
+    justify-content: space-between;
+}
+
+div.user {
+    display: flex;
+    flex-direction: column;
+    width: 6em;
+    overflow: hidden;
+    margin: 1.2em;
+    -webkit-touch-callout: none !important; 
+    -webkit-user-select: none !important;
+    user-select: none;
+}
+
+div.user > span {
+    text-align: center;
+    cursor: default;
+    font-size: small;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    width: 100%;
+}
+
+div.user > img {
+    max-width: 5em;
+    margin-left: auto;
+    margin-right: auto;
+}
+</style>
+{{{CONF.MOBILE_MEDIA_QUERY_START}}}
+span#header > input {margin-right: 0em; max-width: calc(100% - 9em);}
+span#header > button {min-width: 7em;}
+{{{CONF.MOBILE_MEDIA_QUERY_END}}}
+
+
+{{{styleBody}}}
+
+<div id="container">
+    <span id="header">
+        <img src="{{componenturl}}/img/search.svg">
+        <input id="searchbox" type="text" placeholder="{{i18n.Search}}" onkeyup='monkshu_env.components["user-manager"].searchModified(this)'>
+        <button id="add" title="Add user" onclick='monkshu_env.components["user-manager"].addUser(this)'>{{i18n.AddUser}}</button>
+    </span>
+    <div id="userlist">
+        {{#users}}
+        <div id="{{id}}" class="user" title="{{name}}&#10;{{id}}" ontouchend='event.preventDefault(); event.stopPropagation();
+                    event.pageY = event.changedTouches[0].pageY; event.pageX = event.changedTouches[0].pageX; oncontextmenu(event)'
+                oncontextmenu='event.preventDefault(); event.stopPropagation(); monkshu_env.components["user-manager"].userMenuClicked(
+                    event, this, "{{name}}", "{{id}}", "{{org}}", "{{role}}", "{{approved}}");'
+                ondblclick='event.preventDefault(); event.stopPropagation();  monkshu_env.components["user-manager"].editUser(
+                    "{{name}}", "{{id}}","{{role}}", "{{approved}}", this)'>
+            <img src="{{componenturl}}/img/user.svg">
+            <span>{{name}}</span>
+            <span>{{id}}</span>
+        </div>
+        {{/users}}
+    </div>
+</div>
+
+<context-menu id="{{{CONTEXT_MENU_ID}}}" styleBody="span.menubreak > hr{background-color: #bbbbbb;} span.menuitem > span.menuicon {display:none} div#menu {border:none; background: #FFFFFF;} span.menuitem > span.menutext {padding: 0.5em 2em 0.5em 1em; font-size: small;} span.menuitem > span.menutext:hover {background-color: #41cf70; color: #ffffff;}"></context-menu>
+<dialog-box id="dialog"></dialog-box>

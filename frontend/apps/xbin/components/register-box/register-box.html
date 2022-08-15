@@ -1,0 +1,153 @@
+<!--
+/* 
+ * (C) 2018 TekMonks. All rights reserved.
+ * License: See enclosed license file.
+ */
+ -->
+
+<style>
+@import url('https://fonts.googleapis.com/css?family=Raleway:100,100i,200,200i,300,300i,400,400i,500,500i,600,600i,700,700i,800,800i,900,900i&amp;display=swap');
+
+body{
+    margin: 0; padding: 0;
+    font-family: inherit;
+    font-size: inherit;
+    height: fit-content;
+}
+
+input {
+    width: 90%;
+    padding: 10px;
+    margin: 0;
+    border-style: none;
+    outline: none;
+    text-align: left;
+    background-color: transparent;
+    margin: 20px 5% 0px 5%;
+    border-bottom: 1px solid darkgray;
+    font-family: inherit;
+    font-size: smaller;
+}
+input#org {margin-bottom: 1em;}
+
+button {
+    width: 80%;
+    padding: 10px;
+    margin: 0;
+    box-sizing: border-box;
+    border-radius: 10px;
+    border-style: none;
+    outline: none;
+    text-align: center;
+    background-color: rgb(51, 204, 102);
+    color: white;
+    position: relative;
+    margin: 30px 0% 20px 0%;
+    font-family: inherit;
+    font-size: inherit;
+    text-transform: uppercase;
+}
+
+button:hover {
+    filter: brightness(110%);
+    transition: all 0.3s ease;
+}
+
+span#error {
+    color: #e40000;
+    display: none;
+}
+
+span#otp, span#password {
+    display: flex;
+    flex-direction: row;
+    padding-top: 0px;
+    padding-bottom: 0px;
+}
+span#password {
+    margin-left: 5%;
+    margin-right: 5%;
+    justify-content: space-between;
+    margin-bottom: 1em;
+}
+
+span#otp > img {
+    margin: 10px 10px 0px 16px;
+    width: 110px;
+    height: 110px;
+    border: 1px solid darkgray;
+}
+
+span#otp > div#otp_help_and_input {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+span#otp > div#otp_help_and_input > p {
+    font-family: inherit;
+    font-size: smaller;
+    text-align: justify;
+    margin: 10px 12px 0px 10px;
+}
+
+span#otp > div#otp_help_and_input > p#mobileotpmsg {display: none;}
+
+span#otp > div#otp_help_and_input > input {
+    margin-top: 0px;
+}
+
+span#otp > button {display: none;}
+</style>
+{{{MOBILE_MEDIA_QUERY_START}}}
+    input {margin: 0; margin-top: 1em; width: 100%; border-radius: 0;}
+    span#password {margin-left: 0; margin-right: 0; margin-bottom: 2em; justify-content: space-between;}
+    span#otp {justify-content: space-between; margin-bottom: 1em;}
+    span#otp > img {display: none;}
+    span#otp > button {display: inline-block;}
+    span#otp > div#otp_help_and_input {max-width: 30%; color: #444444;}
+    span#otp > div#otp_help_and_input > p#desktopotpmsg {display: none;} 
+    span#otp > div#otp_help_and_input > p#mobileotpmsg {margin: 0; display: inline;}
+    span#otp > div#otp_help_and_input > input {width: 100%;}
+    span#otp > div#otp_help_and_input > input::placeholder {color: transparent;}
+    button {max-width: 30%; min-width: 30%; padding: 5px; text-transform: none; margin: 0;}
+    button#submit {padding: 1em; margin-top: 1em;}
+    div#container {margin: 0 1em;}
+{{{MOBILE_MEDIA_QUERY_END}}}
+
+{{{styleBody}}}
+
+<script type="module">
+    import {password_box} from "./components/password-box/password-box.mjs"; 
+</script>
+
+<div id="container">
+<span id="error">{{i18n.RegisterError}}</span>
+<input type="text" id="name" placeholder="{{i18n.Name}}" value="{{name}}" required 
+    oninvalid="this.setCustomValidity('{{i18n.FillField}}')" oninput="setCustomValidity('')">
+<input type="text" id="id" placeholder="{{i18n.Email}}" value="{{id}}" required 
+    oninvalid="this.setCustomValidity('{{i18n.FillField}}')" oninput="setCustomValidity('')" {{#reset}}readonly{{/reset}} {{#initial}}readonly{{/initial}}>
+<input type="hidden" id="oldid" value="{{id}}">
+<input type="text" id="org" placeholder="{{i18n.Org}}" value="{{org}}" required 
+    oninvalid="this.setCustomValidity('{{i18n.FillField}}')" oninput="setCustomValidity('')" {{#reset}}readonly{{/reset}} {{#initial}}readonly{{/initial}}>
+<span id="password">
+    <password-box style="width:45%; padding: 10px 0px 10px 0px; height: 2em;" id="pass1" placeholder="{{Password}}" 
+        required="true" minlength="{{minlength}}" customValidity="{{i18n.FillField}}"></password-box>
+    <password-box style="width:45%; padding: 10px 0px 10px 0px; height: 2em;" id="pass2" placeholder="{{PasswordAgain}}" 
+        required="true" minlength="{{minlength}}" customValidity="{{i18n.FillField}}"></password-box>
+</span>
+<span id="otp">
+    <img src="{{totpQRCodeData}}">
+    <button onclick="window.open('{{authLink}}')">First install Google Authenticator</button>
+    <button onclick='window.monkshu_env.components["register-box"].openAuthenticator(this, "{{{totpURL}}}")'>Then click here for the code</button>
+    <div id="otp_help_and_input">
+        <p id="desktopotpmsg">{{AuthenticatorMsg}}</p>
+        <p id="mobileotpmsg">Enter Code</p>
+        <input type="number" id="otp" placeholder="{{i18n.Otp}}" required minlength="6" {{^reset}}required="true"{{/reset}} 
+            oninvalid="this.setCustomValidity('{{i18n.FillField}}')" oninput="setCustomValidity('')" 
+            onkeyup="if (event.keyCode == 13) monkshu_env.components['register-box'].getShadowRootByContainedElement(this).querySelector('#submit').click();">
+    </div>
+</span>
+<button id="submit" onclick="monkshu_env.components['register-box'].registerOrUpdate(this);">{{Submit}}</button>
+</div>
+<dialog-box id="register_box_dialog"></dialog-box>

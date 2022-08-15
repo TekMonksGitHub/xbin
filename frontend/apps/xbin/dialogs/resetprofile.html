@@ -1,0 +1,44 @@
+<style>
+@import url('https://fonts.googleapis.com/css?family=Raleway:100,100i,200,200i,300,300i,400,400i,500,500i,600,600i,700,700i,800,800i,900,900i&amp;display=swap');
+
+body {min-width: 350px;}
+
+input {
+    width: 100%;
+    border-style: none;
+    outline: none;
+    text-align: left;
+    background-color: transparent;
+    transition: background-color 5000s ease-in-out 0s;
+    border-bottom: 1px solid darkgray;
+    font-family: inherit;
+    font-size: smaller;
+    display: block;
+    color: #444444;
+    margin-bottom: 2.5em;
+}
+
+input.error {color: red;}
+</style>
+{{{APP_CONSTANTS.MOBILE_MEDIA_QUERY_START}}}
+    div#dialog {width: 98%; height: 98%; box-sizing: border-box; padding: 2em;}
+    body {width: 100%; height: 100%; min-width: 0;}
+    span#close {display:none;}
+    div#buttonbar {position: absolute; width: calc(100% - 4em); bottom: 2em; justify-content: space-between;}
+{{{APP_CONSTANTS.MOBILE_MEDIA_QUERY_END}}}
+{{{APP_CONSTANTS.MOBILE_MEDIA_QUERY_LANDSCAPE_START}}}
+    div#dialog {height: 96%;}
+{{{APP_CONSTANTS.MOBILE_MEDIA_QUERY_LANDSCAPE_END}}}
+{{{APP_CONSTANTS.MOBILE_MEDIA_QUERY_PORTRAIT_START}}}
+    div#dialog {width: 96%;}
+{{{APP_CONSTANTS.MOBILE_MEDIA_QUERY_PORTRAIT_END}}}
+
+<input type="text" id="name" placeholder="{{i18n.Name}}" value="{{name}}" required 
+    oninvalid="this.setCustomValidity('{{i18n.FillField}}')" oninput="setCustomValidity('')">
+<input type="text" id="id" placeholder="{{i18n.Email}}" value="{{id}}" required 
+    oninvalid="this.setCustomValidity('{{i18n.FillField}}')" oninput="setCustomValidity('')">
+<input type="hidden" id="oldid" value="{{id}}">
+<input type="text" id="org" placeholder="{{i18n.Org}}" value="{{org}}" required 
+    oninvalid="this.setCustomValidity('{{i18n.FillField}}')" oninput="setCustomValidity('')">
+
+<script>function onOK(element) {monkshu_env.components["dialog-box"].submit(element);}</script>

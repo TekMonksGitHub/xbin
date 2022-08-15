@@ -1,6 +1,6 @@
 /* 
  * (C) 2015 TekMonks. All rights reserved.
- * License: MIT - see enclosed license.txt file.
+ * License: See enclosed license.txt file.
  */
 import {session} from "/framework/js/session.mjs";
 import {router} from "/framework/js/router.mjs";

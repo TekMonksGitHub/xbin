@@ -1,15 +1,16 @@
 /* 
  * (C) 2018 TekMonks. All rights reserved.
- * License: MIT - see enclosed license.txt file.
+ * License: See enclosed license file.
  */
 import {router} from "/framework/js/router.mjs";
-import {monkshu_component} from "/framework/js/monkshu_component.mjs";
 import {loginmanager} from "../../js/loginmanager.mjs";
+import {monkshu_component} from "/framework/js/monkshu_component.mjs";
 
 async function elementConnected(element) {
 	let data = {};
 
 	if (element.getAttribute("styleBody")) data.styleBody = `<style>${element.getAttribute("styleBody")}</style>`;
+	data.minlength = element.getAttribute("minlength");
 	
 	if (element.id) {
 		if (!login_box.datas) login_box.datas = {}; login_box.datas[element.id] = data;
@@ -17,17 +18,43 @@ async function elementConnected(element) {
 }
 
 async function signin(signInButton) {	
-	let shadowRoot = login_box.getShadowRootByContainedElement(signInButton);
-	let userid = shadowRoot.getElementById("userid").value;
-	let pass = shadowRoot.getElementById("pass").value;
-		
-	_handleLoginResult(await loginmanager.signin(userid, pass), shadowRoot);
+	const shadowRoot = login_box.getShadowRootByContainedElement(signInButton); _hideErrors(shadowRoot);
+	if (!_validateForm(shadowRoot)) return;	// HTML5 validation failed
+
+	const userid = shadowRoot.querySelector("#userid").value.toLowerCase();
+	const pass = shadowRoot.querySelector("#pass").value;
+	const otp = shadowRoot.querySelector("#otp").value;
+	const routeOnSuccess = login_box.getHostElement(signInButton).getAttribute("routeOnSuccess");
+
+	_handleLoginResult(await loginmanager.signin(userid, pass, otp), shadowRoot, routeOnSuccess);
 }
 
-function _handleLoginResult(result, shadowRoot) {
-	if (result) router.loadPage(APP_CONSTANTS.MAIN_HTML);
-	else shadowRoot.getElementById("notifier").MaterialSnackbar.showSnackbar({message:"Login Failed"});
+function resetAccount(element) {
+	const shadowRoot = login_box.getShadowRootByContainedElement(element);
+	shadowRoot.getElementById("notifier").style.display = "none";
+	shadowRoot.getElementById("notifier2").style.display = "inline";
+
+	loginmanager.reset(shadowRoot.getElementById("userid").value);
 }
 
-export const login_box = { trueWebComponentMode: true, signin, elementConnected }
+function _validateForm(shadowRoot) {
+	const userid = shadowRoot.querySelector("input#userid"), pass = shadowRoot.querySelector("#pass"), otp = shadowRoot.querySelector("#otp");
+	if (!userid.checkValidity()) {userid.reportValidity(); return false;}
+	if (!pass.checkValidity()) {pass.reportValidity(); return false;}
+	if (!otp.checkValidity()) {otp.reportValidity(); return false;}
+	return true;
+}
+
+function _hideErrors(shadowRoot) {
+	shadowRoot.getElementById("notifier").style.display = "none";
+	shadowRoot.getElementById("notifier2").style.display = "none";
+}
+
+function _handleLoginResult(result, shadowRoot, routeOnSuccess) {
+	if (result) router.loadPage(routeOnSuccess);
+	else shadowRoot.getElementById("notifier").style.display = "inline";
+}
+
+const trueWebComponentMode = true;	// making this false renders the component without using Shadow DOM
+export const login_box = {signin, resetAccount, trueWebComponentMode, elementConnected}
 monkshu_component.register("login-box", `${APP_CONSTANTS.APP_PATH}/components/login-box/login-box.html`, login_box);

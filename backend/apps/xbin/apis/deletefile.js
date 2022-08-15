@@ -21,8 +21,8 @@ exports.doService = async (jsonReq, _, headers) => {
 	
 	LOG.debug("Got deletefile request for path: " + jsonReq.path);
 
-	const fullpath = path.resolve(`${cms.getCMSRoot(headers)}/${jsonReq.path}`);
-	if (!cms.isSecure(headers, fullpath)) {LOG.error(`Path security validation failure: ${jsonReq.path}`); return CONSTANTS.FALSE_RESULT;}
+	const fullpath = path.resolve(`${await cms.getCMSRoot(headers)}/${jsonReq.path}`);
+	if (!await cms.isSecure(headers, fullpath)) {LOG.error(`Path security validation failure: ${jsonReq.path}`); return CONSTANTS.FALSE_RESULT;}
 
 	try {
 		await rmrf(fullpath); 

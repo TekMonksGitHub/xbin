@@ -1,223 +1,209 @@
 <!-- 
-(C) 2015 TekMonks. All rights reserved.
-License: See enclosed license.txt file.
+(C) 2020 TekMonks. All rights reserved.
 -->
+<style>
+@import url('./fonts/appfonts.css');
+
+body::-webkit-scrollbar {
+    width: 0.5em !important;
+    height: 0.5em !important;
+    scroll-behavior: smooth !important;
+}
+
+body::-webkit-scrollbar-track {
+    -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3) !important;
+    box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3) !important;
+    margin: 5em;
+    border-radius: 1em !important;
+}
+
+body::-webkit-scrollbar-thumb {
+    background-color: darkgrey !important;
+    border-radius: 1em !important;
+    background-clip: padding-box;
+}
+
+body, html {
+	margin: 0;
+	padding: 0;
+	font-family: 'Red Hat Text';
+	min-width: 880px;
+	min-height: 640px;
+	overflow: overlay;
+}
+
+body::after {
+	content: "";
+	background: url(./img/logob.png);
+	background-size: auto 100%;
+	width: 100%;
+	height: 120%;
+	top: -20%;
+	left: -10%;
+	background-repeat: no-repeat;
+	opacity: 0.05;
+	position: absolute;
+	z-index: -1;
+	bottom: 0;
+}
+
+span#desktopheader {
+	color: #4FB4ED;
+	user-select: none;
+    overflow: hidden;
+    white-space: nowrap;
+	height: 5em;
+    display: inline-flex;
+    align-items: center;
+	justify-content: space-between;
+    width: calc(100% - 4em);
+	margin: 1em 2em 0 2em;
+}
+
+span#desktopheader > img#textlogo {width: 6em;}
+
+span#desktopheader > span#rightheader {
+	height: 100%;
+    display: inline-flex;
+	flex-direction: row;
+    align-items: center;
+	width: 100%;
+    justify-content: space-between;
+}
+
+span#desktopheader > span#rightheader > span#signoff > img {
+	height: 2em;
+	width: 2em;
+}
+
+span#desktopheader > span#rightheader > span#greeting {
+	display: flex;
+    align-items: center;
+}
+span#desktopheader > span#rightheader > span#greeting > span-with-menu#status {
+	border-radius: 50%;
+	box-shadow: 1px 1px 20px -3px #41cf70;
+}
+span#desktopheader > span#rightheader > span#greeting > span-with-menu#status.working {box-shadow: 1px 1px 20px -3px #41cf70}
+span#desktopheader > span#rightheader > span#greeting > span-with-menu#status.break {box-shadow: 1px 1px 20px -3px #bdbd00}
+span#desktopheader > span#rightheader > span#greeting > span-with-menu#status.offline {box-shadow: 1px 1px 20px -3px #cc0000}
+span#desktopheader > span#rightheader > span#greeting > span#name {margin-left: 1.5em;}
+span#desktopheader > span#rightheader > span#search {
+	width: 50%;
+    position: relative;
+}
+span#desktopheader > span#rightheader > span#search > input#searchtext {
+	padding: 0.8em;
+    outline: none;
+    border: 1px solid #4FB4ED;
+    border-radius: 0.5em;
+    width: 100%;
+    padding-left: 3em;
+	font-size: medium;
+	color: #444444;
+}
+span#desktopheader > span#rightheader > span#search > img#searchimg {
+	position: absolute;
+    margin-left: 5px;
+	height: 80%;
+	top: 10%;
+}
+
+div#maincontent {
+	background-color: transparent;
+	height: calc(100% - 7em);
+    margin: 1em 1em 0em 1em;
+	display: flex;
+	flex-direction: column;
+}
+
+div#lowercontent {
+	height: 43%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: row;
+	justify-content: space-between;
+}
+
+span#mobilefooter {
+	width: 100%;
+    height: 4em;
+    position: fixed;
+    bottom: 0;
+    background: #4FB4ED;
+    border-radius: 0.2em 0.2em 0 0;
+	display: none;
+	flex-direction: row;
+	align-items: center;
+    padding: 1em;
+    box-sizing: border-box;
+    justify-content: space-between;
+}
+
+file-manager#fm {height: 100%;}
+</style>
+{{{APP_CONSTANTS.MOBILE_MEDIA_QUERY_START}}}
+	body, html {min-width: 0; min-height: 0;}
+	span#desktopheader {display: none;}
+	span#rightheader {width: 100% !important;}
+	img#textlogo, span#greeting, span-with-menu#gear, span#signoff {display: none !important;}
+	div#maincontent {height: calc(100% - 5em);; margin: 0; padding: 1em 1em 0em 1em;}
+	div#lowercontent {height: auto; flex-direction: column-reverse;}
+	span#mobilefooter {display: flex;}
+{{{APP_CONSTANTS.MOBILE_MEDIA_QUERY_END}}}
 
 <!doctype html>
 <html>
-<style>
-@import url('https://fonts.googleapis.com/css?family=Raleway');
-
-::-webkit-scrollbar {width: 5px;}
- 
-::-webkit-scrollbar-thumb {
-    border-radius: 100px;
-    background: #cdeaf2; 
-    box-shadow: inset 0 0 6px rgba(0,0,0,0.3); 
-}
-
-::-webkit-scrollbar-track {
-    background-color: lightgray;
-    border-radius: 10px;
-}
-
-html, body {
-	margin: 0;
-	padding: 0;
-	font-family: 'Raleway';
-	overflow-y: auto;
-    overflow-x: hidden;
-	color: #444444;
-	height: 100%;
-}
-
-div#container {
-	display: flex;
-    flex-direction: column;
-    height: 100%;
-}
-
-div#header {
-	height: 50px;
-	line-height: 50px;
-	margin: 0;
-	box-sizing: border-box;
-	padding: 0;
-	display: flex;
-	flex-flow: row nowrap;
-}
-
-div#header > span:first-child {
-	padding: 8px 22px 0px 6px;
-	cursor: pointer;
-	width: 1em;
-}
-
-div#header > span:first-child:hover {
-	transition: all 0.3s ease;
-	background-color: #cdeaf2;
-}
-
-div#header > span:last-child {
-	font-size: 0.9em;
-	width: 100%;
-	text-align: center;
-}
-
-div#menu {
-	display: flex;
-	flex-flow: row wrap;
-	justify-content: start;
-	border-top: 0.8px solid gray;
-	border-bottom: 0.8px solid gray;
-	opacity: 0;
-	visibility: hidden;
-	background-color: rgba(0, 0, 0, 0.024);
-	overflow: hidden;
-	transition: max-height 0.18s ease-out;
-	max-height: 0px;
-}
-
-div#menu.visible {
-	opacity: 1;
-	visibility: visible;
-	height: auto;
-}
-
-div#menu > span > img {width: 50px;}
-
-div#menu > span {
-	display: flex;
-	flex-direction: column;
-	padding: 10px;
-	text-align: center;
-	cursor: pointer;
-	font-size: 0.9em;
-}
-
-div#content {
-	flex-grow: 1;
-    position: relative;
-}
-
-div#rightbar {
-	width: 20vw;
-    position: relative;
-    left: calc(80% - 3em);
-    padding-top: 3em;
-}
-
-div#leftbar {
-	width: 100%;
-    position: absolute;
-	height: 100%;
-}
-
-div#rightbar > div#adv, div#rightbar > div#info {
-	margin: 0px 10px 60px 10px;
-	text-align: center;
-	border-radius: 20px;
-	background-color: #cdeaf2;
-	padding: 20px;
-	min-height: 25vh;
-    justify-content: space-around;
-    display: flex;
-    flex-direction: column;
-	overflow: hidden;
-}
-
-div#rightbar > div#info {margin-bottom: 0px;}
-
-div#rightbar img {
-	width: 6em; 
-	height: 6em;
-}
-
-@media (max-width:1000px) {	/* On small screens don't show info bar */
-	div#rightbar {display:none;}
-	div#leftbar {width: 100vw}
-}
-
-a, a:visited{
-	text-decoration: none;
-	color: inherit;
-}
-
-a:hover {text-decoration: underline;}
-
-div#info > table {
-	text-align: left; 
-	border-spacing: 3px 10px; 
-	font-size: 0.7em;
-	font-family: arial;
-}
-
-</style>
-
 <head>
 	<meta charset="UTF-8">
-	<meta http-equiv="pragma" content="no-cache">
-	<meta http-equiv="expires" content="-1">
-	
-	<title>{{i18n.Title}}</title>
+	{{{headers}}}
+
+	<link href="./img/favicon.ico" rel="icon" type="image/x-icon">
 
 	<script type="module">
-		import {main} from "./js/main.mjs"; window.main=main; 
-		import {file_manager} from "./components/file-manager/file-manager.mjs"; 
+	import {main} from "./js/main.mjs"; monkshu_env.apps[APP_CONSTANTS.APP_NAME].main = main; main.showLoginMessages();
+	import "./components/dialog-box/dialog-box.mjs";
+	import "./components/span-with-menu/span-with-menu.mjs";
+	import "./components/file-manager/file-manager.mjs";
 	</script>
+		
+	<title>{{i18n.Title}}</title>
 </head>
 
-<body>
+<body style="margin: 0%">
+<span id="desktopheader">
+	<span id="rightheader">
+	<img id="textlogo" src="./img/textlogo.svg">
+	<span id="greeting">
+	<span><img src="./img/person.svg"></span>
+	<span id="name">{{i18n.Hi}} {{#_org_monkshu_session}}username{{/_org_monkshu_session}}!</span>
+	</span>
+	<span-with-menu id="gear" styleBody="url(./pages/menu.stylebody.css)"><img src="./img/settings.svg" style="height: 2em;width: 2em;vertical-align: middle;">
+		<menu-item onclick="monkshu_env.apps[APP_CONSTANTS.APP_NAME].main.changePassword(this)" label="{{i18n.ChangePassword}}"></menu-item>
+		<menu-item onclick="monkshu_env.apps[APP_CONSTANTS.APP_NAME].main.showOTPQRCode(this)" label="{{i18n.ChangePhone}}"></menu-item>
+		<menu-item onclick="monkshu_env.apps[APP_CONSTANTS.APP_NAME].main.changeProfile(this)" label="{{i18n.ChangeProfile}}"></menu-item>
+		{{#admin}}<menu-item onclick="monkshu_env.frameworklibs.router.navigate(APP_CONSTANTS.MANAGE_HTML)" label="{{i18n.ManageUsers}}"></menu-item>{{/admin}}
+	</span-with-menu>
+	<span id="signoff"><img src="./img/poweroff.svg" onclick="monkshu_env.apps[APP_CONSTANTS.APP_NAME].main.logoutClicked()"></span>
+	</span>
+</span>
 
-
-<div id="container">
-	<div id="header">
-		<span onclick="event.stopPropagation();main.toggleMenu();" id="menubutton"><img src="./img/menu.svg"></span>
-		<span onclick="event.stopPropagation();">{{i18n.Location}} - {{url.path}}</span>
-	</div>
-
-	<div id="menu" onclick="event.stopPropagation();">
-		<span><img src="./img/logout.svg" onclick="event.stopPropagation();main.logout()">{{i18n.Logout}}</span>
-	</div>
-		
-	<div id="content">
-		<div id="leftbar">
-			<file-manager path="{{url.path}}" id="fm" defaultShareDuration="5" 
-				styleBody="body{height: calc(100vh - 52px);} div#container{margin-right: calc(20vw + 60px);} @media (max-width:1000px) {div#container{margin-right:0px}}" 
-				onselect="main.fileSelected(event)" user="{{#_org_monkshu_session}}id{{/_org_monkshu_session}}"
-				downloadpage="./download.html"></file-manager>
-		</div>
-
-		<div id="rightbar" ondragover="event.preventDefault(); event.dataTransfer.effectAllowed = 'none'; event.dataTransfer.dropEffect='none'; return false;" 
-				ondrop="event.preventDefault(); event.dataTransfer.effectAllowed = 'none'; event.dataTransfer.dropEffect='none'; return false;">
-			<div id="adv">
-			<div style="height:100%">
-			<img src="./img/xbin.png"><br/><br/>
-			{{i18n.PoweredBy}} <a href="https://github.com/TekMonksGitHub/webscrolls/wiki" target="_blank">WebScrolls</a>
-			</div>
-			</div>
-
-			<div id="info">
-			{{{i18n.DefaultFileInfo}}}
-			</div>
-			<template id="fileinfo">
-			<!-- {{=<% %>=}} 
-			<table>
-				<tr><td>{{i18n.Name}}</td><td>{{name}}</td></tr>
-				<tr><td>{{i18n.Size}}</td><td>{{size}} {{i18n.Bytes}}</td></tr>
-				<tr><td>{{i18n.Created}}</td><td>{{birthtime}}</td></tr>
-				<tr><td>{{i18n.Modified}}</td><td>{{ctime}}</td></tr>
-			</table>
-			<%={{ }}=%> -->
-			</template>
-			<template id="defaultinfo">
-			<!-- {{=<% %>=}} 
-			{{{i18n.DefaultFileInfo}}}
-			<%={{ }}=%> -->
-			</template>
-		</div>
-	</div>
+<div id="maincontent">
+	<file-manager id="fm" defaultShareDuration="5" 
+		user="{{#_org_monkshu_session}}id{{/_org_monkshu_session}}" downloadpage="./download.html"></file-manager>
 </div>
 
+<span id="mobilefooter">
+	<img src="./img/mobilefooter_home.svg" onclick="monkshu_env.frameworklibs.router.navigate(APP_CONSTANTS.MAIN_HTML)">
+	<span-with-menu id="gearmobile" bottommenu="true" styleBody="url(./pages/menu.stylebody.css)"><img src="./img/mobilefooter_settings.svg">
+		<menu-item onclick="monkshu_env.apps[APP_CONSTANTS.APP_NAME].main.changePassword(this)" label="{{i18n.ChangePassword}}"></menu-item>
+		<menu-item onclick="monkshu_env.apps[APP_CONSTANTS.APP_NAME].main.showOTPQRCode(this)" label="{{i18n.ChangePhone}}"></menu-item>
+		<menu-item onclick="monkshu_env.apps[APP_CONSTANTS.APP_NAME].main.changeProfile(this)" label="{{i18n.ChangeProfile}}"></menu-item>
+		{{#admin}}<menu-item onclick="monkshu_env.frameworklibs.router.navigate(APP_CONSTANTS.MANAGE_HTML)" label="{{i18n.ManageUsers}}"></menu-item>{{/admin}}
+	</span-with-menu>
+	<img src="./img/mobilefooter_logout.svg" onclick="monkshu_env.apps[APP_CONSTANTS.APP_NAME].main.logoutClicked()">
+</span>
+
+<dialog-box id="dialog"></dialog-box>
 </body>
 </html>

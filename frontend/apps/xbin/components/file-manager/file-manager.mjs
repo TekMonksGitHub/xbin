@@ -26,6 +26,7 @@ const API_CREATEFILE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/c
 const API_RENAMEFILE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/renamefile";
 const API_OPERATEFILE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/operatefile";
 const API_DOWNLOADFILE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/downloadfile";
+const COMPONENT_PATH = util.getModulePath(import.meta), DIALOGS_PATH = `${COMPONENT_PATH}/dialogs`;
 const API_DOWNLOADFILE_GETSECURID = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/getsecurid";
 const API_DOWNLOADFILE_STATUS = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/getdownloadstatus";
 const API_DOWNLOADFILE_DND = APP_CONSTANTS.FRONTEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/proxiedapis/downloaddnd";
@@ -62,15 +63,14 @@ async function elementConnected(element) {
    if (element.getAttribute("styleBody")) data.styleBody = `<style>${element.getAttribute("styleBody")}</style>`;
    shareDuration = element.getAttribute("defaultShareDuration") || DEFAULT_SHARE_EXPIRY; 
    
-   if (element.id) { if (!file_manager.datas) file_manager.datas = {}; file_manager.datas[element.id] = data; } 
-   else file_manager.data = data;
+   file_manager.setData(element.id, data);
 
    if (element.getAttribute("downloadpage")) PAGE_DOWNLOADFILE_SHARED = element.getAttribute("downloadpage");
 }
 
 async function elementRendered(element) {
    const shadowRoot = file_manager.getShadowRootByHostId(element.getAttribute("id"));
-   shadowRoot.addEventListener("mousemove", e => {mouseX = e.clientX-element.getBoundingClientRect().left; mouseY = e.clientY-element.getBoundingClientRect().top;});
+   shadowRoot.addEventListener("mousemove", e => {mouseX = e.clientX; mouseY = e.clientY;});
 
    const container = shadowRoot.querySelector("div#container");
    shadowRoot.addEventListener(isMobile()?"click":"contextmenu", e => { e.preventDefault(); if (!menuOpen) showMenu(container, true); else hideMenu(container); });
@@ -100,9 +100,7 @@ function upload(containedElement, files) {
 }
 
 function create(element) {
-   dialog().showDialog(`${APP_CONSTANTS.APP_PATH}/dialogs/createfile.html`, true, true, {}, "dialog", 
-         ["createType", "path"], async result => {
-
+   dialog().showDialog(`${DIALOGS_PATH}/createfile.html`, true, true, {}, "dialog", ["createType", "path"], async result => {
       const path = `${selectedPath}/${result.path}`, isDirectory = result.createType == "file" ? false: true
       const resp = await apiman.rest(API_CREATEFILE, "GET", {path, isDirectory}, true), hostID = file_manager.getHostElementID(element);
       if (resp.result) {dialog().hideDialog("dialog"); file_manager.reload(hostID);} else dialog().error("dialog", await i18n.get("Error"));
@@ -117,28 +115,28 @@ const uploadFiles = async (element, files) => {
 }
 
 async function _uploadAFile(element, file) {
-   const totalChunks = Math.ceil(file.size / IO_CHUNK_SIZE); const lastChunkSize = file.size - (totalChunks-1)*IO_CHUNK_SIZE;
+   const totalChunks = file.size != 0 ? Math.ceil(file.size / IO_CHUNK_SIZE) : 1, lastChunkSize = file.size - (totalChunks-1)*IO_CHUNK_SIZE;
    if (filesAndPercents[file.name]?.cancelled) filesAndPercents[file.name].cancelled = false; // being reuploaded
    const waitingReaders = [];  
 
    const queueReadFileChunk = (fileToRead, chunkNumber, resolve, reject) => {
-      const reader = new FileReader(), savePath = selectedPath;
-      const rejectReadPromises = error => {
+      const _rejectReadPromises = error => {
          LOG.error(`Error reading ${fileToRead}, error is: ${error}`); 
          while (waitingReaders.length) (waitingReaders.pop())(error);   // reject all waiting readers too
          reject(error);
       }
-      const onloadFunction = async loadResult => {
-         const resp = await apiman.rest(API_UPLOADFILE, "POST", {data:loadResult.target.result, path:`${savePath}/${fileToRead.name}`, user}, true);
-         if (!resp.result) rejectReadPromises("Error writing to the server."); else {
+      const reader = new FileReader(), savePath = selectedPath;
+      reader.onload = async loadResult => {
+         const dataToPost = file.size != 0 ? loadResult.target.result : "data:;base64,";  // handle 0 byte files
+         const resp = await apiman.rest(API_UPLOADFILE, "POST", {data:dataToPost, path:`${savePath}/${fileToRead.name}`, user}, true);
+         if (!resp.result) _rejectReadPromises("Error writing to the server."); else {
             _showProgress(element, chunkNumber+1, totalChunks, fileToRead.name, UPLOAD_ICON);
             if (!filesAndPercents[fileToRead.name]?.cancelled && (waitingReaders.length)) (waitingReaders.pop())();  // issue next chunk read if queued reads
             else if (filesAndPercents[fileToRead.name]?.cancelled) await apiman.rest(API_DELETEFILE, "GET", {path: `${savePath}/${fileToRead.name}`}, true);
             resolve();
          }
       }
-      reader.onload = onloadFunction;
-      reader.onerror = _ => rejectReadPromises(reader.error);
+      reader.onerror = _ => _rejectReadPromises(reader.error);
 
       // queue reads if we are waiting for a chunk to be returned, so the writes are in correct order 
       const sizeToRead = chunkNumber == totalChunks-1 ? lastChunkSize : IO_CHUNK_SIZE;
@@ -224,11 +222,10 @@ async function deleteFile(element) {
    if (resp.result) file_manager.reload(file_manager.getHostElementID(element)); else _showErrorDialog();
 }
 
-function editFile() {
+function editFile(element) {
    if (selectedIsDirectory) {
-      const urlToLoad = util.replaceURLParamValue(session.get($$.MONKSHU_CONSTANTS.PAGE_URL), "path", selectedPath);
-      router.loadPage(urlToLoad);
-      return;
+      const host = file_manager.getHostElement(element); host.setAttribute("path", selectedPath); 
+      file_manager.reload(host.id); return;
    } 
 
    if (selectedElement.id == "upload") {upload(selectedElement); return;}
@@ -242,8 +239,8 @@ function editFile() {
 
 async function editFileLoadData() {
    const resp = await apiman.rest(API_OPERATEFILE, "POST", {path: selectedPath, op: "read"}, true);
-   if (resp.result) dialog().showDialog(`${APP_CONSTANTS.APP_PATH}/dialogs/editfile.html`, true, true, 
-         {fileContents: resp.data}, "dialog", ["filecontents"], async result => {
+   if (resp.result) dialog().showDialog(`${DIALOGS_PATH}/editfile.html`, true, true, {fileContents: resp.data}, 
+         "dialog", ["filecontents"], async result => {
 
       const resp = await apiman.rest(API_OPERATEFILE, "POST", {path: selectedPath, op: "write", data: result.filecontents}, true);
       dialog().hideDialog("dialog"); if (!resp.result) _showErrorDialog();
@@ -314,9 +311,7 @@ function _reloadIfAllFilesUpOrDownloaded(element, filesAndPercents) {
 
 function renameFile(element) {
    const oldName = selectedPath?selectedPath.substring(selectedPath.lastIndexOf("/")+1):null;
-   dialog().showDialog(`${APP_CONSTANTS.APP_PATH}/dialogs/renamefile.html`, true, true, {oldName}, "dialog", 
-         ["renamepath"], async result => {
-
+   dialog().showDialog(`${DIALOGS_PATH}/renamefile.html`, true, true, {oldName}, "dialog", ["renamepath"], async result => {
       const subpaths = selectedPath.split("/"); subpaths.splice(subpaths.length-1, 1, result.renamepath);
       const newPath = subpaths.join("/");
 
@@ -327,8 +322,7 @@ function renameFile(element) {
 async function shareFile() {
    const paths = selectedPath.split("/"), name = paths[paths.length-1];
    const resp = await apiman.rest(API_SHAREFILE, "GET", {path: selectedPath, expiry: shareDuration}, true);
-   if (!resp || !resp.result) _showErrorDialog(); else dialog().showDialog(
-      `${APP_CONSTANTS.APP_PATH}/dialogs/sharefile.html`, true, true, 
+   if (!resp || !resp.result) _showErrorDialog(); else dialog().showDialog( `${DIALOGS_PATH}/sharefile.html`, true, true, 
       {link: router.encodeURL(`${PAGE_DOWNLOADFILE_SHARED}?id=${resp.id}&name=${name}`), id: resp.id, shareDuration}, 
       "dialog", ["expiry"], async result => {
             dialog().hideDialog("dialog");

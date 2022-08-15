@@ -21,8 +21,8 @@ exports.doService = async (jsonReq, _, headers) => {
 	
 	LOG.debug("Got renamefile request for path: " + jsonReq.old);
 
-	const oldPath = path.resolve(`${cms.getCMSRoot(headers)}/${jsonReq.old}`); const newPath = path.resolve(`${cms.getCMSRoot(headers)}/${jsonReq.new}`);
-	if (!cms.isSecure(headers, oldPath)) {LOG.error(`Path security validation failure: ${jsonReq.old}`); return CONSTANTS.FALSE_RESULT;}
+	const oldPath = path.resolve(`${await cms.getCMSRoot(headers)}/${jsonReq.old}`); const newPath = path.resolve(`${await cms.getCMSRoot(headers)}/${jsonReq.new}`);
+	if (!await cms.isSecure(headers, oldPath)) {LOG.error(`Path security validation failure: ${jsonReq.old}`); return CONSTANTS.FALSE_RESULT;}
 
 	try {
 		await fspromises.rename(oldPath, newPath);

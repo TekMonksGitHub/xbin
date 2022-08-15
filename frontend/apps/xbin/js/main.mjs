@@ -2,9 +2,13 @@
  * (C) 2020 TekMonks. All rights reserved.
  * License: See enclosed license.txt file.
  */
+import {i18n} from "/framework/js/i18n.mjs";
 import {loginmanager} from "./loginmanager.mjs"
 import {router} from "/framework/js/router.mjs";
 import {session} from "/framework/js/session.mjs";
+import {apimanager as apiman} from "/framework/js/apimanager.mjs";
+
+const dialog = _ => monkshu_env.components['dialog-box'];
 
 function toggleMenu() {
     const imgElement = document.querySelector("span#menubutton > img"), menuIsOpen = imgElement.src.indexOf("menu.svg") != -1;
@@ -19,17 +23,48 @@ function toggleMenu() {
     }
 }
 
-async function fileSelected(entry) {
-    let template = document.querySelector(entry?"template#fileinfo":"template#defaultinfo").innerHTML; 
-    const matches = /<!--([\s\S]+)-->/g.exec(template); template = matches[1]; 
-    
-    if (entry) entry.size = entry.size.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    if (entry) entry.ctime = `${entry.ctime.split("T")[0]} ${entry.ctime.split("T")[1].substring(0, entry.ctime.split("T")[1].lastIndexOf("."))}`;
-    if (entry) entry.birthtime = `${entry.birthtime.split("T")[0]} ${entry.birthtime.split("T")[1].substring(0, entry.birthtime.split("T")[1].lastIndexOf("."))}`;
-    const rendered = await router.expandPageData(template, session.get($$.MONKSHU_CONSTANTS.PAGE_URL), entry);
-    document.querySelector("div#info").innerHTML = rendered;
+async function changePassword(_element) {
+    dialog().showDialog(`${APP_CONSTANTS.DIALOGS_PATH}/changepass.html`, true, true, {}, "dialog", ["p1","p2"], async result=>{
+        const done = await loginmanager.changepassword(session.get(APP_CONSTANTS.USERID), result.p1);
+        if (!done) dialog().error("dialog", await i18n.get("PWCHANGEFAILED"));
+        else { dialog().hideDialog("dialog"); _showMessage(await i18n.get("PWCHANGED")); }
+    });
 }
 
-const logout = _ => loginmanager.logout();
+async function showOTPQRCode(_element) {
+    const id = session.get(APP_CONSTANTS.USERID).toString(); 
+    const totpSec = await apiman.rest(APP_CONSTANTS.API_GETTOTPSEC, "GET", {id}, true, false); if (!totpSec || !totpSec.result) return;
+    const qrcode = await _getTOTPQRCode(totpSec.totpsec);
+    dialog().showDialog(`${APP_CONSTANTS.DIALOGS_PATH}/changephone.html`, true, true, {img:qrcode}, "dialog", ["otpcode"], async result => {
+        const otpValidates = await apiman.rest(APP_CONSTANTS.API_VALIDATE_TOTP, "GET", {totpsec: totpSec.totpsec, otp:result.otpcode, id}, true, false);
+        if (!otpValidates||!otpValidates.result) dialog().error("dialog", await i18n.get("PHONECHANGEFAILED"));
+        else dialog().hideDialog("dialog");
+    });
+}
 
-export const main = {toggleMenu, fileSelected, logout}
+async function changeProfile(_element) {
+    const sessionUser = loginmanager.getSessionUser();
+    dialog().showDialog(`${APP_CONSTANTS.DIALOGS_PATH}/resetprofile.html`, true, true, sessionUser, "dialog", 
+            ["name", "id", "org"], async result => {
+        
+        if (await loginmanager.registerOrUpdate(sessionUser.id, result.name, result.id, null, result.org)) dialog().hideDialog("dialog");
+        else dialog().error("dialog", await i18n.get("PROFILECHANGEFAILED"));
+    });
+}
+
+function showLoginMessages() {
+    const data = router.getCurrentPageData();
+    if (data.showDialog) { _showMessage(data.showDialog.message); delete data.showDialog; router.setCurrentPageData(data); }
+}
+
+const logoutClicked = _ => loginmanager.logout();
+
+async function _getTOTPQRCode(key) {
+	const title = await i18n.get("Title");
+	await $$.require("./js/3p/qrcode.min.js");
+	return new Promise(resolve => QRCode.toDataURL(
+	    `otpauth://totp/${title}?secret=${key}&issuer=TekMonks&algorithm=sha1&digits=6&period=30`, (_, data_url) => resolve(data_url)));
+}
+
+const _showMessage = message => dialog().showMessage(`${APP_CONSTANTS.DIALOGS_PATH}/message.html`, {message}, "dialog");
+export const main = {toggleMenu, changePassword, showOTPQRCode, showLoginMessages, changeProfile, logoutClicked}

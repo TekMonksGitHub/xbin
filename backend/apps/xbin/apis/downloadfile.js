@@ -5,7 +5,6 @@ const fs = require("fs");
 const path = require("path");
 const archiver = require("archiver");
 const utils = require(`${CONSTANTS.LIBDIR}/utils.js`);
-const statsAsync = require("util").promisify(fs.stat);
 const cms = require(`${API_CONSTANTS.LIB_DIR}/cms.js`);
 const CONF = require(`${API_CONSTANTS.CONF_DIR}/xbin.json`);
 const securid = require(`${API_CONSTANTS.API_DIR}/getsecurid.js`);
@@ -16,8 +15,8 @@ exports.handleRawRequest = async function(jsonObj, servObject, headers, url) {
 	if (!securid.check(jsonObj.securid)) {LOG.error("SecurID validation failure."); _sendError(servObject, true); return;}
 
 	const headersMod = {...headers, "authorization": `Bearer ${jsonObj.auth}`};
-	jsonObj.fullpath = path.resolve(`${cms.getCMSRoot(headersMod)}/${jsonObj.path}`);
-	if (!cms.isSecure(headersMod, jsonObj.fullpath)) {LOG.error(`Path security validation failure: ${jsonObj.path}`); _sendError(servObject); return;}
+	jsonObj.fullpath = path.resolve(`${await cms.getCMSRoot(headersMod)}/${jsonObj.path}`);
+	if (!await cms.isSecure(headersMod, jsonObj.fullpath)) {LOG.error(`Path security validation failure: ${jsonObj.path}`); _sendError(servObject); return;}
 
 	await this.downloadFile(jsonObj, servObject, headers, url);
 }
@@ -26,8 +25,8 @@ exports.downloadFile = async (fileReq, servObject, headers, url) => {
 	LOG.debug("Got downloadfile request for path: " + fileReq.fullpath);
 
 	try {
-		let fullpath = fileReq.fullpath; let stats = await statsAsync(fullpath);
-		if (stats.isDirectory()) {fullpath = await _zipDirectory(fullpath); stats = await statsAsync(fullpath);}
+		let fullpath = fileReq.fullpath; let stats = await fs.promises.stat(fullpath);
+		if (stats.isDirectory()) {fullpath = await _zipDirectory(fullpath); stats = await fs.promises.stat(fullpath);}
 
 		let respHeaders = {}; APIREGISTRY.injectResponseHeaders(url, {}, headers, respHeaders, servObject);
 		respHeaders["content-disposition"] = "attachment;filename=" + path.basename(fullpath);

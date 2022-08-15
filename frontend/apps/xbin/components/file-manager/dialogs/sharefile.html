@@ -6,14 +6,20 @@ div#wrapper {
     flex-direction: column;
 }
 
+span#link {
+    display: flex;
+    flex-direction: row;
+    height: 3em;
+    margin-bottom: 1em;
+}
+
 span#copy {
-    padding: 20px 10px 20px 10px;
+    padding: 1em;
     margin-left: 20px;
     box-sizing: border-box;
     border-radius: 10px;
     border-style: none;
     outline: none;
-    text-align: center;
     background-color: lightgray;
     color: rgba(0, 0, 0, 0.75);
     font-family: inherit;
@@ -21,7 +27,9 @@ span#copy {
     text-transform: uppercase;
     cursor: default;
     user-select: none;
-    min-width: 100px;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
 }
 
 span#copy:hover {
@@ -30,17 +38,15 @@ span#copy:hover {
 }
 
 input#sharedisplay {
-    width: calc(100% - 8.5em);
-    padding: 20px;
-    margin-bottom: 20px;
+    padding: 1em;
     box-sizing: border-box;
     border-radius: 10px;
     border-style: none;
     outline: none;
     text-align: left;
-    font-family: 'Raleway';
     background-color: #F0F8FF;
     box-shadow: 0 0 0px 1000px #F0F8FF inset;
+    flex-grow: 1;
 }
 
 span#expiryspan {
@@ -58,7 +64,6 @@ span#expiryspan > input#expiry {
 
 span#copied {
     text-align: center;
-    font-family: 'Raleway';
     font-size: small;
     transition: opacity 1s;
     opacity: 0;

@@ -4,6 +4,4 @@
  * (C) 2020 TekMonks. All rights reserved.
  */
 
-const CONF = require(`${API_CONSTANTS.CONF_DIR}/xbin.json`);
-
-exports.doService = async _jsonReq => {return {result: true, remote_log: CONF.REMOTE_LOG};}
+exports.doService = async _jsonReq => {return {result: true, remote_log: APP_CONSTANTS.CONF.remote_log};}

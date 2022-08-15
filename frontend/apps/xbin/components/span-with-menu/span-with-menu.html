@@ -1,0 +1,73 @@
+<!--
+/* 
+ * (C) 2018 TekMonks. All rights reserved.
+ * License: See enclosed license file.
+ */
+ -->
+
+<style>
+body{
+    margin: 0; padding: 0;
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+    height: fit-content;
+}
+
+span#content {
+    cursor: default;
+}
+
+div#menu {
+    position: absolute;
+    box-shadow: 2px 2px 10px -2px rgba(0,0,0,0.25);
+    border-radius: 8px;
+    overflow: hidden;
+    transform: scaleY(0);    
+    transform-origin: top;
+    transition: all 0.26s ease;
+    margin-left: -1.5em;
+    background-color: rgba(255,255,255,1);
+    z-index: 50;
+}
+
+div#menu.visible {
+    transform: scaleY(1) !important;
+}
+
+div#menu.bottom {
+    bottom: calc(100% - 0.5em);
+    transform-origin: bottom;
+}
+
+div#menu > div.menuitem {
+    padding: 15px 30px 15px 30px;
+    cursor: default;
+    white-space: nowrap;
+}
+
+div#menu > div.menuitem:hover {
+    background-color: greenyellow;
+    color: white;
+}
+
+div#menu > div.cancel {
+    color: #FFFFFF;
+    background-color: red;
+    display: none;
+}
+</style>
+
+{{{MOBILE_MEDIA_QUERY_START}}}
+{{#MOBILE_MEDIA_QUERY_START}}div#menu > div.cancel {display: block;}{{/MOBILE_MEDIA_QUERY_START}}
+{{{MOBILE_MEDIA_QUERY_END}}}
+
+{{{styleBody}}}
+
+<span id="content" onclick='monkshu_env.components["span-with-menu"].showMenu(this)'>{{{content}}}</span>
+<div id="menu" {{#risesFromBottom}}class="bottom"{{/risesFromBottom}}>
+{{#menuitems}}
+<div class="menuitem" onclick="{{{onclick}}}">{{entry}}</div>
+{{/menuitems}}
+<div class="menuitem cancel">✗&nbsp;{{i18n.Cancel}}</div>
+</div>

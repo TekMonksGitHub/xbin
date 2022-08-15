@@ -1,4 +1,6 @@
 {
+    "TIMEOUT": 600000,
+    "MIN_PASS_LENGTH": 8,
     "MOBILE_MEDIA_QUERY_START": "<style>@media only screen and (max-width: 959px) {",
     "MOBILE_MEDIA_QUERY_END": "}</style>",
     "MOBILE_MEDIA_QUERY_LANDSCAPE_START": "<style>@media only screen and (max-width: 959px) and (orientation: landscape) {",

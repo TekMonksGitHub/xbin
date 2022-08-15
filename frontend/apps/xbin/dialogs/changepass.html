@@ -1,0 +1,137 @@
+<style>
+body {
+    width: 350px;
+}
+
+input {
+    width: 100%;
+    border-style: none;
+    outline: none;
+    text-align: left;
+    background-color: transparent;
+    transition: background-color 5000s ease-in-out 0s;
+    border-bottom: 1px solid darkgray;
+    font-family: inherit;
+    font-size: smaller;
+    display: block;
+    color: #444444;
+}
+
+input.error {
+    color: red;
+}
+
+span#toggler {
+    display: inline-flex;
+    flex-direction: row;
+    justify-content: space-between;
+    width: 100%;
+    color: #444444;
+    font-size: smaller;
+}
+
+.tgl {display: none;}
+.tgl, .tgl:after, .tgl:before, .tgl *, .tgl *:after, .tgl *:before, .tgl + .tgl-btn {box-sizing: border-box;}
+.tgl::-moz-selection, .tgl:after::-moz-selection, .tgl:before::-moz-selection, .tgl *::-moz-selection, .tgl *:after::-moz-selection, .tgl *:before::-moz-selection, .tgl + .tgl-btn::-moz-selection {background: none;}
+.tgl::selection, .tgl:after::selection, .tgl:before::selection, .tgl *::selection, .tgl *:after::selection, .tgl *:before::selection, .tgl + .tgl-btn::selection {background: none;}
+.tgl + .tgl-btn {
+    outline: 0;
+    display: block;
+    width: 3em;
+    height: 1.5em;
+    position: relative;
+    cursor: pointer;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
+}
+.tgl + .tgl-btn:after, .tgl + .tgl-btn:before {
+    position: relative;
+    display: block;
+    content: "";
+    width: 50%;
+    height: 100%;
+}
+.tgl + .tgl-btn:after {left: 0;}
+.tgl + .tgl-btn:before {display: none;}
+.tgl:checked + .tgl-btn:after {left: 50%;}
+.tgl-ios + .tgl-btn {
+    background: #fbfbfb;
+    border-radius: 2em;
+    padding: 2px;
+    -webkit-transition: all .4s ease;
+    transition: all .4s ease;
+    border: 1px solid #e8eae9;
+}
+.tgl-ios + .tgl-btn:after {
+    border-radius: 2em;
+    background: #fbfbfb;
+    -webkit-transition: left 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), padding 0.3s ease, margin 0.3s ease;
+    transition: left 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), padding 0.3s ease, margin 0.3s ease;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1), 0 4px 0 rgba(0, 0, 0, 0.08);
+}
+.tgl-ios + .tgl-btn:hover:after {will-change: padding;}
+.tgl-ios + .tgl-btn:active {box-shadow: inset 0 0 0 2em #e8eae9;}
+.tgl-ios + .tgl-btn:active:after {padding-right: .8em;}
+.tgl-ios:checked + .tgl-btn {background: #41cf70;}
+.tgl-ios:checked + .tgl-btn:active {box-shadow: none;}
+.tgl-ios:checked + .tgl-btn:active:after {margin-left: -.8em;}
+</style>
+{{{APP_CONSTANTS.MOBILE_MEDIA_QUERY_START}}}
+    div#dialog {width: 98%; height: 98%; box-sizing: border-box; padding: 2em;}
+    div#dialogcontent {overflow-y: scroll; max-height: calc(100% - 4em - 40px);}
+    body {width: 100%; height: calc(100% - 4em - 40px);}
+    span#close {display:none;}
+    div#buttonbar {position: absolute; width: calc(100% - 4em); bottom: 2em; justify-content: space-between;}
+{{{APP_CONSTANTS.MOBILE_MEDIA_QUERY_END}}}
+{{{APP_CONSTANTS.MOBILE_MEDIA_QUERY_LANDSCAPE_START}}}
+    div#dialog {height: 96%;}
+{{{APP_CONSTANTS.MOBILE_MEDIA_QUERY_LANDSCAPE_END}}}
+{{{APP_CONSTANTS.MOBILE_MEDIA_QUERY_PORTRAIT_START}}}
+    div#dialog {width: 96%;}
+{{{APP_CONSTANTS.MOBILE_MEDIA_QUERY_PORTRAIT_END}}}
+
+<input id="p1" type="password" placeholder="{{i18n.NewPassword}}" onkeypress="this.onchange();" 
+    onpaste="this.onchange();" oninput="this.onchange();" onchange='pwFieldsChanged(this)'>
+<p>&nbsp;</p>
+
+<input id="p2" type="password" placeholder="{{i18n.TypeAgain}}" onkeypress="this.onchange();" 
+    onpaste="this.onchange();" oninput="this.onchange();" onchange='pwFieldsChanged(this)'>
+<p>&nbsp;</p>
+
+<span id="toggler">
+<span>{{i18n.ShowPassword}}</span>
+<input class="tgl tgl-ios" id="pwToggle" type="checkbox" onclick='pwToggle(this)'>
+<label class="tgl-btn" for="pwToggle">
+</span>
+
+<script>
+function pwToggle(element) {
+    const shadowRoot = monkshu_env.components["dialog-box"].getShadowRootByContainedElement(element);
+    if (shadowRoot.querySelector("input#pwToggle").checked) {
+        shadowRoot.querySelector("input#p1").type = "text"; shadowRoot.querySelector("input#p2").type = "text";
+    } else {
+        shadowRoot.querySelector("input#p1").type = "password"; shadowRoot.querySelector("input#p2").type = "password";
+    }
+}
+
+function pwFieldsChanged(element) {
+    monkshu_env.components["dialog-box"].hideError(element);
+    const shadowRoot = monkshu_env.components["dialog-box"].getShadowRootByContainedElement(element);
+    if (shadowRoot.querySelector("input#p1").value != shadowRoot.querySelector("input#p2").value) {
+        shadowRoot.querySelector("input#p1").classList.add("error");
+        shadowRoot.querySelector("input#p2").classList.add("error");
+    } else {
+        shadowRoot.querySelector("input#p1").classList.remove("error");
+        shadowRoot.querySelector("input#p2").classList.remove("error");
+    }
+}
+
+function onOK(element) {
+    const shadowRoot = monkshu_env.components["dialog-box"].getShadowRootByContainedElement(element);
+    const p1 = shadowRoot.querySelector("input#p1").value, p2 = shadowRoot.querySelector("input#p2").value;
+    if (p1 != p2) {monkshu_env.components["dialog-box"].error(element, "{{i18n.PWNOTSAME}}"); return;}
+    if (p1.length < APP_CONSTANTS.MIN_PW_LENGTH) {monkshu_env.components["dialog-box"].error(element, "{{i18n.PWMUSTBE}}"); return;}
+    monkshu_env.components["dialog-box"].submit(element);
+}
+</script>

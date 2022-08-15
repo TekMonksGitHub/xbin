@@ -10,7 +10,7 @@ import {apimanager as apiman} from "/framework/js/apimanager.mjs";
 import {APP_CONSTANTS as AUTO_APP_CONSTANTS} from "./constants.mjs";
 
 const init = async hostname => {
-	window.monkshu_env.apps.telemeet = {};
+	window.monkshu_env.apps[AUTO_APP_CONSTANTS.APP_NAME] = {};
 
 	const mustache = await router.getMustache();
 	window.APP_CONSTANTS = JSON.parse(mustache.render(JSON.stringify(AUTO_APP_CONSTANTS), {hostname}));
@@ -24,18 +24,19 @@ const init = async hostname => {
 
 	apiman.registerAPIKeys(APP_CONSTANTS.API_KEYS, APP_CONSTANTS.KEY_HEADER); 
 	const API_GETREMOTELOG = APP_CONSTANTS.API_PATH+"/getremotelog", API_REMOTELOG = APP_CONSTANTS.API_PATH+"/log";
-	const remoteLogFlag = ((await apiman.rest(API_GETREMOTELOG, "GET", {})).remote_log||false);
-	LOG.setRemote(remoteLogFlag, API_REMOTELOG); LOG.info(`Remote log status is ${remoteLogFlag}`);
+	const remoteLogResponse = (await apiman.rest(API_GETREMOTELOG, "GET", {})), remoteLogFlag = remoteLogResponse?remoteLogResponse.remote_log:false;
+	LOG.setRemote(remoteLogFlag, API_REMOTELOG);
 }
 
 const main = async (desiredURL, desiredData) => {
 	await _addPageLoadInterceptors(); await _readConfig();
 	const decodedURL = new URL(desiredURL || router.decodeURL(window.location.href)), justURL = decodedURL.href.split("?")[0];
 
-	if (securityguard.isAllowed(justURL)) {
+	if (justURL == APP_CONSTANTS.INDEX_HTML) router.loadPage(APP_CONSTANTS.REGISTER_HTML);
+	else if (securityguard.isAllowed(justURL)) {
 		if (router.getLastSessionURL() && (decodedURL.toString() == router.getLastSessionURL().toString())) router.reload();
 		else router.loadPage(decodedURL.href, desiredData);
-	} else router.loadPage(APP_CONSTANTS.LOGIN_HTML);
+	} else router.loadPage(APP_CONSTANTS.REGISTER_HTML);
 }
 
 const interceptPageLoadData = _ => router.addOnLoadPageData("*", async (data, _url) => {

@@ -1,0 +1,107 @@
+<html>
+<head>
+<style>
+div#bodydiv {overflow: overlay;}
+div#cardmaincontainer {overflow: unset;}
+
+div#bodydiv > div#title {font-weight: 600; cursor: default;}
+
+div.wrapper {
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+    border-radius: 0.5em;
+    overflow: hidden;
+}
+
+div.roomactions {
+    display: flex;
+    flex-direction: column;
+    background-color: #FFFFFF;
+    justify-content: space-around;
+    height: 100%;
+    width: 4em;
+    align-items: center;
+}
+
+div.roomactions > img {height: 2em; width: 2em; cursor: pointer;}
+
+div.container {
+    padding: 1em;
+    box-sizing: border-box;
+    color: #FFFFFF;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background-image: url("{{{image}}}");
+    background-size: cover;
+    background-repeat: no-repeat;
+    min-width: 11em;
+    font-size: large;
+    /*  These calculations set the width and min-width so that below 300px they are 100% width, and above
+        300px they are 9em in width. Also the minimum width below 300px is 9em. */
+    --base_size: 100%;
+    --breakpoint_wide_px: 300px;
+    --breakpoint_wide_px_no_unit: 300;
+    --min_width_em_no_unit: 9;
+    --min_width_em: 9em;
+    --is_wide: clamp(0px, var(--base_size) - var(--breakpoint_wide_px), 1px);
+    --is_wide_em: clamp(0em, var(--base_size) - var(--breakpoint_wide_px), 1em);
+    --min_width_adder: calc(var(--is_wide_em) * var(--min_width_em_no_unit));
+    --subtractor: calc(var(--is_wide) * var(--breakpoint_wide_px_no_unit));
+    --preferred_width: min(var(--base_size), var(--breakpoint_wide_px));
+    --child-width: calc(var(--preferred_width) - var(--subtractor) + var(--min_width_adder));
+    --child-min-width: var(--min_width_em);
+}
+
+div.meetingtext {
+    background-color: rgba(255, 255, 255, 0.8);
+    color: #444444;
+    padding: 0.3em;
+    box-sizing: border-box;
+    border-radius: 0.5em;
+    display: flex;
+    flex-direction: column;
+    font-size: large;
+    width: var(--child-width);
+    min-width: var(--child-min-width);
+}
+span.time {font-size: x-small;}
+span.roomname {font-size: medium; font-weight: bolder;}
+
+button.button {
+    border-radius: 0.5em;
+    background-color: #FFFFFF;
+    color: #00C24E;
+    font-size: large;
+    border: none;
+    padding: 0.5em;
+    margin-left: auto;
+    box-shadow: 0px 0px 3px -2px #000000;
+    outline: none;
+    width: var(--child-width);
+    min-width: var(--child-min-width);
+}
+</style>
+
+</head>
+
+<body>
+<div class="wrapper">
+<div class="roomactions">
+    <img src="{{APP_CONSTANTS.APP_PATH}}/img/email.svg" onclick="monkshu_env.apps.telemeet.main.emailShareRoom('{{{room}}}', '{{{password}}}')">
+    <img src="{{APP_CONSTANTS.APP_PATH}}/img/link.svg" onclick="monkshu_env.apps.telemeet.main.linkShareRoom('{{{room}}}', '{{{password}}}')">
+    <img src="{{APP_CONSTANTS.APP_PATH}}/img/edit.svg" onclick="monkshu_env.apps.telemeet.main.editRoom('{{{room}}}', '{{{password}}}', '{{{image}}}')">
+    <img src="{{APP_CONSTANTS.APP_PATH}}/img/delete.svg" onclick="monkshu_env.apps.telemeet.main.deleteRoom('{{{room}}}')">
+</div>
+<div class="container">
+    <div class="meetingtext">
+        <span class="time">{{creationTime}}</span>
+        <span class="roomname">{{room}}</span>
+    </div>
+    <button class="button" onclick="monkshu_env.apps.telemeet.main.joinRoom('{{{room}}}','{{{moderator}}}')">{{joinText}}</button>
+</div>
+</div>
+</body>
+</html>

@@ -1,11 +1,37 @@
 {
-    "extensions": ["proxy","redirect"],
-    "proxies": [{"^http(.*)://([^:/]+)[:]?.*?/apps/xbin/proxiedapis/(.*)$":"http{{{$1}}}://{{{$2}}}:9090/apps/xbin/proxiedapis/{{{$3}}}"}],
-    "redirects": [
-        {"^http(.*)://([^/]+?)/index.html$": "http{{{$1}}}://{{{$2}}}/apps/xbin/index.html"},
-        {"^http(.*)://([^/]+?)/$": "http{{{$1}}}://{{{$2}}}/apps/xbin/index.html"},
-        {"^http(.*)://([^/]+?)$": "http{{{$1}}}://{{{$2}}}/apps/xbin/index.html"}
+    "extensions": [
+        "proxy",
+        "redirect"
     ],
-    "diskCache": {"refresh": 1000, "dontCache": [".*\\.pdf"], "maxSizeInMB": "1024", "ignoreAfterMaxHits": 10},
-    "httpdHeaders": {"Cache-Control": "no-cache"}
+    "proxies": [
+        {
+            "^http(.*)://([^:/]+)[:]?.*?/apps/xbin/proxiedapis/(.*)$": "http{{{$1}}}://{{{$2}}}:9090/apps/xbin/proxiedapis/{{{$3}}}"
+        }
+    ],
+    "redirects": [
+        {
+            "^http(.*)://([^/]+?)/index.html$": "http{{{$1}}}://{{{$2}}}/apps/xbin/index.html"
+        },
+        {
+            "^http(.*)://([^/]+?)/$": "http{{{$1}}}://{{{$2}}}/apps/xbin/index.html"
+        },
+        {
+            "^http(.*)://([^/]+?)$": "http{{{$1}}}://{{{$2}}}/apps/xbin/index.html"
+        }
+    ],
+    "diskCache": {
+        "refresh": 1000,
+        "dontCache": [
+            ".*\\.pdf"
+        ],
+        "maxSizeInMB": "1024",
+        "ignoreAfterMaxHits": 10
+    },
+    "httpdHeaders": {
+        "Cache-Control": "no-cache"
+    },
+    "ssl": true,
+    "sslKeyFile": "C:\\Users\\rvkapoor\\source\\etc\\dnsip_privkey.pem",
+    "sslCertFile": "C:\\Users\\rvkapoor\\source\\etc\\dnsip_fullchain.pem",
+    "port": 443
 }

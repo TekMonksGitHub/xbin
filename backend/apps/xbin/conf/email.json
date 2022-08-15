@@ -1,0 +1,45 @@
+{
+    "en_resetuser_title":"Login reset - {{org}} TekMonks Login Account",
+    "en_resetuser_email_html":"<p>Hello {{name}}</p><p>A request has been received to change the password for your {{org}}'s TekMonks Login account.</p><p align='center'>{{{button_code_pre}}}Reset Password{{{button_code_post}}}</p><p>If you did not send this request, please contact your company's administrator for TekMonks Login and ignore this email.</p><p>Thank you, <br/>The TekMonks Login Team.</p>",
+    "en_resetuser_email_text": "Hello {{name}}\n\nA request has been received to change the password for your {{org}}'s TekMonks Login account.\n\nPaste this URL into a new browser window to reset your account\n{{{action_url}}}\n\nIf you did not send this request, please contact your company's administrator for TekMonks Login and ignore this email.\n\nThank you,\nThe TekMonks Login Team.",
+
+    "hi_resetuser_title":"लॉगिन रीसेट - {{org}} टेलीवर्क अकाउंट",
+    "hi_resetuser_email_html":"<p>नमस्ते {{name}}</p><p>आपके {{org}} के टेलीवर्क खाते के लिए पासवर्ड बदलने के लिए एक अनुरोध प्राप्त हुआ है।</p><p align='center'>{{{button_code_pre}}}पासवर्ड रीसेट{{{button_code_post}}}</p><p>यदि आपने यह अनुरोध नहीं भेजा है, तो कृपया TekMonks Login के लिए अपनी कंपनी के व्यवस्थापक से संपर्क करें और इस ईमेल को अनदेखा करें।</p><p>धन्यवाद, <br/>TekMonks Login की टीम।</p>",
+    "hi_resetuser_email_text": "Hello {{name}}\n\nआपके {{org}} के टेलीवर्क खाते के लिए पासवर्ड बदलने के लिए एक अनुरोध प्राप्त हुआ है।\n\nअपना अकाउंट रीसेट करने के लिए इस URL को एक नई ब्राउज़र विंडो में पेस्ट करें\n{{{action_url}}}\n\nयदि आपने यह अनुरोध नहीं भेजा है, तो कृपया TekMonks Login के लिए अपनी कंपनी के व्यवस्थापक से संपर्क करें और इस ईमेल को अनदेखा करें।\n\nधन्यवाद,\nTekMonks Login की टीम।",
+
+    "ja_resetuser_title":"ログインリセット - {{org}} TekMonks Loginアカウント",
+    "ja_resetuser_email_html":"<p>こんにちは {{name}}</p><p>{{org}}のTekMonks Loginアカウントのパスワードを変更するリクエストを受け取りました。</p><p align='center'>{{{button_code_pre}}}パスワードを再設定する{{{button_code_post}}}</p><p>このリクエストを送信しなかった場合は、TekMonks Loginについて会社の管理者に連絡し、このメールを無視してください。</p><p>ありがとうございました, <br/>TekMonks Loginのチーム。</p>",
+    "ja_resetuser_email_text": "こんにちは {{name}}\n\n{{org}}のTekMonks Loginアカウントのパスワードを変更するリクエストを受け取りました。\n\nこのURLを新しいブラウザウィンドウに貼り付けて、アカウントをリセットします\n{{{action_url}}}\n\nこのリクエストを送信しなかった場合は、TekMonks Loginについて会社の管理者に連絡し、このメールを無視してください。\n\nありがとうございました,\nTekMonks Loginのチーム。",
+
+    "th_resetuser_title":"รีเซ็ตการเข้าสู่ระบบ - {{org}} บัญชี TekMonks Login",
+    "th_resetuser_email_html":"<p>สวัสดีคุณ {{name}}</p><p>ได้รับคำขอให้เปลี่ยนรหัสผ่านสำหรับบัญชี TekMonks Login ของ {{org}} ของคุณ</p><p align='center'>{{{button_code_pre}}}รีเซ็ตรหัสผ่าน{{{button_code_post}}}</p><p>หากคุณไม่ได้ส่งคำขอนี้โปรดติดต่อผู้ดูแลระบบของ บริษัท ของคุณสำหรับ TekMonks Login และไม่ต้องสนใจอีเมลนี้</p><p>ขอขอบคุณ, <br/>ทีมงานสำหรับ TekMonks Login</p>",
+    "th_resetuser_email_text": "Hello {{name}}\n\nได้รับคำขอให้เปลี่ยนรหัสผ่านสำหรับบัญชี TekMonks Login ของ {{org}} ของคุณ\n\nวาง URL นี้ในหน้าต่างเบราว์เซอร์ใหม่เพื่อรีเซ็ตบัญชีของคุณ\n{{{action_url}}}\n\nหากคุณไม่ได้ส่งคำขอนี้โปรดติดต่อผู้ดูแลระบบของ บริษัท ของคุณสำหรับ TekMonks Login และไม่ต้องสนใจอีเมลนี้\n\nขอขอบคุณ,\nทีมงานสำหรับ TekMonks Login",
+
+    "zh_resetuser_title":"登录重置-{{org}}远程工作人员帐户",
+    "zh_resetuser_email_html":"<p>您好{{name}}</p><p>已收到更改{{org}}的TekMonks Login帐户密码的请求。</p><p align='center'>{{{button_code_pre}}}重设密码{{{button_code_post}}}</p><p>如果您没有发送此请求，请联系您公司的TekMonks Login管理员，并忽略此电子邮件。</p><p>谢谢, <br/>TekMonks Login的团队。</p>",
+    "zh_resetuser_email_text": "您好{{name}}\n\n已收到更改{{org}}的TekMonks Login帐户密码的请求。\n\n将此URL粘贴到新的浏览器窗口中以重置您的帐户\n{{{action_url}}}\n\n如果您没有发送此请求，请联系您公司的TekMonks Login管理员，并忽略此电子邮件。\n\n谢谢,\nTekMonks Login的团队。",
+
+
+    "en_adduser_title":"Login - {{org}} TekMonks Login Account",
+    "en_adduser_email_html":"<p>Hello {{name}}</p><p>A request has been received to create a login for you in {{org}}'s TekMonks Login account.</p><p align='center'>{{{button_code_pre}}}Click to Login{{{button_code_post}}}</p><p>If you did not expect this request, please contact your company's administrator for TekMonks Login and ignore this email.</p><p>Thank you, <br/>The TekMonks Login Team.</p>",
+    "en_adduser_email_text": "Hello {{name}}\n\nA request has been received to create a login for you in {{org}}'s TekMonks Login account.\n\nPaste this URL into a new browser window to login to your account\n{{{action_url}}}\n\nIf you did not expect this request, please contact your company's administrator for TekMonks Login and ignore this email.\n\nThank you,\nThe TekMonks Login Team.",
+
+    "hi_adduser_title":"लॉगिन रीसेट - {{org}} टेलीवर्क अकाउंट",
+    "hi_adduser_email_html":"<p>नमस्ते {{name}}</p><p>आपके {{org}} के टेलीवर्क खाते के लिए पासवर्ड बदलने के लिए एक अनुरोध प्राप्त हुआ है।</p><p align='center'>{{{button_code_pre}}}पासवर्ड रीसेट{{{button_code_post}}}</p><p>यदि आपने यह अनुरोध नहीं भेजा है, तो कृपया TekMonks Login के लिए अपनी कंपनी के व्यवस्थापक से संपर्क करें और इस ईमेल को अनदेखा करें।</p><p>धन्यवाद, <br/>TekMonks Login की टीम।</p>",
+    "hi_adduser_email_text": "Hello {{name}}\n\nआपके {{org}} के टेलीवर्क खाते के लिए पासवर्ड बदलने के लिए एक अनुरोध प्राप्त हुआ है।\n\nअपना अकाउंट रीसेट करने के लिए इस URL को एक नई ब्राउज़र विंडो में पेस्ट करें\n{{{action_url}}}\n\nयदि आपने यह अनुरोध नहीं भेजा है, तो कृपया TekMonks Login के लिए अपनी कंपनी के व्यवस्थापक से संपर्क करें और इस ईमेल को अनदेखा करें।\n\nधन्यवाद,\nTekMonks Login की टीम।",
+
+    "ja_adduser_title":"ログインリセット - {{org}} TekMonks Loginアカウント",
+    "ja_adduser_email_html":"<p>こんにちは {{name}}</p><p>{{org}}のTekMonks Loginアカウントのパスワードを変更するリクエストを受け取りました。</p><p align='center'>{{{button_code_pre}}}パスワードを再設定する{{{button_code_post}}}</p><p>このリクエストを送信しなかった場合は、TekMonks Loginについて会社の管理者に連絡し、このメールを無視してください。</p><p>ありがとうございました, <br/>TekMonks Loginのチーム。</p>",
+    "ja_adduser_email_text": "こんにちは {{name}}\n\n{{org}}のTekMonks Loginアカウントのパスワードを変更するリクエストを受け取りました。\n\nこのURLを新しいブラウザウィンドウに貼り付けて、アカウントをリセットします\n{{{action_url}}}\n\nこのリクエストを送信しなかった場合は、TekMonks Loginについて会社の管理者に連絡し、このメールを無視してください。\n\nありがとうございました,\nTekMonks Loginのチーム。",
+
+    "th_adduser_title":"รีเซ็ตการเข้าสู่ระบบ - {{org}} บัญชี TekMonks Login",
+    "th_adduser_email_html":"<p>สวัสดีคุณ {{name}}</p><p>ได้รับคำขอให้เปลี่ยนรหัสผ่านสำหรับบัญชี TekMonks Login ของ {{org}} ของคุณ</p><p align='center'>{{{button_code_pre}}}รีเซ็ตรหัสผ่าน{{{button_code_post}}}</p><p>หากคุณไม่ได้ส่งคำขอนี้โปรดติดต่อผู้ดูแลระบบของ บริษัท ของคุณสำหรับ TekMonks Login และไม่ต้องสนใจอีเมลนี้</p><p>ขอขอบคุณ, <br/>ทีมงานสำหรับ TekMonks Login</p>",
+    "th_adduser_email_text": "Hello {{name}}\n\nได้รับคำขอให้เปลี่ยนรหัสผ่านสำหรับบัญชี TekMonks Login ของ {{org}} ของคุณ\n\nวาง URL นี้ในหน้าต่างเบราว์เซอร์ใหม่เพื่อรีเซ็ตบัญชีของคุณ\n{{{action_url}}}\n\nหากคุณไม่ได้ส่งคำขอนี้โปรดติดต่อผู้ดูแลระบบของ บริษัท ของคุณสำหรับ TekMonks Login และไม่ต้องสนใจอีเมลนี้\n\nขอขอบคุณ,\nทีมงานสำหรับ TekMonks Login",
+
+    "zh_adduser_title":"登录重置-{{org}}远程工作人员帐户",
+    "zh_adduser_email_html":"<p>您好{{name}}</p><p>已收到更改{{org}}的TekMonks Login帐户密码的请求。</p><p align='center'>{{{button_code_pre}}}重设密码{{{button_code_post}}}</p><p>如果您没有发送此请求，请联系您公司的TekMonks Login管理员，并忽略此电子邮件。</p><p>谢谢, <br/>TekMonks Login的团队。</p>",
+    "zh_adduser_email_text": "您好{{name}}\n\n已收到更改{{org}}的TekMonks Login帐户密码的请求。\n\n将此URL粘贴到新的浏览器窗口中以重置您的帐户\n{{{action_url}}}\n\n如果您没有发送此请求，请联系您公司的TekMonks Login管理员，并忽略此电子邮件。\n\n谢谢,\nTekMonks Login的团队。",
+    
+    "button_code_pre": "<table border='0' width='100%' cellspacing='0' cellpadding='0'><tbody><tr><td><table border='0' cellspacing='0' cellpadding='0'><tbody><tr><td style='border-radius: 3px;' align='center' bgcolor='#0492c2'><a style='font-size: 16px; font-family: Helvetica, Arial, sans-serif; color: #ffffff; text-decoration: none; border-radius: 3px; padding: 12px 18px; border: 1px solid #0492c2; display: inline-block;' href='{{{action_url}}}' target='_blank' rel='noopener'>",
+    "button_code_post": " &rarr;</a></td></tr></tbody></table></td></tr></tbody></table>"
+}

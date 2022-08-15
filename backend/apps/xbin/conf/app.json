@@ -1,0 +1,8 @@
+{
+    "reset_url": "https://{{{hostname}}}/apps/{{{app}}}/reset.html",
+    "initiallogin_url": "https://{{{hostname}}}/apps/{{{app}}}/initiallogin.html",
+    "base_url": "https://{{{hostname}}}/apps/{{{app}}}/index.html?.=",
+    "reset_expiry_time": 43200000,
+    "remote_log": true,
+    "loginlisteners": ["lib/cms.initID"]
+}

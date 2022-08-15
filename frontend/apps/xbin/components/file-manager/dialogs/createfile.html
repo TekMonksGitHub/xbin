@@ -1,6 +1,6 @@
 <style>
 input[type=text] { 
-    width: max(30vw, 20em);
+    width: 100%;
     padding: 20px;
     margin: 0;
     box-sizing: border-box;
@@ -8,7 +8,6 @@ input[type=text] {
     border-style: none;
     outline: none;
     text-align: left;
-    font-family: 'Raleway';
     background-color: #F0F8FF;
     box-shadow: 0 0 0px 1000px #F0F8FF inset;
 }
@@ -30,7 +29,6 @@ div#togglediv > span {
     border-style: none;
     outline: none;
     text-align: center;
-    font-family: 'Raleway';
     background-color: #F0F8FF;
     box-shadow: 0 0 0px 1000px #F0F8FF inset;
     font-size: 0.8em;
@@ -44,4 +42,15 @@ div#togglediv > span.checked {
 }
 </style>
 
-<input type="text" id="renamepath" placeholder="{{i18n.NewName}}" value="{{oldName}}" required>
+<input type="text" id="path" placeholder="{{i18n.Path}}" required>
+<div id="togglediv">
+<span class="checked" id="filetoggle" onclick="event.stopPropagation(); 
+    this.classList.add('checked'); 
+    this.parentNode.querySelector('#dirtoggle').classList.remove('checked'); 
+    this.parentNode.querySelector('#createType').value='file'">{{i18n.File}}</span>
+<span id="dirtoggle" onclick="event.stopPropagation(); 
+    this.classList.add('checked'); 
+    this.parentNode.querySelector('#filetoggle').classList.remove('checked'); 
+    this.parentNode.querySelector('#createType').value='directory'">{{i18n.Directory}}</span>
+<input type="hidden" id="createType" value="file">
+</div>

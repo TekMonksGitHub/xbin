@@ -1,0 +1,32 @@
+<style>
+body {
+    width: 25vw;
+}
+
+span#error {
+    font: inherit;
+    font-size: smaller;
+    text-align: center;
+    width: 100%;
+    display: inline-block;
+}
+</style>
+{{{APP_CONSTANTS.MOBILE_MEDIA_QUERY_START}}}
+    div#dialog {box-sizing: border-box; padding: 2em;}
+    body {width: 100%; min-width: 0;}
+    span#close {display:none;}
+    div#buttonbar {position: absolute; width: calc(100% - 4em); bottom: 2em; justify-content: space-around;}
+    span#error {width: 100%;}
+{{{APP_CONSTANTS.MOBILE_MEDIA_QUERY_END}}}
+{{{APP_CONSTANTS.MOBILE_MEDIA_QUERY_LANDSCAPE_START}}}
+    div#dialog {min-height: 12em; width: 50vw;}
+{{{APP_CONSTANTS.MOBILE_MEDIA_QUERY_LANDSCAPE_END}}}
+{{{APP_CONSTANTS.MOBILE_MEDIA_QUERY_PORTRAIT_START}}}
+    div#dialog {width: 96vw; min-height: 12em;}
+{{{APP_CONSTANTS.MOBILE_MEDIA_QUERY_PORTRAIT_END}}}
+
+<span id="error">{{error}}</span>
+
+<script>
+function onOK(element) {monkshu_env.components["dialog-box"].submit(element);}
+</script>

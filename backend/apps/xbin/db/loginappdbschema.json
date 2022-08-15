@@ -1,0 +1,5 @@
+[
+    "BEGIN TRANSACTION",
+    "CREATE TABLE users(id varchar not null primary key, name varchar not null, pwph varchar not null, org varchar not null, totpsec varchar not null, role varchar not null, approved integer DEFAULT 0)",
+    "COMMIT TRANSACTION"
+]
