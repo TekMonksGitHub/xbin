@@ -1,4 +1,23 @@
 <style>
+textarea#filecontents::-webkit-scrollbar {
+    width: 0.5em !important;
+    height: 0.5em !important;
+    scroll-behavior: smooth !important;
+}
+
+textarea#filecontents::-webkit-scrollbar-track {
+    -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3) !important;
+    box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3) !important;
+    margin: 5em;
+    border-radius: 1em !important;
+}
+
+textarea#filecontents::-webkit-scrollbar-thumb {
+    background-color: darkgrey !important;
+    border-radius: 1em !important;
+    background-clip: padding-box;
+}
+
 textarea#filecontents { 
     width: calc(100vw - 100px);
     height: calc(100vh - 200px);
@@ -12,5 +31,9 @@ textarea#filecontents {
     box-shadow: 0 0 0px 1000px #F0F8FF inset;
 }
 </style>
+
+<script>
+setTimeout(_ => window.monkshu_env.components["file-manager"].editFileVisible(), 0);
+</script>
 
 <textarea id="filecontents" required>{{{fileContents}}}</textarea>

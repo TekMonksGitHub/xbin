@@ -11,7 +11,6 @@
 import {i18n} from "/framework/js/i18n.mjs";
 import {util} from "/framework/js/util.mjs";
 import {router} from "/framework/js/router.mjs";
-import {session} from "/framework/js/session.mjs";
 import {apimanager as apiman} from "/framework/js/apimanager.mjs";
 import {monkshu_component} from "/framework/js/monkshu_component.mjs";
 
@@ -35,14 +34,15 @@ let PAGE_DOWNLOADFILE_SHARED = `${APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.A
 const DIALOG_SCROLL_ELEMENT_ID = "notificationscrollpositioner", DIALOG_HOST_ELEMENT_ID = "notification", PROGRESS_TEMPLATE="progressdialog", DEFAULT_SHARE_EXPIRY = 5;
 const DOUBLE_CLICK_DELAY=400, DOWNLOADFILE_REFRESH_INTERVAL = 500, UPLOAD_ICON = "⇧", DOWNLOAD_ICON = "⇩";
 const dialog = _ => monkshu_env.components['dialog-box'];
-const isMobile = _ => true;//navigator.maxTouchPoints?true:false;
+const isMobile = _ => $$.isMobile();
 
 const IO_CHUNK_SIZE = 10485760;   // 10M read buffer
 
-async function elementConnected(element) {
-   menuOpen = false; user = element.getAttribute("user");
+async function elementConnected(host) {
+   menuOpen = false; user = host.getAttribute("user");
 
-   const path = element.getAttribute("path") || "/"; selectedPath = path.replace(/[\/]+/g,"/"); selectedIsDirectory = true;
+   const path = host.getAttribute("path") || (file_manager.getSessionMemory(host.id))["__lastPath"] || "/"; 
+   selectedPath = path.replace(/[\/]+/g,"/"); selectedIsDirectory = true;
    const resp = await apiman.rest(API_GETFILES, "GET", {path}, true); if (!resp || !resp.result) return; 
    for (const entry of resp.entries) {entry.stats.name = entry.name; entry.stats.json = JSON.stringify(entry.stats);}
    
@@ -60,19 +60,19 @@ async function elementConnected(element) {
 
    const data = {entries: resp.entries, COMPONENT_PATH: `${APP_CONSTANTS.COMPONENTS_PATH}/file-manager`};
 
-   if (element.getAttribute("styleBody")) data.styleBody = `<style>${element.getAttribute("styleBody")}</style>`;
-   shareDuration = element.getAttribute("defaultShareDuration") || DEFAULT_SHARE_EXPIRY; 
+   if (host.getAttribute("styleBody")) data.styleBody = `<style>${host.getAttribute("styleBody")}</style>`;
+   shareDuration = host.getAttribute("defaultShareDuration") || DEFAULT_SHARE_EXPIRY; 
    
-   file_manager.setData(element.id, data);
+   file_manager.setData(host.id, data);
 
-   if (element.getAttribute("downloadpage")) PAGE_DOWNLOADFILE_SHARED = element.getAttribute("downloadpage");
+   if (host.getAttribute("downloadpage")) PAGE_DOWNLOADFILE_SHARED = host.getAttribute("downloadpage");
 }
 
 async function elementRendered(element) {
    const shadowRoot = file_manager.getShadowRootByHostId(element.getAttribute("id"));
    shadowRoot.addEventListener("mousemove", e => {mouseX = e.clientX; mouseY = e.clientY;});
 
-   const container = shadowRoot.querySelector("div#container");
+   const container = shadowRoot.querySelector("div#filelistingscontainer");
    shadowRoot.addEventListener(isMobile()?"click":"contextmenu", e => { e.preventDefault(); if (!menuOpen) showMenu(container, true); else hideMenu(container); });
    if (!isMobile()) shadowRoot.addEventListener("click", e => { e.stopPropagation(); if (menuOpen) hideMenu(container); });
 
@@ -225,7 +225,7 @@ async function deleteFile(element) {
 function editFile(element) {
    if (selectedIsDirectory) {
       const host = file_manager.getHostElement(element); host.setAttribute("path", selectedPath); 
-      file_manager.reload(host.id); return;
+      (file_manager.getSessionMemory(host.id))["__lastPath"] = selectedPath; file_manager.reload(host.id); return;
    } 
 
    if (selectedElement.id == "upload") {upload(selectedElement); return;}
@@ -245,6 +245,11 @@ async function editFileLoadData() {
       const resp = await apiman.rest(API_OPERATEFILE, "POST", {path: selectedPath, op: "write", data: result.filecontents}, true);
       dialog().hideDialog("dialog"); if (!resp.result) _showErrorDialog();
    }); else _showErrorDialog();
+}
+
+function editFileVisible() {
+   const shadowRootDialog = dialog().getShadowRootByHostId("dialog");
+   const elementTextArea = shadowRootDialog.querySelector("textarea#filecontents"); elementTextArea.focus();
 }
 
 const _getReqIDForDownloading = path => encodeURIComponent(path+Date.now()+Math.random());
@@ -342,7 +347,7 @@ async function _showNotification(element, dialogTemplateID) {
    const matches = /<!--([\s\S]+)-->/g.exec(template);
    if (!matches) return; template = matches[1]; // can't show progress if the template is bad
 
-   const rendered = await router.expandPageData(template, session.get($$.MONKSHU_CONSTANTS.PAGE_URL), templateData);
+   const rendered = await router.expandPageData(template, router.getLastSessionURL(), templateData);
    const hostElement = shadowRoot.querySelector(`#${DIALOG_HOST_ELEMENT_ID}`), scrollElement = shadowRoot.querySelector(`#${DIALOG_SCROLL_ELEMENT_ID}`);
    hostElement.innerHTML = rendered; 
    if (!hostElement.classList.contains("visible")) hostElement.classList.add("visible"); 
@@ -374,5 +379,5 @@ async function _performCopy(fromPath, toPath, element) {
 export const file_manager = { trueWebComponentMode: true, elementConnected, elementRendered, handleClick, 
    showMenu, deleteFile, editFile, downloadFile, cut, copy, paste, upload, uploadFiles, create, shareFile, 
    renameFile, menuEventDispatcher, isMobile, getDragAndDropDownloadURL, showDownloadProgress, hideNotification,
-   cancelFile }
+   cancelFile, editFileVisible }
 monkshu_component.register("file-manager", `${APP_CONSTANTS.APP_PATH}/components/file-manager/file-manager.html`, file_manager);

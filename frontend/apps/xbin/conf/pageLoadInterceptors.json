@@ -1,4 +1,5 @@
 [
     {"module": "js/application.mjs", "function":"interceptPageLoadData"},
-    {"module": "js/loginmanager.mjs", "function":"interceptPageLoad"}
+    {"module": "js/loginmanager.mjs", "function":"interceptPageLoad"},
+    {"module": "js/main.mjs", "function":"interceptPageData"}
 ]

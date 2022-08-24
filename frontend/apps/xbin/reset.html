@@ -36,16 +36,16 @@ body::after {
 
 div#header {
 	display: flex;
-	flex-direction: row;
-	justify-content: flex-start;
-	align-items: center;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
 	margin: 1em;
 	width: calc(100% - 2em);
 	height: 4em;
 }
 span#imgheader {text-align: center;}
 img.logo {
-	height: 25px;
+	height: 4em;
 	cursor: pointer;
 }
 
@@ -116,7 +116,7 @@ div.lgbox > span {
 </style>
 {{{APP_CONSTANTS.MOBILE_MEDIA_QUERY_START}}}
 	div#maincontent {flex-direction: column;}
-	div#header {justify-content: space-around;}
+	div#header {justify-content: space-around; height: 6em;}
 	span#signin {text-align: center;}
 	.lgbox {padding: 1em; box-shadow: none;}
 {{{APP_CONSTANTS.MOBILE_MEDIA_QUERY_END}}}
@@ -140,7 +140,7 @@ div.lgbox > span {
 <div id="bodydiv">
 <div id="header">
 <span id="imgheader">
-	<img class="logo" src="./img/logo.png" onclick="window.open('http://teleworkr.com', '_blank')"></img>
+	<img class="logo" src="./img/logo.svg" onclick="window.open('http://teleworkr.com', '_blank')"></img>
 </span>
 </div>
 
@@ -155,7 +155,8 @@ div.lgbox > span {
 	<span><br><br>{{i18n.ResetMsg}}<br><br></span>
 	<register-box id="reset" roles='["{{APP_CONSTANTS.GUEST_ROLE}}", "{{APP_CONSTANTS.USER_ROLE}}"]' type="reset" 
 		email="{{url.e}}" time="{{url.t}}" minlength="{{APP_CONSTANTS.MIN_PASS_LENGTH}}" routeOnSuccess="./main.html" 
-		dataOnSuccess='{"showDialog":{"message": "{{i18n.ResetSuccess}}"}}'></register-box>
+		dataOnSuccess='{"showDialog":{"message": "{{i18n.ResetSuccess}}"}}'
+		mobileQueries='{"start": "{{APP_CONSTANTS.MOBILE_MEDIA_QUERY_START}}", "end": "{{APP_CONSTANTS.MOBILE_MEDIA_QUERY_END}}"}'></register-box>
 </div>
 </div>
 
@@ -163,8 +164,6 @@ div.lgbox > span {
 	<span class="langsel" onclick="language.changeLanguage('en')">English</span>&nbsp;&nbsp;
 	<span class="langsel" onclick="language.changeLanguage('hi')">हिंदी</span>&nbsp;&nbsp;
 	<span class="langsel" onclick="language.changeLanguage('ja')">日本語</span>
-	<span class="langsel" onclick="language.changeLanguage('th')">&nbsp;ภาษาไทย</span>
-	<span class="langsel" onclick="language.changeLanguage('zh')">中文</span>
 </div>	
 </div>
 

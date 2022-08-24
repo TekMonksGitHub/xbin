@@ -6,8 +6,6 @@
  -->
 
 <style>
-@import url('https://fonts.googleapis.com/css?family=Raleway:100,100i,200,200i,300,300i,400,400i,500,500i,600,600i,700,700i,800,800i,900,900i&amp;display=swap');
-
 body{
     margin: 0; padding: 0;
     font-family: inherit;
@@ -99,6 +97,7 @@ span#otp > div#otp_help_and_input > input {
 
 span#otp > button {display: none;}
 </style>
+{{#MOBILE_MEDIA_QUERY_START}}
 {{{MOBILE_MEDIA_QUERY_START}}}
     input {margin: 0; margin-top: 1em; width: 100%; border-radius: 0;}
     span#password {margin-left: 0; margin-right: 0; margin-bottom: 2em; justify-content: space-between;}
@@ -114,6 +113,7 @@ span#otp > button {display: none;}
     button#submit {padding: 1em; margin-top: 1em;}
     div#container {margin: 0 1em;}
 {{{MOBILE_MEDIA_QUERY_END}}}
+{{/MOBILE_MEDIA_QUERY_START}}
 
 {{{styleBody}}}
 

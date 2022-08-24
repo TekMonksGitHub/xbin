@@ -32,7 +32,7 @@ span#header {
 	margin: 0 2em 0 2em;
 	align-items: center;
 }
-img#textlogo {width: 6em;}
+img#textlogo {height: 3em;}
 span#middleheader {
 	background-color: #4FB4ED;
 	width: 80%;
@@ -110,8 +110,8 @@ span#mobilefooter {
 	import {user_manager} from "./components/user-manager/user-manager.mjs";
 	import "./components/span-with-menu/span-with-menu.mjs";
 	import "./components/dialog-box/dialog-box.mjs";
-	import {main} from "./js/main.mjs"; monkshu_env.apps.telemeet.main = main; 
-	import {loginmanager} from "./js/loginmanager.mjs"; monkshu_env.apps.telemeet.loginmanager = loginmanager;
+	import {main} from "./js/main.mjs"; monkshu_env.apps[APP_CONSTANTS.APP_NAME].main = main; 
+	import {loginmanager} from "./js/loginmanager.mjs"; monkshu_env.apps[APP_CONSTANTS.APP_NAME].loginmanager = loginmanager;
 	</script>
 		
 	<title>{{i18n.Title}}</title>
@@ -119,9 +119,9 @@ span#mobilefooter {
 
 <body style="margin: 0%">
 <span id="header">
-<img id="textlogo" src="./img/textlogo.svg">
+<img id="textlogo" src="./img/logomainpage.svg">
 <span id="middleheader"><span id="title">{{i18n.ManageUsers}}</span><span id="close" onclick="monkshu_env.frameworklibs.router.navigate(APP_CONSTANTS.MAIN_HTML)">X</span></span>
-<img id="logout" src="./img/poweroff.svg" onclick="monkshu_env.apps.telemeet.loginmanager.logout()">
+<img id="logout" src="./img/poweroff.svg" onclick="monkshu_env.apps[APP_CONSTANTS.APP_NAME].loginmanager.logout()">
 </span>
 
 <div id="maincontent">
@@ -131,15 +131,10 @@ span#mobilefooter {
 
 <span id="mobilefooter">
 	<img src="./img/mobilefooter_home.svg" onclick="monkshu_env.frameworklibs.router.navigate(APP_CONSTANTS.MAIN_HTML)">
-	<span-with-menu id="statusmobile" bottommenu="true" styleBody="url(./pages/menu.stylebody.css)"><img src="./img/mobilefooter_person.svg">
-		<menu-item onclick="monkshu_env.apps.telemeet.main.changeStatus('Working')" label="{{i18n.Working}}"></menu-item>
-		<menu-item onclick="monkshu_env.apps.telemeet.main.changeStatus('Break')" label="{{i18n.OnBreak}}"></menu-item>
-		<menu-item onclick="monkshu_env.apps.telemeet.main.changeStatus('Offline')" label="{{i18n.Offline}}"></menu-item>
-	</span-with-menu>
 	<span-with-menu id="gearmobile" bottommenu="true" styleBody="url(./pages/menu.stylebody.css)"><img src="./img/mobilefooter_settings.svg">
-		<menu-item onclick="monkshu_env.apps.telemeet.main.changePassword(this)" label="{{i18n.ChangePassword}}"></menu-item>
-		<menu-item onclick="monkshu_env.apps.telemeet.main.showOTPQRCode(this)" label="{{i18n.ChangePhone}}"></menu-item>
-		<menu-item onclick="monkshu_env.apps.telemeet.main.changeProfile(this)" label="{{i18n.ChangeProfile}}"></menu-item>
+		<menu-item onclick="monkshu_env.apps[APP_CONSTANTS.APP_NAME].main.changePassword(this)" label="{{i18n.ChangePassword}}"></menu-item>
+		<menu-item onclick="monkshu_env.apps[APP_CONSTANTS.APP_NAME].showOTPQRCode(this)" label="{{i18n.ChangePhone}}"></menu-item>
+		<menu-item onclick="monkshu_env.apps[APP_CONSTANTS.APP_NAME].changeProfile(this)" label="{{i18n.ChangeProfile}}"></menu-item>
 		{{#admin}}<menu-item onclick="monkshu_env.frameworklibs.router.navigate(APP_CONSTANTS.MANAGE_HTML)" label="{{i18n.ManageUsers}}"></menu-item>{{/admin}}
 	</span-with-menu>
 	<img src="./img/mobilefooter_logout.svg" onclick="monkshu_env.apps.telemeet.loginmanager.logout()">

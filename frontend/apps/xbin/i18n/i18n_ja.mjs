@@ -54,8 +54,8 @@ export const i18n = {
 "Bytes": "バイト",
 "Location": "ロケーション",
 
-"logintagline": "Change this - an advanced LoginApp shell",
-"loginsubtag": "Secure, integrated, and easy to use. Try it today for the next webapp you build.",
+"logintagline": "XBin Enterprise Content Manager",
+"loginsubtag": "Secure, integrated, and easy to use. Cloud content manager.",
 "learn":"Learn More",
 "Name": "Name",
 "Email": "Email",

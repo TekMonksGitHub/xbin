@@ -45,7 +45,7 @@ div#header {
 }
 span#imgheader {text-align: center;}
 img.logo {
-	height: 25px;
+	height: 4em;
 	cursor: pointer;
 }
 span#signin {
@@ -136,7 +136,7 @@ div.lgbox > span {
 </style>
 {{{APP_CONSTANTS.MOBILE_MEDIA_QUERY_START}}}
 	div#maincontent {flex-direction: column;}
-	div#header {flex-direction: column-reverse;}
+	div#header {flex-direction: column-reverse; height: 6em;}
 	span#signin {text-align: center;}
 	.lgbox {padding: 1em; box-shadow: none;}
 {{{APP_CONSTANTS.MOBILE_MEDIA_QUERY_END}}}
@@ -159,7 +159,7 @@ div.lgbox > span {
 <div id="bodydiv">
 <div id="header">
 <span id="imgheader">
-	<img class="logo" src="./img/logo.png" onclick="window.open('http://teleworkr.com', '_blank')"></img>
+	<img class="logo" src="./img/logo.svg" onclick="window.open('http://teleworkr.com', '_blank')"></img>
 </span>
 <span id="signin">
 	<span><a href="{{#_org_monkshu_makeLink}}./loginroom.html{{/_org_monkshu_makeLink}}">{{i18n.RoomLoginMsg}}</a></span>
@@ -188,8 +188,6 @@ div.lgbox > span {
 	<span class="langsel" onclick="language.changeLanguage('en')">English</span>&nbsp;&nbsp;
 	<span class="langsel" onclick="language.changeLanguage('hi')">हिंदी</span>&nbsp;&nbsp;
 	<span class="langsel" onclick="language.changeLanguage('ja')">日本語</span>
-	<span class="langsel" onclick="language.changeLanguage('th')">&nbsp;ภาษาไทย</span>
-	<span class="langsel" onclick="language.changeLanguage('zh')">中文</span>
 </div>	
 </div>
 

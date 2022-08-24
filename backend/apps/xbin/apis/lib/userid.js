@@ -26,7 +26,7 @@ exports.delete = async id => {
 exports.update = async (oldid, id, name, org, pwph, totpSecret, role, approved) => {
 	const pwphHashed = await getUserHash(pwph);
 	return {result: await db.runCmd("UPDATE users SET id=?, name=?, org=?, pwph=?, totpsec=?, role = ?, approved = ? WHERE id=?", 
-		[id, name, org, pwphHashed, totpSecret, role, approved?1:0, oldid])};
+		[id, name, org, pwphHashed, totpSecret, role, approved?1:0, oldid]), oldid, id, name, org, pwph, totpSecret, role, approved};
 }
 
 exports.checkPWPH = async (id, pwph) => {

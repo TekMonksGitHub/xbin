@@ -11,7 +11,7 @@ const COMPONENTS_PATH = `${FRONTEND}/apps/${APP_NAME}/components`;
 
 export const APP_CONSTANTS = {
     FRONTEND, BACKEND, APP_PATH, APP_NAME, COMPONENTS_PATH, API_PATH,
-    MAIN_HTML: APP_PATH+"/main.html?path=/",
+    MAIN_HTML: APP_PATH+"/main.html",
     LOGIN_HTML: APP_PATH+"/login.html",
     INDEX_HTML: APP_PATH+"/index.html",
     REGISTER_HTML: APP_PATH+"/register.html",

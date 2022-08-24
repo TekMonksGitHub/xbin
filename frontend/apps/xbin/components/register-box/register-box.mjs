@@ -24,7 +24,6 @@ async function elementConnected(host) {
 	if (host.getAttribute("styleBody")) data.styleBody = `<style>${host.getAttribute("styleBody")}</style>`;
 
 	const memory = register_box.getMemory(host.id), type = host.getAttribute("type");
-	let mobileQueries = host.getAttribute("mobileQueries"); try {mobileQueries = JSON.parse(mobileQueries)} catch (err) {mobileQueries = {}};
 	memory.totpKey = _getTOTPRandomKey(); memory.type = type;
 	data.totpQRCodeData = await _getTOTPQRCode(memory.totpKey); 
 	data.totpURL = await _getTOTPURL(memory.totpKey);
@@ -36,9 +35,12 @@ async function elementConnected(host) {
 	data.reset = type == "reset"?true:undefined;
 	if (host.getAttribute("email") && host.getAttribute("time") && (type == "reset" || type == "initial")) 
 		await _checkAndFillAccountProfile(data, host.getAttribute("email"), host.getAttribute("time"));
-	data.MOBILE_MEDIA_QUERY_START = mobileQueries.start||`<style>@media only screen and (max-width: ${conf.mobileBreakpoint}) {`;
-	data.MOBILE_MEDIA_QUERY_END = mobileQueries.end||"}</style>";
 	data.authLink = conf[`authLink_${$$.getOS()}`];
+	if ($$.isMobile()) {
+		let mobileQueries = host.getAttribute("mobileQueries"); try {mobileQueries = JSON.parse(mobileQueries)} catch (err) {mobileQueries = {}};
+		data.MOBILE_MEDIA_QUERY_START = mobileQueries.start||`<style>@media only screen and (max-width: ${conf.mobileBreakpoint}) {`;
+		data.MOBILE_MEDIA_QUERY_END = mobileQueries.end||"}</style>";
+	}
 
 	if (host.id) {
 		if (!register_box.datas) register_box.datas = {}; register_box.datas[host.id] = data;

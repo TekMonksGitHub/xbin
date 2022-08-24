@@ -60,7 +60,7 @@ span#desktopheader {
 	margin: 1em 2em 0 2em;
 }
 
-span#desktopheader > img#textlogo {width: 6em;}
+img#textlogo {height: 3em;}
 
 span#desktopheader > span#rightheader {
 	height: 100%;
@@ -161,10 +161,14 @@ file-manager#fm {height: 100%;}
 	<link href="./img/favicon.ico" rel="icon" type="image/x-icon">
 
 	<script type="module">
-	import {main} from "./js/main.mjs"; monkshu_env.apps[APP_CONSTANTS.APP_NAME].main = main; main.showLoginMessages();
+	import {main} from "./js/main.mjs"; monkshu_env.apps[APP_CONSTANTS.APP_NAME].main = main; 
 	import "./components/dialog-box/dialog-box.mjs";
-	import "./components/span-with-menu/span-with-menu.mjs";
 	import "./components/file-manager/file-manager.mjs";
+	import "./components/span-with-menu/span-with-menu.mjs";
+	import {blackboard} from "/framework/js/blackboard.mjs";
+	import {monkshu_component} from "/framework/js/monkshu_component.mjs";
+	blackboard.registerListener(monkshu_component.BLACKBOARD_MESSAGE_COMPONENT_RENDERED, component => {
+		if (component == "file-manager#fm") main.showLoginMessages(); });	// rendering needs to be complete as filemanager has it's own dialog which onconnect clears memory etc
 	</script>
 		
 	<title>{{i18n.Title}}</title>
@@ -173,7 +177,7 @@ file-manager#fm {height: 100%;}
 <body style="margin: 0%">
 <span id="desktopheader">
 	<span id="rightheader">
-	<img id="textlogo" src="./img/textlogo.svg">
+	<img id="textlogo" src="./img/logomainpage.svg">
 	<span id="greeting">
 	<span><img src="./img/person.svg"></span>
 	<span id="name">{{i18n.Hi}} {{#_org_monkshu_session}}username{{/_org_monkshu_session}}!</span>

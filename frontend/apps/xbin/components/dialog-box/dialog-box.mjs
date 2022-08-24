@@ -4,8 +4,11 @@
  * (C) 2020 TekMonks. All rights reserved.
  * License: MIT - see enclosed license.txt file.
  */
+import {util} from "/framework/js/util.mjs";
 import {router} from "/framework/js/router.mjs";
 import {monkshu_component} from "/framework/js/monkshu_component.mjs";
+
+const COMPONENT_PATH = util.getModulePath(import.meta);
 
 /**
  * Shows a new dialog
@@ -118,4 +121,4 @@ function _resetUI(shadowRoot) {
 
 const trueWebComponentMode = true;	// making this false renders the component without using Shadow DOM
 export const dialog_box = {showDialog, trueWebComponentMode, hideDialog, cancel, error, showMessage, hideError, submit}
-monkshu_component.register("dialog-box", `${APP_CONSTANTS.APP_PATH}/components/dialog-box/dialog-box.html`, dialog_box);
+monkshu_component.register("dialog-box", `${COMPONENT_PATH}/dialog-box.html`, dialog_box);

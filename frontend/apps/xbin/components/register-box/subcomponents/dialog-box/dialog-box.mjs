@@ -2,8 +2,11 @@
  * (C) 2020 TekMonks. All rights reserved.
  * License: See enclosed license.txt file.
  */
+import {util} from "/framework/js/util.mjs";
 import {router} from "/framework/js/router.mjs";
 import {monkshu_component} from "/framework/js/monkshu_component.mjs";
+
+const COMPONENT_PATH = util.getModulePath(import.meta);
 
 async function showDialog(templatePath, showOK, showCancel, data, hostID, retValIDs, callback) {
     const templateHTML = await router.loadHTML(templatePath, data, false);
@@ -28,8 +31,8 @@ function error(element, msg) {
     divError.innerHTML = msg; divError.style.visibility = "visible";
 }
 
-const showMessage = (templatePath, data, hostID) => monkshu_env.components['dialog-box'].showDialog(templatePath, true, 
-    false, data, hostID, [], _=> monkshu_env.components['dialog-box'].hideDialog("dialog"));
+const showMessage = (templatePath, data, hostID) => dialog_box.showDialog(templatePath, true, 
+    false, data, hostID, [], _=> dialog_box.hideDialog("dialog"));
 
 function hideError(element) {
     const shadowRoot = dialog_box.getShadowRootByContainedElement(element);
@@ -62,6 +65,7 @@ function _showDialogInternal(templateHTML, showOK, showCancel, hostID, retValIDs
     if (!showCancel) shadowRoot.querySelector("span#cancel").style.display = "none";
     
     const memory = dialog_box.getMemory(hostID); memory.retValIDs = retValIDs; memory.callback = callback;
+    memory.dialog = dialog;
 }
 
 function _resetUI(shadowRoot) {
@@ -72,4 +76,4 @@ function _resetUI(shadowRoot) {
 
 const trueWebComponentMode = true;	// making this false renders the component without using Shadow DOM
 export const dialog_box = {showDialog, trueWebComponentMode, hideDialog, error, showMessage, hideError, submit}
-monkshu_component.register("dialog-box", `${APP_CONSTANTS.APP_PATH}/components/dialog-box/dialog-box.html`, dialog_box);
+monkshu_component.register("dialog-box", `${COMPONENT_PATH}/dialog-box.html`, dialog_box);
