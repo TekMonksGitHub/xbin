@@ -29,5 +29,6 @@
     "/apps/{{app}}/gettotpsec" : "/apis/gettotpsec.js?get=true&keys=fheiwu98237hjief8923ydewjidw834284hwqdnejwr79389&needsToken=true",
     "/apps/{{app}}/getprofile" : "/apis/getprofile.js?get=true&keys=fheiwu98237hjief8923ydewjidw834284hwqdnejwr79389&needsToken=false&addsToken=sub:{{{role}}},flag:{{{result}}},id:{{{id}}}",
     "/apps/{{app}}/getorgusers" : "/apis/getorgusers.js?get=true&keys=fheiwu98237hjief8923ydewjidw834284hwqdnejwr79389&needsToken=admin",
-    "/apps/{{app}}/approveuser" : "/apis/approveuser.js?get=true&keys=fheiwu98237hjief8923ydewjidw834284hwqdnejwr79389&needsToken=admin"
+    "/apps/{{app}}/approveuser" : "/apis/approveuser.js?get=true&keys=fheiwu98237hjief8923ydewjidw834284hwqdnejwr79389&needsToken=admin",
+    "/apps/{{app}}/getorgsmatching" : "/apis/getorgsmatching.js?get=true&keys=fheiwu98237hjief8923ydewjidw834284hwqdnejwr79389&needsToken=false"
 }

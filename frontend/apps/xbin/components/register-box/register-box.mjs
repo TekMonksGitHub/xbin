@@ -9,14 +9,19 @@ import {i18n} from "/framework/js/i18n.mjs";
 import {util} from "/framework/js/util.mjs";
 import {router} from "/framework/js/router.mjs";
 import {loginmanager} from "../../js/loginmanager.mjs";
+import {apimanager as apiman} from "/framework/js/apimanager.mjs";
 import {monkshu_component} from "/framework/js/monkshu_component.mjs";
 
 const COMPONENT_PATH = util.getModulePath(import.meta), DIALOGS_PATH = `${COMPONENT_PATH}/dialogs`;
+let API_GETMATCHINGORGS;
+
 let conf, dialog_box;
 
 async function elementConnected(host) {
 	if (window.monkshu_env.components["dialog-box"]) dialog_box = window.monkshu_env.components["dialog-box"];
 	else dialog_box = (await import("./subcomponents/dialog-box/dialog-box.mjs"))["dialog_box"];
+
+	API_GETMATCHINGORGS = `${host.getAttribute("apiPath")}/getorgsmatching`;
 
 	conf = await $$.requireJSON(`${COMPONENT_PATH}/conf/config.json`);
 	const data = {};
@@ -32,14 +37,14 @@ async function elementConnected(host) {
 	data.PasswordAgain = await i18n.get(type == "reset"?"NewPasswordAgain":"PasswordAgain");
 	data.Submit = await i18n.get(type == "reset"?"Modify" : type=="initial" ? "SignIn" : "Register");
 	data.minlength = host.getAttribute("minlength"); data.initial = type == "initial"?true:undefined;
-	data.reset = type == "reset"?true:undefined;
+	data.reset = type == "reset"?true:undefined; data.SUBCOMPONENTS_PATH = `${COMPONENT_PATH}/subcomponents`;
 	if (host.getAttribute("email") && host.getAttribute("time") && (type == "reset" || type == "initial")) 
 		await _checkAndFillAccountProfile(data, host.getAttribute("email"), host.getAttribute("time"));
 	data.authLink = conf[`authLink_${$$.getOS()}`];
 	if ($$.isMobile()) {
 		let mobileQueries = host.getAttribute("mobileQueries"); try {mobileQueries = JSON.parse(mobileQueries)} catch (err) {mobileQueries = {}};
 		data.MOBILE_MEDIA_QUERY_START = mobileQueries.start||`<style>@media only screen and (max-width: ${conf.mobileBreakpoint}) {`;
-		data.MOBILE_MEDIA_QUERY_END = mobileQueries.end||"}</style>";
+		data.MOBILE_MEDIA_QUERY_END = mobileQueries.end||"}</style>"; data.IS_MOBILE_PLATFORM = true;
 	}
 
 	if (host.id) {
@@ -77,6 +82,12 @@ async function openAuthenticator(containedElement, totpURL) {
 	const secret = new URL(totpURL).searchParams.get("secret"), newURL = await _getTOTPURL(secret, register_box.getHostElement(containedElement));
 	if ($$.getOS() == "ios") dialog_box.showDialog(`${DIALOGS_PATH}/ios_totp_message.html`, false, false, {totpURL, secret}, "register_box_dialog");
 	else window.open(newURL);
+}
+
+async function updateOrgDataList(org, datalist) {
+	util.removeAllChildElements(datalist);
+	const resp = await apiman.rest(API_GETMATCHINGORGS, "GET", {org}); if (!resp || !resp.orgs) return;  
+	for (const org of resp.orgs) datalist.appendChild(new Option(org, org));
 }
 
 function _validateForm(shadowRoot) {
@@ -122,5 +133,5 @@ async function _checkAndFillAccountProfile(data, email, time) {
 }
 
 const trueWebComponentMode = true;	// making this false renders the component without using Shadow DOM
-export const register_box = {registerOrUpdate, trueWebComponentMode, elementConnected, initialRender, openAuthenticator}
-monkshu_component.register("register-box", `${APP_CONSTANTS.APP_PATH}/components/register-box/register-box.html`, register_box);
+export const register_box = {registerOrUpdate, trueWebComponentMode, elementConnected, initialRender, openAuthenticator, updateOrgDataList}
+monkshu_component.register("register-box", `${COMPONENT_PATH}/register-box.html`, register_box);

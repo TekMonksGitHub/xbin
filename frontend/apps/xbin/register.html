@@ -180,7 +180,8 @@ div.lgbox > span {
 	<register-box id="register" roles='["{{APP_CONSTANTS.GUEST_ROLE}}", "{{APP_CONSTANTS.USER_ROLE}}"]' 
 		routeOnSuccess="./main.html" type="register" minlength="{{APP_CONSTANTS.MIN_PASS_LENGTH}}"
 		dataOnSuccess='{"showDialog":{"message": "{{i18n.RegisterSuccess}}"}}'
-		mobileQueries='{"start": "{{APP_CONSTANTS.MOBILE_MEDIA_QUERY_START}}", "end": "{{APP_CONSTANTS.MOBILE_MEDIA_QUERY_END}}"}'></register-box>
+		mobileQueries='{"start": "{{APP_CONSTANTS.MOBILE_MEDIA_QUERY_START}}", "end": "{{APP_CONSTANTS.MOBILE_MEDIA_QUERY_END}}"}',
+		apiPath='{{APP_CONSTANTS.BACKEND}}/apps/{{APP_CONSTANTS.APP_NAME}}'></register-box>
 </div>
 </div>
 

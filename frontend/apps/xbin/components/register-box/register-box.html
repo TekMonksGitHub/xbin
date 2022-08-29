@@ -97,7 +97,7 @@ span#otp > div#otp_help_and_input > input {
 
 span#otp > button {display: none;}
 </style>
-{{#MOBILE_MEDIA_QUERY_START}}
+{{#IS_MOBILE_PLATFORM}}
 {{{MOBILE_MEDIA_QUERY_START}}}
     input {margin: 0; margin-top: 1em; width: 100%; border-radius: 0;}
     span#password {margin-left: 0; margin-right: 0; margin-bottom: 2em; justify-content: space-between;}
@@ -113,12 +113,12 @@ span#otp > button {display: none;}
     button#submit {padding: 1em; margin-top: 1em;}
     div#container {margin: 0 1em;}
 {{{MOBILE_MEDIA_QUERY_END}}}
-{{/MOBILE_MEDIA_QUERY_START}}
+{{/IS_MOBILE_PLATFORM}}
 
 {{{styleBody}}}
 
 <script type="module">
-    import {password_box} from "./components/password-box/password-box.mjs"; 
+    import {password_box} from "{{{SUBCOMPONENTS_PATH}}}/password-box/password-box.mjs"; 
 </script>
 
 <div id="container">
@@ -129,7 +129,10 @@ span#otp > button {display: none;}
     oninvalid="this.setCustomValidity('{{i18n.FillField}}')" oninput="setCustomValidity('')" {{#reset}}readonly{{/reset}} {{#initial}}readonly{{/initial}}>
 <input type="hidden" id="oldid" value="{{id}}">
 <input type="text" id="org" placeholder="{{i18n.Org}}" value="{{org}}" required 
-    oninvalid="this.setCustomValidity('{{i18n.FillField}}')" oninput="setCustomValidity('')" {{#reset}}readonly{{/reset}} {{#initial}}readonly{{/initial}}>
+    oninvalid="this.setCustomValidity('{{i18n.FillField}}')" 
+    oninput="setCustomValidity(''); monkshu_env.components['register-box'].updateOrgDataList(this.value, this.nextElementSibling)" 
+    list="orgsearchlist" autocomplete="off" {{#reset}}readonly{{/reset}} {{#initial}}readonly{{/initial}}>
+<datalist id="orgsearchlist"></datalist>
 <span id="password">
     <password-box style="width:45%; padding: 10px 0px 10px 0px; height: 2em;" id="pass1" placeholder="{{Password}}" 
         required="true" minlength="{{minlength}}" customValidity="{{i18n.FillField}}"></password-box>

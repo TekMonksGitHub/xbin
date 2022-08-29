@@ -49,6 +49,11 @@ exports.getUsersForOrg = async org => {
 	if (users && users.length) return {result: true, users}; else return {result: false};
 }
 
+exports.getOrgsMatching = async org => {
+	const orgs = await db.getQuery("SELECT org FROM users WHERE org LIKE ? COLLATE NOCASE", [org]);
+	if (orgs && orgs.length) return {result: true, orgs}; else return {result: true, orgs:[]};
+}
+
 exports.approve = async id => {
 	return {result: await db.runCmd("UPDATE users SET approved=1 WHERE id=?", [id])};
 }
