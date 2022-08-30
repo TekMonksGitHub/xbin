@@ -71,7 +71,7 @@ span#desktopheader > span#rightheader {
     justify-content: space-between;
 }
 
-span#desktopheader > span#rightheader > span#signoff > img {
+span#desktopheader > span#rightheader > span#signoff > img,  span#desktopheader > span#rightheader > span#refresh > img {
 	height: 2em;
 	width: 2em;
 }
@@ -140,6 +140,11 @@ span#mobilefooter {
     justify-content: space-between;
 }
 
+span#mobilefooter > img {
+	width: 2.5em;
+	height: 2.5em;
+}
+
 file-manager#fm {height: 100%;}
 </style>
 {{{APP_CONSTANTS.MOBILE_MEDIA_QUERY_START}}}
@@ -182,6 +187,7 @@ file-manager#fm {height: 100%;}
 	<span><img src="./img/person.svg"></span>
 	<span id="name">{{i18n.Hi}} {{#_org_monkshu_session}}username{{/_org_monkshu_session}}!</span>
 	</span>
+	<span id="refresh"><img src="./img/reload.svg" onclick="location.reload()"></span>
 	<span-with-menu id="gear" styleBody="url(./pages/menu.stylebody.css)"><img src="./img/settings.svg" style="height: 2em;width: 2em;vertical-align: middle;">
 		<menu-item onclick="monkshu_env.apps[APP_CONSTANTS.APP_NAME].main.changePassword(this)" label="{{i18n.ChangePassword}}"></menu-item>
 		<menu-item onclick="monkshu_env.apps[APP_CONSTANTS.APP_NAME].main.showOTPQRCode(this)" label="{{i18n.ChangePhone}}"></menu-item>
@@ -199,6 +205,7 @@ file-manager#fm {height: 100%;}
 
 <span id="mobilefooter">
 	<img src="./img/mobilefooter_home.svg" onclick="monkshu_env.frameworklibs.router.navigate(APP_CONSTANTS.MAIN_HTML)">
+	<img src="./img/mobilefooter_reload.svg" onclick="location.reload()">
 	<span-with-menu id="gearmobile" bottommenu="true" styleBody="url(./pages/menu.stylebody.css)"><img src="./img/mobilefooter_settings.svg">
 		<menu-item onclick="monkshu_env.apps[APP_CONSTANTS.APP_NAME].main.changePassword(this)" label="{{i18n.ChangePassword}}"></menu-item>
 		<menu-item onclick="monkshu_env.apps[APP_CONSTANTS.APP_NAME].main.showOTPQRCode(this)" label="{{i18n.ChangePhone}}"></menu-item>
