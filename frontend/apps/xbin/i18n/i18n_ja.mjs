@@ -23,6 +23,7 @@ export const i18n = {
 "DownloadFile": "ダウンロードする",
 "BadDownload": "エラー：不正なリンクまたは共有の有効期限が切れています",
 "Cut": "これを切る",
+"Move": "Move",
 "Copy": "これをコピー",
 "Paste": "ここに貼り付け",
 "Path": "名前",

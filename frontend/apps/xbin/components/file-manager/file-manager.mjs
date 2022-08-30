@@ -44,7 +44,8 @@ async function elementConnected(host) {
    const path = host.getAttribute("path") || (file_manager.getSessionMemory(host.id))["__lastPath"] || "/"; 
    selectedPath = path.replace(/[\/]+/g,"/"); selectedIsDirectory = true;
    const resp = await apiman.rest(API_GETFILES, "GET", {path}, true); if (!resp || !resp.result) return; 
-   for (const entry of resp.entries) {entry.stats.name = entry.name; entry.stats.json = JSON.stringify(entry.stats);}
+   for (const entry of resp.entries) {if (entry.path.replace(/[\/]+/g,"/") == selectedCut) entry.cutimage = "_cutimage"; 
+      entry.stats.name = entry.name; entry.stats.json = JSON.stringify(entry.stats);}
    
    // if a file or folder has been selected, show the paste button
    if (selectedCopy || selectedCut) resp.entries.unshift({name: await i18n.get("Paste"), path, stats:{paste: true}});
@@ -73,7 +74,9 @@ async function elementRendered(element) {
    shadowRoot.addEventListener("mousemove", e => {mouseX = e.clientX; mouseY = e.clientY;});
 
    const container = shadowRoot.querySelector("div#filelistingscontainer");
-   shadowRoot.addEventListener(isMobile()?"click":"contextmenu", e => { e.preventDefault(); if (!menuOpen) showMenu(container, true); else hideMenu(container); });
+   shadowRoot.addEventListener(isMobile()?"click":"contextmenu", e => { 
+      e.stopPropagation(); e.preventDefault(); if (e.___handled) return; else e.___handled = true; 
+      if (!menuOpen) showMenu(container, true); else hideMenu(container); });
    if (!isMobile()) shadowRoot.addEventListener("click", e => { e.stopPropagation(); if (menuOpen) hideMenu(container); });
 
    if (showNotification) _showNotification(container, PROGRESS_TEMPLATE);
@@ -271,9 +274,9 @@ function getDragAndDropDownloadURL(path, element) {
 
 const showDownloadProgress = (path, element) => _showDownloadProgress(element, path, element["data-reqid"]);
 
-function cut(_element) { selectedCut = selectedPath }
+function cut(element) { selectedCut = selectedPath; file_manager.reload(file_manager.getHostElementID(element)); }
 
-function copy(_element) { selectedCopy = selectedPath }
+function copy(_element) { selectedCopy = selectedPath; }
 
 function paste(element) {
    const selectedPathToOperate = selectedCut?selectedCut:selectedCopy;

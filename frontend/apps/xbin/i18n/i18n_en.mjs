@@ -23,6 +23,7 @@ export const i18n = {
 "DownloadFile": "Download",
 "BadDownload": "Error: Bad link or share expired",
 "Cut": "Cut",
+"Move": "Move",
 "Copy": "Copy",
 "Paste": "Paste",
 "Path": "Name",

@@ -23,6 +23,7 @@ export const i18n = {
 "DownloadFile": "डाउनलोड करें",
 "BadDownload": "समस्या: खराब लिंक या शेयर की समय सीमा समाप्त हो गई है",
 "Cut": "काटें",
+"Move": "Move",
 "Copy": "कॉपी करें",
 "Paste": "चिपकाएँ",
 "Path": "नाम",
