@@ -18,7 +18,7 @@ exports.doService = async (jsonReq, _, headers) => {
 	if (!await cms.isSecure(headers, toPath)) {LOG.error(`Path security validation failure: ${jsonReq.to}`); return CONSTANTS.FALSE_RESULT;}
 
 	try { 
-		const stat = fspromises.stat(fromPath); if (!quotas.checkQuota(headers, stat.size)) {LOG.error("Quota is full write failed."); return;}
+		const stat = fspromises.stat(fromPath); if (!await quotas.checkQuota(headers, stat.size)) {LOG.error("Quota is full write failed."); return;}
 		await utils.copyFileOrFolder(fromPath, toPath); return CONSTANTS.TRUE_RESULT; 
 	} catch (err) { LOG.error(`Error copying from: ${fromPath}, to: ${toPath}, error is: ${err}`); return CONSTANTS.FALSE_RESULT; }
 }
