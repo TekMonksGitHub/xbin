@@ -24,7 +24,7 @@ let dbInstance = [], dbRunAsync = [], dbAllAsync = [];
  * @return true on success, and false on error
  */
 exports.runCmd = async (cmd, params=[], dbPath=DB_PATH, dbCreationSQLs=DB_CREATION_SQLS) => {
-    const dbPath = path.resolve(dbPath);
+    dbPath = path.resolve(dbPath);
     await _initDB(dbPath, dbCreationSQLs); params = Array.isArray(params)?params:[params];
     try {await dbRunAsync[dbPath](cmd, params); return true}
     catch (err) {LOG.error(`DB error running, ${cmd}, with params ${params}, error: ${err}`); return false;}
@@ -39,7 +39,7 @@ exports.runCmd = async (cmd, params=[], dbPath=DB_PATH, dbCreationSQLs=DB_CREATI
  * @return rows array on success, and false on error 
  */
 exports.getQuery = async(cmd, params=[], dbPath=DB_PATH, dbCreationSQLs=DB_CREATION_SQLS) => {
-    const dbPath = path.resolve(dbPath);
+    dbPath = path.resolve(dbPath);
     await _initDB(dbPath, dbCreationSQLs); params = Array.isArray(params)?params:[params];
     try {return await dbAllAsync[dbPath](cmd, params);}
     catch (err) {LOG.error(`DB error running, ${cmd}, with params ${params}, error: ${err}`); return false;}
