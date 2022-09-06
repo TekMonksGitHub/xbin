@@ -1,5 +1,9 @@
 [
     "BEGIN TRANSACTION",
     "CREATE TABLE users(id varchar not null primary key, name varchar not null, pwph varchar not null, org varchar not null, totpsec varchar not null, role varchar not null, approved integer DEFAULT 0)",
+    
+    "/* The following is for XBin DB schemas */",
+    "CREATE TABLE shares(fullpath varchar not null, id varchar primary key, expiry varchar not null)",
+    "CREATE TABLE quotas(id varchar not null primary key, quota integer not null)",
     "COMMIT TRANSACTION"
 ]

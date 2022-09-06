@@ -13,7 +13,8 @@
     "/apps/{{app}}/downloadsharedfile" : "/apis/downloadsharedfile.js?get=true",
     "/apps/{{app}}/proxiedapis/downloaddnd" : "/apis/downloaddnd.js?get=true",
     "/apps/{{app}}/getdownloadstatus" : "/apis/getdownloadstatus.js?get=true&keys=fheiwu98237hjief8923ydewjidw834284hwqdnejwr79389&needsToken=user,admin",
-    
+    "/apps/{{app}}/checkquota" : "/apis/checkquota.js?keys=fheiwu98237hjief8923ydewjidw834284hwqdnejwr79389&needsToken=user,admin",
+
     "/apps/{{app}}/log" : "{{server_lib}}/log.js?keys=fheiwu98237hjief8923ydewjidw834284hwqdnejwr79389&logpath={{server}}/../apps/{{app}}/logs/remotelog.ndjson",
     "/apps/{{app}}/getremotelog" : "/apis/getremotelog.js?get=true&keys=fheiwu98237hjief8923ydewjidw834284hwqdnejwr79389",
 

@@ -12,7 +12,7 @@ function init() {
 		if (event == "token_generated") try {
 			const token = ("Bearer "+object.token).toLowerCase(); 
 			const logins = CLUSTER_MEMORY.get("__org_monkshu_loginapp_logins") || {};
-			logins[token] = {id: object.response.id, org: object.response.org, name: object.response.name}; 
+			logins[token] = {id: object.response.id, org: object.response.org, name: object.response.name, role: object.response.role}; 
 			CLUSTER_MEMORY.set("__org_monkshu_loginapp_logins", logins);
 		} catch (err) {LOG.error(`Could not init home for the user with ID ${object.response.id}, name ${object.response.name}, error was: ${err}`);}
 
@@ -50,6 +50,11 @@ exports.getID = headers => {
 exports.getOrg = headers => {
 	if (!headers["authorization"]) return null; const logins = CLUSTER_MEMORY.get("__org_monkshu_loginapp_logins") || {};
 	return logins[headers["authorization"].toLowerCase()]?logins[headers["authorization"].toLowerCase()].org:null;
+}
+
+exports.getRole = headers => {
+	if (!headers["authorization"]) return null; const logins = CLUSTER_MEMORY.get("__org_monkshu_loginapp_logins") || {};
+	return logins[headers["authorization"].toLowerCase()]?logins[headers["authorization"].toLowerCase()].role:null;
 }
 
 const validateRequest = jsonReq => (jsonReq && jsonReq.pwph && jsonReq.otp && jsonReq.id);

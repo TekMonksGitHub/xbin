@@ -4,5 +4,6 @@
     "DOWNLOAD_READ_BUFFER_SIZE": 10485760,
     "TIME_TO_WAIT_FOR_DOWNLOADS_TO_START": 20000,
     "CMS_ROOT": "C:/Users/rvkapoor/source/xbin/backend/apps/xbin/drive",
-    "REMOTE_LOG": true
+    "REMOTE_LOG": true,
+    "DEFAULT_QUOTA": 1073741824
 }
