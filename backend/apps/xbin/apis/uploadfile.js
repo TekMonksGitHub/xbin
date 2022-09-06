@@ -18,7 +18,7 @@ exports.doService = async (jsonReq, _servObject, headers, _url) => {
         const matches = jsonReq.data.match(/^data:.*;base64,(.*)$/); 
         if (!matches) throw `Bad data encoding: ${jsonReq.data}`;
 		const bufferToWrite = Buffer.from(matches[1], "base64");
-		if (!await quotas.checkQuota(headers, bufferToWrite.length).result) throw ("Quota is full write failed.");
+		if (!(await quotas.checkQuota(headers, bufferToWrite.length)).result) throw ("Quota is full write failed.");
         await fspromises.appendFile(fullpath, bufferToWrite); 
         return CONSTANTS.TRUE_RESULT;
 	} catch (err) {

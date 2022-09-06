@@ -1,4 +1,3 @@
-
 /**
  * Library for managing quotas
  * (C) 2022 TekMonks
@@ -19,7 +18,7 @@ exports.checkQuota = async function(headers, writeLength, id) {
 
 async function _dirSize(path) {
 	let currentDirSize = 0; 
-	for (const dirEntry of await fspromises.readdir(path)) { const stat = fspromises.stat(dirEntry); 
-		currentDirSize += stat.isDirectory() ? _dirSize(path+"/"+dirEntry) : stat.size; }
+	for (const dirEntry of await fspromises.readdir(path)) { const stat = await fspromises.stat(`${path}/${dirEntry}`); 
+		currentDirSize += stat.isDirectory() ? (await _dirSize(`${path}/${dirEntry}`)) : stat.size; }
 	return currentDirSize;
 }

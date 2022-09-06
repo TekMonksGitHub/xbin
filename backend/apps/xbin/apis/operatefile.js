@@ -20,12 +20,14 @@ exports.doService = async (jsonReq, _, headers) => {
 		if (jsonReq.op == "read") result.data = await fspromises.readFile(fullpath, "UTF-8");
 		else {
 			const additionalBytesToWrite = Buffer.from(jsonReq.data, "utf8").length - (await fspromises.stat(fullpath)).size;
-			if (!await quotas.checkQuota(headers, additionalBytesToWrite).result) throw ("Quota is full write failed.");
+			if (!(await quotas.checkQuota(headers, additionalBytesToWrite)).result) throw ("Quota is full write failed.");
 			else await fspromises.writeFile(fullpath, jsonReq.data, "UTF-8");
 		}
 
         return result;
-	} catch (err) {LOG.error(`Error creating  path: ${fullpath}, error is: ${err}`); return CONSTANTS.FALSE_RESULT;}
+	} catch (err) {
+		LOG.error(`Error creating  path: ${fullpath}, error is: ${err}`); return CONSTANTS.FALSE_RESULT;
+	}
 }
 
 const validateRequest = jsonReq => (jsonReq && jsonReq.path && (!jsonReq.op || jsonReq.op == "read" || (jsonReq.op == "write" && jsonReq.data)));
