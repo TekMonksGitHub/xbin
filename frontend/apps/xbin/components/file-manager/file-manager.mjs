@@ -112,7 +112,7 @@ function create(element) {
 }
 
 const uploadFiles = async (element, files) => {
-   let uploadSize = 0; for (const file of files) uploadSize += file.size; if (!_checkQuotaAndReportError(uploadSize)) return;
+   let uploadSize = 0; for (const file of files) uploadSize += file.size; if (!(await _checkQuotaAndReportError(uploadSize))) return;
    for (const file of files) {
       if (Object.keys(filesAndPercents).includes(file.name) && filesAndPercents[file.name].percent != 100 && !filesAndPercents[file.name].cancelled) {LOG.info(`Skipped ${file.name}, already being uploaded.`); continue;}  // already being uploaded
       else _uploadAFile(element, file);
@@ -340,7 +340,7 @@ async function shareFile() {
       }, async _ => apiman.rest(API_SHAREFILE, "GET", {id: resp.id, expiry: 0}, true));
 }
 
-const _showErrorDialog = async (hideAction, message) => dialog().showMessage(message||await i18n.get("Error"), "dialog", hideAction);
+const _showErrorDialog = async (hideAction, message) => dialog().showMessage(message||await i18n.get("Error"), "dialog", hideAction||undefined);
 
 async function _showNotification(element, dialogTemplateID) {
    showNotification = true;
@@ -377,18 +377,20 @@ async function _performRename(oldPath, newPath, element) {
 }
 
 async function _performCopy(fromPath, toPath, element) {
-   const sizeOfCopy = JSON.parse(selectedElement.dataset.stats).size; if (!_checkQuotaAndReportError(sizeOfCopy)) return;
+   const sizeOfCopy = JSON.parse(selectedElement.dataset.stats).size; if (!(await _checkQuotaAndReportError(sizeOfCopy))) return;
    const resp = await apiman.rest(API_COPYFILE, "GET", {from: fromPath, to: toPath}, true), hostID = file_manager.getHostElementID(element)
    if (!resp || !resp.result) _showErrorDialog(_=>file_manager.reload(hostID)); else file_manager.reload(hostID);
 }
 
-const _checkQuotaAndReportError = uploadSize => {
-   const uploadQuotaCheckResult = apiman.rest(API_CHECKQUOTA, "GET", {bytestowrite: uploadSize}, true);
+const _checkQuotaAndReportError = async uploadSize => {
+   const uploadQuotaCheckResult = await apiman.rest(API_CHECKQUOTA, "GET", {bytestowrite: uploadSize}, true);
+   const _roundToTwo = number => Math.round(number * 100)/100;
    if ((!uploadQuotaCheckResult) || (!uploadQuotaCheckResult.result)) { // stop upload if it will exceed the quota
-      LOG.error(`Upload size exceeds quota. User ID is ${user}, upload size ${uploadSize}, quota is ${uploadQuotaCheckResult.quota} and the current user disk size is ${uploadQuotaCheckResult.currentsize}.`); 
-      _showErrorDialog(null, uploadQuotaCheckResult ? mustache.render(i18n.get("UploadQuotaExceeded"), 
-         {diskAvailableMB: (uploadQuotaCheckResult.quota-uploadQuotaCheckResult.currentsize)/(1024*1024), 
-         diskMaxGB: uploadQuotaCheckResult.quota/(1024*1024*1024), uploadSizeMB: uploadSize/(1024*1024)}) : undefined); 
+      if (uploadQuotaCheckResult) LOG.error(`Upload size exceeds quota. User ID is ${user}, upload size ${uploadSize}, quota is ${uploadQuotaCheckResult.quota} and the current user disk size is ${uploadQuotaCheckResult.currentsize}.`); 
+      else LOG.error("Check quota call failed, unable to upload for user "+user);
+      _showErrorDialog(null, uploadQuotaCheckResult ? (await router.getMustache()).render((await i18n.get("UploadQuotaExceeded")), 
+         {diskAvailableMB: _roundToTwo((uploadQuotaCheckResult.quota-uploadQuotaCheckResult.currentsize)/(1024*1024)), 
+         diskMaxGB: _roundToTwo(uploadQuotaCheckResult.quota/(1024*1024*1024)), uploadSizeMB: _roundToTwo(uploadSize/(1024*1024))}) : undefined); 
       return false; 
    } else return true;
 }
