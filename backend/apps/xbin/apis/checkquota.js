@@ -13,7 +13,7 @@ exports.doService = async (jsonReq, _servObject, headers, _url) => {
     const result = await quotas.checkquota(headers, jsonReq.bytestowrite, id);
     LOG.debug("Got check quota request for ID: " + id + ", check for bytes to write " + jsonReq.bytestowrite + ", result is " + result);
 
-    return {result: result.result, quota: result.quota};
+    return {result: result.result, quota: result.quota, currentsize: result.currentsize};
 }
 
 const validateRequest = jsonReq => (jsonReq && jsonReq.bytestowrite);

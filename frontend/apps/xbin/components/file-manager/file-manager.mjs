@@ -6,7 +6,7 @@
  * of local variables.
  *  
  * (C) 2020 TekMonks. All rights reserved.
- * License: MIT - see enclosed license.txt file.
+ * License: MIT - See enclosed LICENSE file.
  */
 import {i18n} from "/framework/js/i18n.mjs";
 import {util} from "/framework/js/util.mjs";
@@ -29,6 +29,7 @@ const COMPONENT_PATH = util.getModulePath(import.meta), DIALOGS_PATH = `${COMPON
 const API_DOWNLOADFILE_GETSECURID = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/getsecurid";
 const API_DOWNLOADFILE_STATUS = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/getdownloadstatus";
 const API_DOWNLOADFILE_DND = APP_CONSTANTS.FRONTEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/proxiedapis/downloaddnd";
+const API_CHECKQUOTA = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/checkquota";
 let PAGE_DOWNLOADFILE_SHARED = `${APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/downloadsharedfile"}`;
 
 const DIALOG_SCROLL_ELEMENT_ID = "notificationscrollpositioner", DIALOG_HOST_ELEMENT_ID = "notification", PROGRESS_TEMPLATE="progressdialog", DEFAULT_SHARE_EXPIRY = 5;
@@ -85,7 +86,7 @@ async function elementRendered(element) {
 function handleClick(element, path, isDirectory, fromClickEvent, nomenu) {
    selectedPath = path?path.replace(/[\/]+/g,"/"):selectedPath; 
    selectedIsDirectory = (isDirectory!== undefined) ? util.parseBoolean(isDirectory) : selectedIsDirectory;
-   selectedElement = element; const event = element.getAttribute("stats")?JSON.parse(element.getAttribute("stats")):null;  // used below in eval
+   selectedElement = element; const event = JSON.parse(element.dataset.stats||"{}");  // used below in eval
    const hostElement = file_manager.getHostElement(element); if (hostElement.getAttribute("onselect")) eval(hostElement.getAttribute("onselect"));
 
    if (nomenu) return;
@@ -111,6 +112,7 @@ function create(element) {
 }
 
 const uploadFiles = async (element, files) => {
+   let uploadSize = 0; for (const file of files) uploadSize += file.size; if (!_checkQuotaAndReportError(uploadSize)) return;
    for (const file of files) {
       if (Object.keys(filesAndPercents).includes(file.name) && filesAndPercents[file.name].percent != 100 && !filesAndPercents[file.name].cancelled) {LOG.info(`Skipped ${file.name}, already being uploaded.`); continue;}  // already being uploaded
       else _uploadAFile(element, file);
@@ -338,7 +340,7 @@ async function shareFile() {
       }, async _ => apiman.rest(API_SHAREFILE, "GET", {id: resp.id, expiry: 0}, true));
 }
 
-const _showErrorDialog = async hideAction => dialog().showMessage(await i18n.get("Error"), "dialog", hideAction);
+const _showErrorDialog = async (hideAction, message) => dialog().showMessage(message||await i18n.get("Error"), "dialog", hideAction);
 
 async function _showNotification(element, dialogTemplateID) {
    showNotification = true;
@@ -375,12 +377,24 @@ async function _performRename(oldPath, newPath, element) {
 }
 
 async function _performCopy(fromPath, toPath, element) {
+   const sizeOfCopy = JSON.parse(selectedElement.dataset.stats).size; if (!_checkQuotaAndReportError(sizeOfCopy)) return;
    const resp = await apiman.rest(API_COPYFILE, "GET", {from: fromPath, to: toPath}, true), hostID = file_manager.getHostElementID(element)
    if (!resp || !resp.result) _showErrorDialog(_=>file_manager.reload(hostID)); else file_manager.reload(hostID);
+}
+
+const _checkQuotaAndReportError = uploadSize => {
+   const uploadQuotaCheckResult = apiman.rest(API_CHECKQUOTA, "GET", {bytestowrite: uploadSize}, true);
+   if ((!uploadQuotaCheckResult) || (!uploadQuotaCheckResult.result)) { // stop upload if it will exceed the quota
+      LOG.error(`Upload size exceeds quota. User ID is ${user}, upload size ${uploadSize}, quota is ${uploadQuotaCheckResult.quota} and the current user disk size is ${uploadQuotaCheckResult.currentsize}.`); 
+      _showErrorDialog(null, uploadQuotaCheckResult ? mustache.render(i18n.get("UploadQuotaExceeded"), 
+         {diskAvailableMB: (uploadQuotaCheckResult.quota-uploadQuotaCheckResult.currentsize)/(1024*1024), 
+         diskMaxGB: uploadQuotaCheckResult.quota/(1024*1024*1024), uploadSizeMB: uploadSize/(1024*1024)}) : undefined); 
+      return false; 
+   } else return true;
 }
 
 export const file_manager = { trueWebComponentMode: true, elementConnected, elementRendered, handleClick, 
    showMenu, deleteFile, editFile, downloadFile, cut, copy, paste, upload, uploadFiles, create, shareFile, 
    renameFile, menuEventDispatcher, isMobile, getDragAndDropDownloadURL, showDownloadProgress, hideNotification,
    cancelFile, editFileVisible }
-monkshu_component.register("file-manager", `${APP_CONSTANTS.APP_PATH}/components/file-manager/file-manager.html`, file_manager);
+monkshu_component.register("file-manager", `${COMPONENT_PATH}/file-manager.html`, file_manager);

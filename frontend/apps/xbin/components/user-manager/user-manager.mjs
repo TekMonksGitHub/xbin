@@ -14,12 +14,12 @@ import {monkshu_component} from "/framework/js/monkshu_component.mjs";
 
 const CONTEXT_MENU_ID = "usermanagerContextMenu", API_GETORGUSERS = "getorgusers", API_DELETEUSER = "deleteuser",
 	API_APPROVEUSER = "approveuser", API_EDITUSER = "updateuserbyadmin", API_RESETUSER = "resetuser", 
-	API_ADDUSER = "adduserbyadmin", MODULE_PATH = util.getModulePath(import.meta);
+	API_ADDUSER = "adduserbyadmin", COMPONENT_PATH = util.getModulePath(import.meta);
 
 let conf;
 
 async function elementConnected(element) {
-	conf = await $$.requireJSON(`${MODULE_PATH}/conf/usermanager.json`);
+	conf = await $$.requireJSON(`${COMPONENT_PATH}/conf/usermanager.json`);
 
 	const usersResult = await apiman.rest(`${element.getAttribute("backendurl")}/${API_GETORGUSERS}`, "GET", 
 		{org: element.getAttribute("org")}, true);
@@ -59,7 +59,7 @@ async function userMenuClicked(event, element, name, id, _org, role, approved) {
 
 async function addUser(element) {
 	const roles = []; for (const thisrole of conf.roles) roles.push({label:await i18n.get(thisrole), value: thisrole, selected: thisrole==conf.user_role?true:undefined});
-	monkshu_env.components['dialog-box'].showDialog(`${MODULE_PATH}/dialogs/addeditprofile.html`, true, true, 
+	monkshu_env.components['dialog-box'].showDialog(`${COMPONENT_PATH}/dialogs/addeditprofile.html`, true, true, 
 			{approved: true, roles, CONF:conf}, "dialog", ["name", "id", "role", "approved"], async ret => {
 		
 		if (ret.approved.toLowerCase() == "true") ret.approved = true; else ret.approved = false;
@@ -81,7 +81,7 @@ async function addUser(element) {
 
 async function editUser(name, id, role, approved, element) {
 	const roles = []; for (const thisrole of conf.roles) roles.push({label:await i18n.get(thisrole), value: thisrole, selected: thisrole==role?true:undefined});
-	monkshu_env.components['dialog-box'].showDialog(`${MODULE_PATH}/dialogs/addeditprofile.html`, true, true, 
+	monkshu_env.components['dialog-box'].showDialog(`${COMPONENT_PATH}/dialogs/addeditprofile.html`, true, true, 
 			{name, id, role, approved:approved==1?true:undefined, roles, CONF:conf}, "dialog", 
 			["name", "id", "role", "approved", "old_id"], async ret => {
 		
@@ -129,7 +129,7 @@ async function _approveUser(name, id, element) {
 }
 
 function _createData(host, users) {
-	const data = {componenturl: MODULE_PATH, CONTEXT_MENU_ID};
+	const data = {componenturl: COMPONENT_PATH, CONTEXT_MENU_ID};
 
 	if (host.getAttribute("styleBody")) data.styleBody = `<style>${host.getAttribute("styleBody")}</style>`;
 	if (users) data.users = users;
@@ -138,13 +138,13 @@ function _createData(host, users) {
 	return data;
 }
 
-const _showError = async error => { await monkshu_env.components['dialog-box'].showDialog(`${MODULE_PATH}/dialogs/error.html`, 
+const _showError = async error => { await monkshu_env.components['dialog-box'].showDialog(`${COMPONENT_PATH}/dialogs/error.html`, 
 	true, false, {error, CONF:conf}, "dialog", []); monkshu_env.components['dialog-box'].hideDialog("dialog"); }
-const _showMessage = async message => { await monkshu_env.components['dialog-box'].showDialog(`${MODULE_PATH}/dialogs/message.html`, 
+const _showMessage = async message => { await monkshu_env.components['dialog-box'].showDialog(`${COMPONENT_PATH}/dialogs/message.html`, 
 	true, false, {message, CONF:conf}, "dialog", []); monkshu_env.components['dialog-box'].hideDialog("dialog"); }
-const _execOnConfirm = (message, cb) => monkshu_env.components['dialog-box'].showDialog(`${MODULE_PATH}/dialogs/message.html`, 
+const _execOnConfirm = (message, cb) => monkshu_env.components['dialog-box'].showDialog(`${COMPONENT_PATH}/dialogs/message.html`, 
 	true, true, {message, CONF:conf}, "dialog", [], _=>{monkshu_env.components['dialog-box'].hideDialog("dialog"); cb();});
 
 export const user_manager = {trueWebComponentMode: true, elementConnected, userMenuClicked, addUser, editUser, 
 	searchModified, elementRendered}
-monkshu_component.register("user-manager", `${APP_CONSTANTS.APP_PATH}/components/user-manager/user-manager.html`, user_manager);
+monkshu_component.register("user-manager", `${COMPONENT_PATH}/user-manager.html`, user_manager);

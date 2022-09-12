@@ -13,7 +13,8 @@ exports.checkQuota = async function(headers, writeLength, id) {
     if (!id) {LOG.error("Not valid ID "+id); return {result: false};}
 	let quota; try {quota = (await db.getQuery("SELECT quota FROM quotas WHERE id = ?", [id]))[0]} catch (err) {};
 	if (!quota) quota = CONF.DEFAULT_QUOTA;
-	if ((await _dirSize(cmsRoot))+writeLength > quota) return {result: false, quota}; else return {result: true, quota};
+	const currentsize = await _dirSize(cmsRoot); if (currentsize+writeLength > quota) return {result: false, quota, 
+		currentsize}; else return {result: true, quota};
 }
 
 async function _dirSize(path) {

@@ -56,4 +56,4 @@ function _getContent(element) {
 
 const trueWebComponentMode = true;	// making this false renders the component without using Shadow DOM
 export const span_with_menu = {trueWebComponentMode, initialRender, showMenu}
-monkshu_component.register("span-with-menu", `${APP_CONSTANTS.APP_PATH}/components/span-with-menu/span-with-menu.html`, span_with_menu);
+monkshu_component.register("span-with-menu", `${COMPONENT_PATH}/span-with-menu.html`, span_with_menu);

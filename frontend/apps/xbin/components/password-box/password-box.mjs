@@ -5,7 +5,10 @@
  * (C) 2021 TekMonks. All rights reserved.
  * License: See enclosed license file.
  */
+import {util} from "/framework/js/util.mjs";
 import {monkshu_component} from "/framework/js/monkshu_component.mjs";
+
+const COMPONENT_PATH = util.getModulePath(import.meta);
 
 async function elementConnected(element) {
 	const data = {
@@ -51,4 +54,4 @@ function _attachFormValidationControls(element) {
 }
 
 export const password_box = {trueWebComponentMode: true, elementConnected, elementRendered, onKeyUp}
-monkshu_component.register("password-box", `${APP_CONSTANTS.COMPONENTS_PATH}/password-box/password-box.html`, password_box);
+monkshu_component.register("password-box", `${COMPONENT_PATH}/password-box.html`, password_box);

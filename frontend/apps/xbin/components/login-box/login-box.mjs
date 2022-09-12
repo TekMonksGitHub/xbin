@@ -2,9 +2,12 @@
  * (C) 2018 TekMonks. All rights reserved.
  * License: See enclosed license file.
  */
+import {util} from "/framework/js/util.mjs";
 import {router} from "/framework/js/router.mjs";
 import {loginmanager} from "../../js/loginmanager.mjs";
 import {monkshu_component} from "/framework/js/monkshu_component.mjs";
+
+const COMPONENT_PATH = util.getModulePath(import.meta);
 
 async function elementConnected(element) {
 	let data = {};
@@ -57,4 +60,4 @@ function _handleLoginResult(result, shadowRoot, routeOnSuccess) {
 
 const trueWebComponentMode = true;	// making this false renders the component without using Shadow DOM
 export const login_box = {signin, resetAccount, trueWebComponentMode, elementConnected}
-monkshu_component.register("login-box", `${APP_CONSTANTS.APP_PATH}/components/login-box/login-box.html`, login_box);
+monkshu_component.register("login-box", `${COMPONENT_PATH}/login-box.html`, login_box);
