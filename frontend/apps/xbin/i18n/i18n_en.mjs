@@ -55,6 +55,7 @@ export const i18n = {
 "Bytes": "Bytes",
 "Location": "Location",
 "UploadQuotaExceeded": "Upload quota exceeded because maximum space allowed is {{diskMaxGB}} GB, the current space available is {{diskAvailableMB}} MB and the upload size is {{uploadSizeMB}} MB.",
+"QuoteStatus": "{{percent}}% used",
 
 "logintagline": "XBin Enterprise Content Manager",
 "loginsubtag": "Secure, integrated, and easy to use. Cloud content manager.",

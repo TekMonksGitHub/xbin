@@ -88,26 +88,7 @@ span#desktopheader > span#rightheader > span#greeting > span-with-menu#status.wo
 span#desktopheader > span#rightheader > span#greeting > span-with-menu#status.break {box-shadow: 1px 1px 20px -3px #bdbd00}
 span#desktopheader > span#rightheader > span#greeting > span-with-menu#status.offline {box-shadow: 1px 1px 20px -3px #cc0000}
 span#desktopheader > span#rightheader > span#greeting > span#name {margin-left: 1.5em;}
-span#desktopheader > span#rightheader > span#search {
-	width: 50%;
-    position: relative;
-}
-span#desktopheader > span#rightheader > span#search > input#searchtext {
-	padding: 0.8em;
-    outline: none;
-    border: 1px solid #4FB4ED;
-    border-radius: 0.5em;
-    width: 100%;
-    padding-left: 3em;
-	font-size: medium;
-	color: #444444;
-}
-span#desktopheader > span#rightheader > span#search > img#searchimg {
-	position: absolute;
-    margin-left: 5px;
-	height: 80%;
-	top: 10%;
-}
+span#desktopheader > span#rightheader > span#diskquota {width: 15%; height: 1.8em;} span#mobilediskquota {display: none;}
 
 div#maincontent {
 	background-color: transparent;
@@ -155,6 +136,7 @@ file-manager#fm {height: 100%;}
 	div#maincontent {height: calc(100% - 5em);; margin: 0; padding: 1em 1em 0em 1em;}
 	div#lowercontent {height: auto; flex-direction: column-reverse;}
 	span#mobilefooter {display: flex;}
+	span#diskquota {display: none;} span#mobilediskquota {display: inline; width: 3em;}
 {{{APP_CONSTANTS.MOBILE_MEDIA_QUERY_END}}}
 
 <!doctype html>
@@ -171,6 +153,7 @@ file-manager#fm {height: 100%;}
 	import "./components/file-manager/file-manager.mjs";
 	import "./components/span-with-menu/span-with-menu.mjs";
 	import {blackboard} from "/framework/js/blackboard.mjs";
+	import "./components/progress-bar/progress-bar.mjs";
 	import {monkshu_component} from "/framework/js/monkshu_component.mjs";
 	blackboard.registerListener(monkshu_component.BLACKBOARD_MESSAGE_COMPONENT_RENDERED, component => {
 		if (component == "file-manager#fm") main.showLoginMessages(); });	// rendering needs to be complete as filemanager has it's own dialog which onconnect clears memory etc
@@ -187,6 +170,9 @@ file-manager#fm {height: 100%;}
 	<span><img src="./img/person.svg"></span>
 	<span id="name">{{i18n.Hi}} {{#_org_monkshu_session}}username{{/_org_monkshu_session}}!</span>
 	</span>
+	<span id="diskquota"><progress-bar id="quotabar" fill="#4FB4ED" background="#E1F4FF" borderwidth="0px" bordercolor="#4FB4ED" borderradius="1em" 
+		filltextcolor="white" bgtextcolor="#4FB4ED" progresstext="&#x7b;&#x7b;&#x7b;value&#x7d;&#x7d;&#x7d;% used" 
+		progresstextsize="0.8em" textfont="Arial" roundedprogressbar="false" value="0"></progress-bar></span>
 	<span id="refresh"><img src="./img/reload.svg" onclick="location.reload()"></span>
 	<span-with-menu id="gear" styleBody="url(./pages/menu.stylebody.css)"><img src="./img/settings.svg" style="height: 2em;width: 2em;vertical-align: middle;">
 		<menu-item onclick="monkshu_env.apps[APP_CONSTANTS.APP_NAME].main.changePassword(this)" label="{{i18n.ChangePassword}}"></menu-item>
@@ -200,11 +186,14 @@ file-manager#fm {height: 100%;}
 
 <div id="maincontent">
 	<file-manager id="fm" defaultShareDuration="5" 
-		user="{{#_org_monkshu_session}}id{{/_org_monkshu_session}}" downloadpage="./download.html"></file-manager>
+		user="{{#_org_monkshu_session}}id{{/_org_monkshu_session}}" downloadpage="./download.html" quotabarids="quotabar,quotabarmobile"></file-manager>
 </div>
 
 <span id="mobilefooter">
 	<img src="./img/mobilefooter_home.svg" onclick="monkshu_env.frameworklibs.router.navigate(APP_CONSTANTS.MAIN_HTML)">
+	<span id="mobilediskquota"><progress-bar id="quotabarmobile" fill="#4FB4ED" background="#E1F4FF" borderwidth="1px" bordercolor="#FFFFFF" borderradius="0.3em" 
+		filltextcolor="white" bgtextcolor="white" progresstext="&#x7b;&#x7b;&#x7b;value&#x7d;&#x7d;&#x7d;% used" 
+		progresstextsize="0.7em" textfont="Arial" roundedprogressbar="false" value="0" isvertical="true"></progress-bar></span>
 	<img src="./img/mobilefooter_reload.svg" onclick="location.reload()">
 	<span-with-menu id="gearmobile" bottommenu="true" styleBody="url(./pages/menu.stylebody.css)"><img src="./img/mobilefooter_settings.svg">
 		<menu-item onclick="monkshu_env.apps[APP_CONSTANTS.APP_NAME].main.changePassword(this)" label="{{i18n.ChangePassword}}"></menu-item>

@@ -11,6 +11,7 @@
 import {i18n} from "/framework/js/i18n.mjs";
 import {util} from "/framework/js/util.mjs";
 import {router} from "/framework/js/router.mjs";
+import {blackboard} from "/framework/js/blackboard.mjs";
 import {apimanager as apiman} from "/framework/js/apimanager.mjs";
 import {monkshu_component} from "/framework/js/monkshu_component.mjs";
 
@@ -81,6 +82,8 @@ async function elementRendered(element) {
    if (!isMobile()) shadowRoot.addEventListener("click", e => { e.stopPropagation(); if (menuOpen) hideMenu(container); });
 
    if (showNotification) _showNotification(container, PROGRESS_TEMPLATE);
+
+   if (element.getAttribute("quotabarids")) _updateQuotaBars(element.getAttribute("quotabarids").split(","));
 }
 
 function handleClick(element, path, isDirectory, fromClickEvent, nomenu) {
@@ -382,9 +385,10 @@ async function _performCopy(fromPath, toPath, element) {
    if (!resp || !resp.result) _showErrorDialog(_=>file_manager.reload(hostID)); else file_manager.reload(hostID);
 }
 
+const _roundToTwo = number => Math.round(number * 100)/100;
+
 const _checkQuotaAndReportError = async uploadSize => {
    const uploadQuotaCheckResult = await apiman.rest(API_CHECKQUOTA, "GET", {bytestowrite: uploadSize}, true);
-   const _roundToTwo = number => Math.round(number * 100)/100;
    if ((!uploadQuotaCheckResult) || (!uploadQuotaCheckResult.result)) { // stop upload if it will exceed the quota
       if (uploadQuotaCheckResult) LOG.error(`Upload size exceeds quota. User ID is ${user}, upload size ${uploadSize}, quota is ${uploadQuotaCheckResult.quota} and the current user disk size is ${uploadQuotaCheckResult.currentsize}.`); 
       else LOG.error("Check quota call failed, unable to upload for user "+user);
@@ -393,6 +397,17 @@ const _checkQuotaAndReportError = async uploadSize => {
          diskMaxGB: _roundToTwo(uploadQuotaCheckResult.quota/(1024*1024*1024)), uploadSizeMB: _roundToTwo(uploadSize/(1024*1024))}) : undefined); 
       return false; 
    } else return true;
+}
+
+const _updateQuotaBars = async quotabarIDs => {
+   const quotaStats = await apiman.rest(API_CHECKQUOTA, "GET", {bytestowrite: 0}, true); if (!quotaStats) return; // can't update
+   const percentUsed = _roundToTwo(quotaStats.currentsize/quotaStats.quota);
+   const _setupUpdateWhenProgressBarLive = _ => {
+      blackboard.registerListener(monkshu_component.BLACKBOARD_MESSAGE_COMPONENT_RENDERED, component => {
+         for (const quotabarID of quotabarIDs) if (component == `progress-bar#${quotabarID}`) _updateQuotaBars([quotabarID]); });
+   }
+   const progress_bar = window.monkshu_env.components["progress-bar"]; if (!progress_bar) {_setupUpdateWhenProgressBarLive(); return;}  // nothing to do
+   for (const quotabarID of quotabarIDs) progress_bar.setValue(quotabarID, percentUsed);
 }
 
 export const file_manager = { trueWebComponentMode: true, elementConnected, elementRendered, handleClick, 
