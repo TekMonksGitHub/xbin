@@ -401,13 +401,13 @@ const _checkQuotaAndReportError = async uploadSize => {
 
 const _updateQuotaBars = async quotabarIDs => {
    const quotaStats = await apiman.rest(API_CHECKQUOTA, "GET", {bytestowrite: 0}, true); if (!quotaStats) return; // can't update
-   const percentUsed = _roundToTwo(quotaStats.currentsize/quotaStats.quota);
+   const percentUsed = _roundToTwo(quotaStats.currentsize/quotaStats.quota), quotaGB = _roundToTwo(quotaStats.quota/(1024*1024*1024));
    const _setupUpdateWhenProgressBarLive = _ => {
       blackboard.registerListener(monkshu_component.BLACKBOARD_MESSAGE_COMPONENT_RENDERED, component => {
          for (const quotabarID of quotabarIDs) if (component == `progress-bar#${quotabarID}`) _updateQuotaBars([quotabarID]); });
    }
    const progress_bar = window.monkshu_env.components["progress-bar"]; if (!progress_bar) {_setupUpdateWhenProgressBarLive(); return;}  // nothing to do
-   for (const quotabarID of quotabarIDs) progress_bar.setValue(quotabarID, percentUsed);
+   for (const quotabarID of quotabarIDs) progress_bar.setValue(quotabarID, {value: percentUsed, quotaGB});
 }
 
 export const file_manager = { trueWebComponentMode: true, elementConnected, elementRendered, handleClick, 

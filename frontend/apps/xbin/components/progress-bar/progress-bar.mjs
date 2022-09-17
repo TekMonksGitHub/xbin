@@ -34,16 +34,17 @@ async function elementConnected(host) {
 	progress_bar.setData(host.id, data);
 }
 
-async function setValue(hostID, newvalue) {
+async function setValue(hostID, renderData) {
 	const host = progress_bar.getHostElementByID(hostID), data = progress_bar.getData(hostID), commonData = 
 		host.getAttribute("isvertical") ? data.vertical_progress : data.horizontal_progress;
-	commonData.progresstext = await _getProgressText(host, newvalue); commonData.value = _getValue(host, newvalue); 
+	if (!renderData.value) renderData.value = 0;	// this is a needed param
+	commonData.progresstext = await _getProgressText(host, renderData); commonData.value = _getValue(host, renderData.value); 
 	progress_bar.bindData(data, hostID);
 }
 
-async function _getProgressText(host, value) {
-	const valueParsed = _getValue(host, value), progrestext = host.getAttribute("progresstext") ? 
-		(await router.getMustache()).render(host.getAttribute("progresstext"), {value: valueParsed}) : `${valueParsed}%`;
+async function _getProgressText(host, renderData={value: 0}) {
+	const valueParsed = _getValue(host, renderData.value), 
+		progrestext = host.getAttribute("progresstext") ? (await router.getMustache()).render(host.getAttribute("progresstext"), renderData) : `${valueParsed}%`;
 	return progrestext;
 }
 

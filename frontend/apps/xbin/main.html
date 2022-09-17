@@ -171,7 +171,7 @@ file-manager#fm {height: 100%;}
 	<span id="name">{{i18n.Hi}} {{#_org_monkshu_session}}username{{/_org_monkshu_session}}!</span>
 	</span>
 	<span id="diskquota"><progress-bar id="quotabar" fill="#4FB4ED" background="#E1F4FF" borderwidth="0px" bordercolor="#4FB4ED" borderradius="1em" 
-		filltextcolor="white" bgtextcolor="#4FB4ED" progresstext="&#x7b;&#x7b;&#x7b;value&#x7d;&#x7d;&#x7d;% used" 
+		filltextcolor="white" bgtextcolor="#4FB4ED" progresstext="&#x7b;&#x7b;&#x7b;quotaGB&#x7d;&#x7d;&#x7d; GB, &#x7b;&#x7b;&#x7b;value&#x7d;&#x7d;&#x7d;% used" 
 		progresstextsize="0.8em" textfont="Arial" roundedprogressbar="false" value="0"></progress-bar></span>
 	<span id="refresh"><img src="./img/reload.svg" onclick="location.reload()"></span>
 	<span-with-menu id="gear" styleBody="url(./pages/menu.stylebody.css)"><img src="./img/settings.svg" style="height: 2em;width: 2em;vertical-align: middle;">
@@ -192,7 +192,7 @@ file-manager#fm {height: 100%;}
 <span id="mobilefooter">
 	<img src="./img/mobilefooter_home.svg" onclick="monkshu_env.frameworklibs.router.navigate(APP_CONSTANTS.MAIN_HTML)">
 	<span id="mobilediskquota"><progress-bar id="quotabarmobile" fill="#4FB4ED" background="#E1F4FF" borderwidth="1px" bordercolor="#FFFFFF" borderradius="0.3em" 
-		filltextcolor="white" bgtextcolor="white" progresstext="&#x7b;&#x7b;&#x7b;value&#x7d;&#x7d;&#x7d;% used" 
+		filltextcolor="white" bgtextcolor="white" progresstext="&#x7b;&#x7b;&#x7b;value&#x7d;&#x7d;&#x7d;% of &#x7b;&#x7b;&#x7b;quotaGB&#x7d;&#x7d;&#x7d; GB" 
 		progresstextsize="0.7em" textfont="Arial" roundedprogressbar="false" value="0" isvertical="true"></progress-bar></span>
 	<img src="./img/mobilefooter_reload.svg" onclick="location.reload()">
 	<span-with-menu id="gearmobile" bottommenu="true" styleBody="url(./pages/menu.stylebody.css)"><img src="./img/mobilefooter_settings.svg">
