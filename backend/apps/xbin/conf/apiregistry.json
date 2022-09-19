@@ -3,6 +3,7 @@
     "/apps/{{app}}/uploadfile" : "/apis/uploadfile.js?keys=fheiwu98237hjief8923ydewjidw834284hwqdnejwr79389&needsToken=user,admin",
     "/apps/{{app}}/deletefile" : "/apis/deletefile.js?get=true&keys=fheiwu98237hjief8923ydewjidw834284hwqdnejwr79389&needsToken=user,admin",
     "/apps/{{app}}/createfile" : "/apis/createfile.js?get=true&keys=fheiwu98237hjief8923ydewjidw834284hwqdnejwr79389&needsToken=user,admin",
+    "/apps/{{app}}/checkfileexists" : "/apis/checkfileexists.js?get=true&keys=fheiwu98237hjief8923ydewjidw834284hwqdnejwr79389&needsToken=user,admin",
     "/apps/{{app}}/renamefile" : "/apis/renamefile.js?get=true&keys=fheiwu98237hjief8923ydewjidw834284hwqdnejwr79389&needsToken=user,admin",
     "/apps/{{app}}/copyfile" : "/apis/copyfile.js?get=true&keys=fheiwu98237hjief8923ydewjidw834284hwqdnejwr79389&needsToken=user,admin",
     "/apps/{{app}}/operatefile" : "/apis/operatefile.js?keys=fheiwu98237hjief8923ydewjidw834284hwqdnejwr79389&needsToken=user,admin",

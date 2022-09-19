@@ -57,6 +57,12 @@ export const i18n = {
 "UploadQuotaExceeded": "Upload quota exceeded because maximum space allowed is {{diskMaxGB}} GB, the current space available is {{diskAvailableMB}} MB and the upload size is {{uploadSizeMB}} MB.",
 "QuoteStatusDesktop": "{{{value}}}% of {{{quotaGB}}} GB",
 "QuoteStatusMobile": "{{{quotaGB}}} GB, {{{value}}}% used",
+"FileExistsWarning": "File {{name}} already exists. Please select one of the following options.",
+"Stop": "Stop",
+"KeepBoth": "Keep Both",
+"Replace": "Replace",
+"OverwriteFailed": "Overwrite failed, skipping upload, for file ",
+
 
 "logintagline": "XBin Enterprise Content Manager",
 "loginsubtag": "Secure, integrated, and easy to use. Cloud content manager.",

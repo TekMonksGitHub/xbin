@@ -1,0 +1,58 @@
+<style>
+input[type=text] { 
+    width: 100%;
+    padding: 20px;
+    margin: 0;
+    box-sizing: border-box;
+    border-radius: 10px;
+    border-style: none;
+    outline: none;
+    text-align: left;
+    background-color: #F0F8FF;
+    box-shadow: 0 0 0px 1000px #F0F8FF inset;
+}
+
+div#togglediv {
+    display: inline-flex;
+    flex-flow: row nowrap;
+    margin-top: 40px;
+    justify-content: space-between;
+    width: 100%;
+}
+
+div#togglediv > span { 
+    padding: 10px;
+    margin: 0;
+    box-sizing: border-box;
+    border-radius: 10px;
+    border-style: none;
+    outline: none;
+    text-align: center;
+    background-color: lightgray;
+    color: rgba(0, 0, 0, 0.75);
+    font-family: inherit;
+    font-size: smaller;
+    text-transform: uppercase;
+    cursor: default;
+    user-select: none;
+    min-width: 100px;
+}
+
+div#togglediv > span:hover {
+    filter: brightness(98%);
+    transition: all 0.3s ease;
+}
+
+div#buttonbar {display: none;}
+</style>
+
+<span>{{fileexistswarning}}</span>
+<div id="togglediv">
+<input type="hidden" value="cancel" id="result">
+<span id="keepboth" onclick="event.stopPropagation(); this.parentNode.querySelector('input#result').value='rename'; 
+    monkshu_env.components['dialog-box'].submit(this); monkshu_env.components['dialog-box'].hideDialog(this);">{{i18n.KeepBoth}}</span>
+<span id="keepboth" onclick="event.stopPropagation(); this.parentNode.querySelector('input#result').value='cancel'; 
+    monkshu_env.components['dialog-box'].submit(this); monkshu_env.components['dialog-box'].hideDialog(this);">{{i18n.Stop}}</span>
+<span id="keepboth" onclick="event.stopPropagation(); this.parentNode.querySelector('input#result').value='overwrite'; 
+    monkshu_env.components['dialog-box'].submit(this); monkshu_env.components['dialog-box'].hideDialog(this);">{{i18n.Replace}}</span>
+</div>

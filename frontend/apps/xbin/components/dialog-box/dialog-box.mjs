@@ -23,7 +23,8 @@ const COMPONENT_PATH = util.getModulePath(import.meta);
  */
 async function showDialog(templatePath, showOK, showCancel, data, hostID, retValIDs, callback, callbackCancel) {
     const templateHTML = await router.loadHTML(templatePath, data, false);
-    _showDialogInternal(templateHTML, showOK, showCancel, hostID, retValIDs, callback, callbackCancel);
+    if (callback || callbackCancel) _showDialogInternal(templateHTML, showOK, showCancel, hostID, retValIDs, callback, callbackCancel);
+    else return new Promise(resolve => _showDialogInternal(templateHTML, showOK, showCancel, hostID, retValIDs, result => resolve(result)));
 }
 
 /**

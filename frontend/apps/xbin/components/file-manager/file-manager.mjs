@@ -6,7 +6,7 @@
  * of local variables.
  *  
  * (C) 2020 TekMonks. All rights reserved.
- * License: MIT - See enclosed LICENSE file.
+ * License: See enclosed LICENSE file.
  */
 import {i18n} from "/framework/js/i18n.mjs";
 import {util} from "/framework/js/util.mjs";
@@ -24,13 +24,14 @@ const API_UPLOADFILE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/u
 const API_DELETEFILE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/deletefile";
 const API_CREATEFILE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/createfile";
 const API_RENAMEFILE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/renamefile";
+const API_CHECKQUOTA = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/checkquota";
 const API_OPERATEFILE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/operatefile";
 const API_DOWNLOADFILE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/downloadfile";
 const COMPONENT_PATH = util.getModulePath(import.meta), DIALOGS_PATH = `${COMPONENT_PATH}/dialogs`;
+const API_CHECKFILEEXISTS = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/checkfileexists";
 const API_DOWNLOADFILE_GETSECURID = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/getsecurid";
 const API_DOWNLOADFILE_STATUS = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/getdownloadstatus";
 const API_DOWNLOADFILE_DND = APP_CONSTANTS.FRONTEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/proxiedapis/downloaddnd";
-const API_CHECKQUOTA = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/checkquota";
 let PAGE_DOWNLOADFILE_SHARED = `${APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/downloadsharedfile"}`;
 
 const DIALOG_SCROLL_ELEMENT_ID = "notificationscrollpositioner", DIALOG_HOST_ELEMENT_ID = "notification", PROGRESS_TEMPLATE="progressdialog", DEFAULT_SHARE_EXPIRY = 5;
@@ -106,25 +107,43 @@ function upload(containedElement, files) {
    else uploadFiles(containedElement, files);   // drag and drop happened
 }
 
-function create(element) {
-   dialog().showDialog(`${DIALOGS_PATH}/createfile.html`, true, true, {}, "dialog", ["createType", "path"], async result => {
-      const path = `${selectedPath}/${result.path}`, isDirectory = result.createType == "file" ? false: true
-      const resp = await apiman.rest(API_CREATEFILE, "GET", {path, isDirectory}, true), hostID = file_manager.getHostElementID(element);
-      if (resp.result) {dialog().hideDialog("dialog"); file_manager.reload(hostID);} else dialog().error("dialog", await i18n.get("Error"));
-   });
+async function create(element) {
+   const result = await dialog().showDialog(`${DIALOGS_PATH}/createfile.html`, true, true, {}, "dialog", ["createType", "path"]);
+   const path = `${selectedPath}/${result.path}`, isDirectory = result.createType == "file" ? false: true
+   const resp = await apiman.rest(API_CREATEFILE, "GET", {path, isDirectory}, true), hostID = file_manager.getHostElementID(element);
+   if (resp.result) {dialog().hideDialog("dialog"); file_manager.reload(hostID);} else dialog().error("dialog", await i18n.get("Error"));
 }
 
 const uploadFiles = async (element, files) => {
    let uploadSize = 0; for (const file of files) uploadSize += file.size; if (!(await _checkQuotaAndReportError(uploadSize))) return;
    for (const file of files) {
-      if (Object.keys(filesAndPercents).includes(file.name) && filesAndPercents[file.name].percent != 100 && !filesAndPercents[file.name].cancelled) {LOG.info(`Skipped ${file.name}, already being uploaded.`); continue;}  // already being uploaded
-      else _uploadAFile(element, file);
+      if (Object.keys(filesAndPercents).includes(file.name) && filesAndPercents[file.name].percent != 100 && 
+         !filesAndPercents[file.name].cancelled) {LOG.info(`Skipped ${file.name}, already being uploaded.`); continue;}  // already being uploaded
+      
+      const checkFileExists = await apiman.rest(API_CHECKFILEEXISTS, "GET", {path: `${selectedPath}/${file.name}`}, true); 
+      if (checkFileExists.result) {
+         const cancelRenameRewrite = await dialog().showDialog(`${DIALOGS_PATH}/cancel_rename_overwrite.html`, true, false, 
+            {fileexistswarning: await i18n.getRendered("FileExistsWarning", {name: file.name})}, "dialog", ["result"]);
+         switch (cancelRenameRewrite.result) {
+            case "cancel": {LOG.info(`User selected to skip existing file ${file.name}, skipping.`); continue;}
+            case "rename": file.renameto = checkFileExists.suggestedNewName; break;
+            case "overwrite": {
+               const deleteResult = await apiman.rest(API_DELETEFILE, "GET", {path: `${selectedPath}/${file.name}`}, true);
+               if (!deleteResult.result) {dialog().showMessage(`${await i18n.get("OverwriteFailed")}${file.name}`, "dialog"); continue;}
+               else break;
+            }
+            default: {LOG.info(`Invalid choice so skipping existing file ${file.name}, skipping.`); continue;}
+         }
+      }
+
+      _uploadAFile(element, file);
    }
 }
 
 async function _uploadAFile(element, file) {
    const totalChunks = file.size != 0 ? Math.ceil(file.size / IO_CHUNK_SIZE) : 1, lastChunkSize = file.size - (totalChunks-1)*IO_CHUNK_SIZE;
-   if (filesAndPercents[file.name]?.cancelled) filesAndPercents[file.name].cancelled = false; // being reuploaded
+   const _getName = file => file.renameto || file.name;
+   if (filesAndPercents[_getName(file)]?.cancelled) filesAndPercents[_getName(file)].cancelled = false; // being reuploaded
    const waitingReaders = [];  
 
    const queueReadFileChunk = (fileToRead, chunkNumber, resolve, reject) => {
@@ -136,11 +155,11 @@ async function _uploadAFile(element, file) {
       const reader = new FileReader(), savePath = selectedPath;
       reader.onload = async loadResult => {
          const dataToPost = file.size != 0 ? loadResult.target.result : "data:;base64,";  // handle 0 byte files
-         const resp = await apiman.rest(API_UPLOADFILE, "POST", {data:dataToPost, path:`${savePath}/${fileToRead.name}`, user}, true);
+         const resp = await apiman.rest(API_UPLOADFILE, "POST", {data:dataToPost, path:`${savePath}/${_getName(fileToRead)}`, user}, true);
          if (!resp.result) _rejectReadPromises("Error writing to the server."); else {
-            _showProgress(element, chunkNumber+1, totalChunks, fileToRead.name, UPLOAD_ICON);
-            if (!filesAndPercents[fileToRead.name]?.cancelled && (waitingReaders.length)) (waitingReaders.pop())();  // issue next chunk read if queued reads
-            else if (filesAndPercents[fileToRead.name]?.cancelled) await apiman.rest(API_DELETEFILE, "GET", {path: `${savePath}/${fileToRead.name}`}, true);
+            _showProgress(element, chunkNumber+1, totalChunks, _getName(fileToRead), UPLOAD_ICON);
+            if (!filesAndPercents[_getName(fileToRead)]?.cancelled && (waitingReaders.length)) (waitingReaders.pop())();  // issue next chunk read if queued reads
+            else if (filesAndPercents[_getName(fileToRead)]?.cancelled) await apiman.rest(API_DELETEFILE, "GET", {path: `${savePath}/${_getName(fileToRead)}`}, true);
             resolve();
          }
       }
@@ -156,7 +175,7 @@ async function _uploadAFile(element, file) {
 
    let readPromises = []; 
    for (let i = 0; i < totalChunks; i++) readPromises.push(new Promise((resolve, reject) => queueReadFileChunk(file, i, resolve, reject)));
-   const startReaders = _ => {_showProgress(element, 0, totalChunks, file.name, UPLOAD_ICON); (waitingReaders.pop())();}
+   const startReaders = _ => {_showProgress(element, 0, totalChunks, _getName(file), UPLOAD_ICON); (waitingReaders.pop())();}
    startReaders();   // kicks off the first read in the queue, which then fires others 
    return Promise.all(readPromises);
 }
@@ -300,9 +319,9 @@ function _showDownloadProgress(element, path, reqid) {
          if (fileDownloadStatus.size!=-1) _showProgress(element, fileDownloadStatus.bytesSent, fileDownloadStatus.size, path, DOWNLOAD_ICON);
          if (fileDownloadStatus.size == fileDownloadStatus.bytesSent) {done = true; clearInterval(interval);}
       }
-      else { 
-         if (done) return; else done=true; 
-         dialog().showMessage(await i18n.get("DownloadFailed"), "dialog"); clearInterval(interval); 
+      else if (!done) {
+         done=true; clearInterval(interval); 
+         dialog().showMessage(await i18n.get("DownloadFailed"), "dialog"); 
       }
    }
    interval = setInterval(updateProgress, DOWNLOADFILE_REFRESH_INTERVAL);
@@ -311,7 +330,8 @@ function _showDownloadProgress(element, path, reqid) {
 async function _showProgress(element, currentBlock, totalBlocks, fileName, icon) {
    if (filesAndPercents[fileName]?.cancelled) return; // already cancelled
 
-   filesAndPercents[fileName] = {name: fileName, percent: Math.floor(currentBlock/totalBlocks*100), icon, cancellable:icon==UPLOAD_ICON?true:null}; 
+   const percent = Math.floor(currentBlock/totalBlocks*100);
+   filesAndPercents[fileName] = {name: fileName, percent, icon, cancellable: (icon==UPLOAD_ICON && percent != 100?true:null)}; 
    await _showNotification(element, PROGRESS_TEMPLATE);
 
    _reloadIfAllFilesUpOrDownloaded(element, filesAndPercents);
