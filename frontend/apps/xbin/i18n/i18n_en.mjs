@@ -62,6 +62,7 @@ export const i18n = {
 "KeepBoth": "Keep Both",
 "Replace": "Replace",
 "OverwriteFailed": "Overwrite failed, skipping upload, for file ",
+"FileAlreadyExists": "File already exists, can't overwrite.",
 
 
 "logintagline": "XBin Enterprise Content Manager",
