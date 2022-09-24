@@ -16,15 +16,18 @@ async function signin(id, pass, otp) {
     logoutListeners = [];   // reset listeners on sign in
         
     const resp = await apiman.rest(APP_CONSTANTS.API_LOGIN, "POST", {pwph, otp, id}, false, true);
-    if (resp && resp.result) {
+    if (resp && resp.result && resp.tokenflag) {
         session.set(APP_CONSTANTS.USERID, resp.id); 
         session.set(APP_CONSTANTS.USERNAME, resp.name);
         session.set(APP_CONSTANTS.USERORG, resp.org);
         session.set("__org_telemeet_cuser_pass", pass);
         securityguard.setCurrentRole(resp.role);
         LOG.info(`Login succeeded for ${id}`);
-        return true;
-    } else {LOG.error(`Login failed for ${id}`); return false;}
+        return loginmanager.ID_OK;
+    } else if (resp.result && (!resp.tokenflag)){
+        LOG.warn(`Login OK but not approved yet for ${id}`); return loginmanager.ID_NOT_YET_APPROVED;
+    }
+    else {LOG.error(`Login failed for ${id}`); return loginmanager.ID_FAILED;}
 }
 
 const reset = id => apiman.rest(APP_CONSTANTS.API_RESET, "GET", {id, lang: i18n.getSessionLang()});
@@ -34,14 +37,17 @@ async function registerOrUpdate(old_id, name, id, pass, org, totpSecret, totpCod
 
     const req = {old_id, name, id, pwph, org, totpSecret, totpCode, role, approved}; 
     const resp = await apiman.rest(old_id?APP_CONSTANTS.API_UPDATE:APP_CONSTANTS.API_REGISTER, "POST", req, old_id?true:false, true);
-    if (resp && resp.result) {
+    if (resp && resp.result && resp.tokenflag) {
         session.set(APP_CONSTANTS.USERID, id); 
         session.set(APP_CONSTANTS.USERNAME, name);
         session.set(APP_CONSTANTS.USERORG, org);
         session.set("__org_telemeet_cuser_pass", pass);
         securityguard.setCurrentRole(resp.role);
-        return true;
-    } else {LOG.error(`${old_id?"Update":"Registration"} failed for ${id}`); return false;}
+        return loginmanager.ID_OK;
+    } else if (resp.result && (!resp.tokenflag)) {
+        LOG.warn(`${old_id?"Update":"Registration"} done but not approved yet for ${id}`); return loginmanager.ID_NOT_YET_APPROVED;
+    }
+    else {LOG.error(`${old_id?"Update":"Registration"} failed for ${id}`); return loginmanager.ID_FAILED;}
 }
 
 async function changepassword(id, pass) {
@@ -95,4 +101,5 @@ const interceptPageLoad = _ => router.addOnLoadPage("*", startAutoLogoutTimer);
 const _stopAutoLogoutTimer = _ => { if (currTimeout) {clearTimeout(currTimeout); currTimeout = null;} }
 
 export const loginmanager = {signin, reset, registerOrUpdate, logout, changepassword, startAutoLogoutTimer, 
-    addLogoutListener, getProfileData, checkResetSecurity, getSessionUser, interceptPageLoad}
+    addLogoutListener, getProfileData, checkResetSecurity, getSessionUser, interceptPageLoad, 
+    ID_OK: 1, ID_FAILED: 0, ID_NOT_YET_APPROVED: -1}

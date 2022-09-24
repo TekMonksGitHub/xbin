@@ -16,14 +16,14 @@ exports.doService = async jsonReq => {
 	}
 
 	const existingUsersForOrg = await userid.getUsersForOrg(jsonReq.org), 
-		approved = existingUsersForOrg && existingUsersForOrg.length?0:1,
-		role = existingUsersForOrg && existingUsersForOrg.length?"user":"admin";
+		notFirstUserForThisOrg = existingUsersForOrg && existingUsersForOrg.result && existingUsersForOrg.users.length,
+		approved = notFirstUserForThisOrg?0:1, role = notFirstUserForThisOrg?"user":"admin";
 
 	const result = await userid.register(jsonReq.id, jsonReq.name, jsonReq.org, jsonReq.pwph, jsonReq.totpSecret, role, approved);
 
 	if (result.result) LOG.info(`User registered and logged in: ${jsonReq.name}, ID: ${jsonReq.id}`); else LOG.error(`Unable to register: ${jsonReq.name}, ID: ${jsonReq.id} DB error`);
 
-	return {result: result.result, role};
+	return {result: result.result, role, tokenflag: approved?true:false};
 }
 
 const validateRequest = jsonReq => (jsonReq && jsonReq.pwph && jsonReq.id && jsonReq.name && jsonReq.org && jsonReq.totpSecret && jsonReq.totpCode);

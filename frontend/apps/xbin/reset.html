@@ -155,7 +155,7 @@ div.lgbox > span {
 	<span><br><br>{{i18n.ResetMsg}}<br><br></span>
 	<register-box id="reset" roles='["{{APP_CONSTANTS.GUEST_ROLE}}", "{{APP_CONSTANTS.USER_ROLE}}"]' type="reset" 
 		email="{{url.e}}" time="{{url.t}}" minlength="{{APP_CONSTANTS.MIN_PASS_LENGTH}}" routeOnSuccess="./main.html" 
-		dataOnSuccess='{"showDialog":{"message": "{{i18n.ResetSuccess}}"}}'
+		dataOnSuccess='{"showDialog":{"message": "{{i18n.ResetSuccess}}"}}' routeOnNotApproved="./notapproved.html"
 		mobileQueries='{"start": "{{APP_CONSTANTS.MOBILE_MEDIA_QUERY_START}}", "end": "{{APP_CONSTANTS.MOBILE_MEDIA_QUERY_END}}"}'></register-box>
 </div>
 </div>

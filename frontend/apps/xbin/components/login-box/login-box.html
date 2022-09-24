@@ -72,6 +72,13 @@ span#notifier2 {
     display: none;
 }
 
+span#notifier3 {
+    color: #e40000;
+    padding: 0;
+    margin: 0;
+    display: none;
+}
+
 span#notifier>span:hover {
     text-decoration: underline;
     cursor: default;
@@ -87,6 +94,7 @@ span#notifier>span:hover {
 <div id="container">
 <span id="notifier">{{i18n.BadLogin}}<span onclick="monkshu_env.components['login-box'].resetAccount(this)">{{i18n.LoginReset}}</span></span>
 <span id="notifier2">{{i18n.LoginWasReset}}</span>
+<span id="notifier3">{{i18n.LoginWasNotReset}}</span>
 <input type="text" id="userid" placeholder="{{i18n.UserID}}" 
     oninvalid="this.setCustomValidity('{{i18n.FillField}}')" oninput="setCustomValidity('')"
     required>

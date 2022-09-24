@@ -29,7 +29,7 @@ exports.doService = async jsonReq => {
 	if (result.result) LOG.info(`User updated and logged in: ${jsonReq.name}, old ID: ${jsonReq.old_id}, new ID: ${jsonReq.id}`); 
 	else LOG.error(`Unable to update: ${jsonReq.name}, ID: ${jsonReq.old_id}, DB error`);
 
-	return {result: result.result, name: result.name, id: result.id, org: result.org, role: result.role};
+	return {result: result.result, name: result.name, id: result.id, org: result.org, role: result.role, approved: result.approved, tokenflag: result.approved};
 }
 
 const validateRequest = jsonReq => (jsonReq && jsonReq.old_id);

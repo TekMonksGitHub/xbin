@@ -28,16 +28,18 @@ async function signin(signInButton) {
 	const pass = shadowRoot.querySelector("#pass").value;
 	const otp = shadowRoot.querySelector("#otp").value;
 	const routeOnSuccess = login_box.getHostElement(signInButton).getAttribute("routeOnSuccess");
+	const routeOnNotApproved = login_box.getHostElement(signInButton).getAttribute("routeOnNotApproved");
 
-	_handleLoginResult(await loginmanager.signin(userid, pass, otp), shadowRoot, routeOnSuccess);
+	_handleLoginResult(await loginmanager.signin(userid, pass, otp), shadowRoot, routeOnSuccess, routeOnNotApproved);
 }
 
-function resetAccount(element) {
+async function resetAccount(element) {
 	const shadowRoot = login_box.getShadowRootByContainedElement(element);
 	shadowRoot.getElementById("notifier").style.display = "none";
-	shadowRoot.getElementById("notifier2").style.display = "inline";
 
-	loginmanager.reset(shadowRoot.getElementById("userid").value);
+	const result = await loginmanager.reset(shadowRoot.getElementById("userid").value);
+	if ((!result) || (!result.result)) shadowRoot.getElementById("notifier3").style.display = "inline";
+	else shadowRoot.getElementById("notifier2").style.display = "inline";
 }
 
 function _validateForm(shadowRoot) {
@@ -51,11 +53,16 @@ function _validateForm(shadowRoot) {
 function _hideErrors(shadowRoot) {
 	shadowRoot.getElementById("notifier").style.display = "none";
 	shadowRoot.getElementById("notifier2").style.display = "none";
+	shadowRoot.getElementById("notifier3").style.display = "none";
 }
 
-function _handleLoginResult(result, shadowRoot, routeOnSuccess) {
-	if (result) router.loadPage(routeOnSuccess);
-	else shadowRoot.getElementById("notifier").style.display = "inline";
+function _handleLoginResult(result, shadowRoot, routeOnSuccess, routeOnNotApproved) {
+	switch (result) {
+		case loginmanager.ID_OK: router.loadPage(routeOnSuccess); break;
+		case loginmanager.ID_FAILED: shadowRoot.getElementById("notifier").style.display = "inline"; break;
+		case loginmanager.ID_NOT_YET_APPROVED: router.loadPage(routeOnNotApproved); break;
+		default: shadowRoot.getElementById("notifier").style.display = "inline"; break;
+	}
 }
 
 const trueWebComponentMode = true;	// making this false renders the component without using Shadow DOM

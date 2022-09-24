@@ -118,6 +118,8 @@ function _resetUI(shadowRoot) {
     shadowRoot.querySelector("div#error").style.visibility = "hidden";
     shadowRoot.querySelector("span#ok").style.display = "inline";
     shadowRoot.querySelector("span#cancel").style.display = "inline";
+    shadowRoot.querySelector("html").style.height = "fit-content";
+    shadowRoot.querySelector("body").style.height = "fit-content";
 }
 
 const trueWebComponentMode = true;	// making this false renders the component without using Shadow DOM

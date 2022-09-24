@@ -94,6 +94,8 @@ export const i18n = {
 "BadLogin" : "Incorrect Login.",
 "LoginReset" : "Click here to reset login",
 "LoginWasReset": "Reset instructions have been emailed to you",
+"LoginWasNotReset": "Unable to reset the ID. Check with your company's administrator.", 
+"NotApprovedMsg": "Your account is successfully registered, but not yet approved.<br><br>Please wait for your company’s administrator to approve it.",
 "FillField": "Please fill out this field.",
 "PWNOTSAME": "Passwords are not the same.",
 "PWMUSTBE": "Passwords must be minimum 10 characters.",

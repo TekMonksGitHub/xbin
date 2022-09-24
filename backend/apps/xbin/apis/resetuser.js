@@ -13,8 +13,9 @@ exports.doService = async jsonReq => {
 	
     LOG.debug("Got reset profile request for ID: " + jsonReq.id);
 
-    const checkExists = await userid.existsID(jsonReq.id); if (!checkExists || !checkExists.result) {
-        LOG.error(`Reset request was rejected, ID doesn't exist: ${jsonReq.id}`);
+    const checkExists = await userid.existsID(jsonReq.id); if ((!checkExists) || (!checkExists.result) || (!checkExists.approved)) {
+        if (checkExists && (!checkExists.approved)) LOG.error(`Reset request rejected for ID as it is not approved : ${jsonReq.id}`);
+        else LOG.error(`Reset request was rejected, ID doesn't exist or not approved: ${jsonReq.id}`);
         return CONSTANTS.FALSE_RESULT;
     }
     

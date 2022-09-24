@@ -108,7 +108,7 @@ async function _deleteUser(name, id, element) {
 }
 
 async function _resetUser(name, id, element) {
-	_execOnConfirm(router.getMustache().render(await i18n.get("ConfirmUserReset"), {name, id}), async _ =>{
+	_execOnConfirm((await router.getMustache()).render(await i18n.get("ConfirmUserReset"), {name, id}), async _ =>{
 		const backendURL = user_manager.getHostElement(element).getAttribute("backendurl"), lang = i18n.getSessionLang();
 		const resetResult = await apiman.rest(`${backendURL}/${API_RESETUSER}`, "GET", {id, lang}, true);
 		if (!resetResult?.result) {const err = router.getMustache().render(await i18n.get("ResetError"), {name, id}); LOG.error(err); _showError(err);}

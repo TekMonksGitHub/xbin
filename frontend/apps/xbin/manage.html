@@ -89,6 +89,12 @@ span#mobilefooter {
     box-sizing: border-box;
     justify-content: space-between;
 }
+
+span#mobilefooter > img {
+	width: 2.5em;
+	height: 2.5em;
+}
+
 </style>
 {{{APP_CONSTANTS.MOBILE_MEDIA_QUERY_START}}}
     div#maincontent {padding: 0 1em; height: calc(100% - 4em); position: inherit; top: 0;}
@@ -131,13 +137,14 @@ span#mobilefooter {
 
 <span id="mobilefooter">
 	<img src="./img/mobilefooter_home.svg" onclick="monkshu_env.frameworklibs.router.navigate(APP_CONSTANTS.MAIN_HTML)">
+	<img src="./img/mobilefooter_reload.svg" onclick="location.reload()">
 	<span-with-menu id="gearmobile" bottommenu="true" styleBody="url(./pages/menu.stylebody.css)"><img src="./img/mobilefooter_settings.svg">
 		<menu-item onclick="monkshu_env.apps[APP_CONSTANTS.APP_NAME].main.changePassword(this)" label="{{i18n.ChangePassword}}"></menu-item>
-		<menu-item onclick="monkshu_env.apps[APP_CONSTANTS.APP_NAME].showOTPQRCode(this)" label="{{i18n.ChangePhone}}"></menu-item>
-		<menu-item onclick="monkshu_env.apps[APP_CONSTANTS.APP_NAME].changeProfile(this)" label="{{i18n.ChangeProfile}}"></menu-item>
+		<menu-item onclick="monkshu_env.apps[APP_CONSTANTS.APP_NAME].main.showOTPQRCode(this)" label="{{i18n.ChangePhone}}"></menu-item>
+		<menu-item onclick="monkshu_env.apps[APP_CONSTANTS.APP_NAME].main.changeProfile(this)" label="{{i18n.ChangeProfile}}"></menu-item>
 		{{#admin}}<menu-item onclick="monkshu_env.frameworklibs.router.navigate(APP_CONSTANTS.MANAGE_HTML)" label="{{i18n.ManageUsers}}"></menu-item>{{/admin}}
 	</span-with-menu>
-	<img src="./img/mobilefooter_logout.svg" onclick="monkshu_env.apps.telemeet.loginmanager.logout()">
+	<img src="./img/mobilefooter_logout.svg" onclick="monkshu_env.apps[APP_CONSTANTS.APP_NAME].main.logoutClicked()">
 </span>
 
 <dialog-box id="dialog"></dialog-box>

@@ -71,11 +71,16 @@ async function registerOrUpdate(element) {
 	const orgSelector = shadowRoot.querySelector("input#org"); const org = orgSelector.value;
 	const totpCodeSelector = shadowRoot.querySelector("input#otp"); const totpCode = totpCodeSelector.value && totpCodeSelector.value != ""?totpCodeSelector.value:null;
 	const routeOnSuccess = register_box.getHostElement(element).getAttribute("routeOnSuccess");
+	const routeOnNotApproved = register_box.getHostElement(element).getAttribute("routeOnNotApproved");
 	const dataOnSuccess = JSON.parse(register_box.getHostElement(element).getAttribute("dataOnSuccess")||"{}");
 
-	if (!await loginmanager.registerOrUpdate(id_old, name, id, pass, org, totpCode?memory.totpKey:null, totpCode)) 
-		shadowRoot.querySelector("span#error").style.display = "inline"; 
-	else router.loadPage(routeOnSuccess, dataOnSuccess);
+	const registerResult = await loginmanager.registerOrUpdate(id_old, name, id, pass, org, totpCode?memory.totpKey:null, totpCode);
+	switch (registerResult) {
+		case loginmanager.ID_OK: router.loadPage(routeOnSuccess, dataOnSuccess); break;
+		case loginmanager.ID_FAILED: shadowRoot.querySelector("span#error").style.display = "inline"; break;
+		case loginmanager.ID_NOT_YET_APPROVED: router.loadPage(routeOnNotApproved, dataOnSuccess); break;
+		default: shadowRoot.querySelector("span#error").style.display = "inline"; break;
+	}
 }
 
 async function openAuthenticator(containedElement, totpURL) {
