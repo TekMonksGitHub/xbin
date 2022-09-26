@@ -58,4 +58,6 @@ exports.getRole = headers => {
 	return logins[headers["authorization"].toLowerCase()]?logins[headers["authorization"].toLowerCase()].role:null;
 }
 
+exports.isAdmin = headers => (exports.getRole(headers))?.toLowerCase() == "admin";
+
 const validateRequest = jsonReq => (jsonReq && jsonReq.pwph && jsonReq.otp && jsonReq.id);

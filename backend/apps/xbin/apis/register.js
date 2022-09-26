@@ -15,15 +15,33 @@ exports.doService = async jsonReq => {
 		return CONSTANTS.FALSE_RESULT;
 	}
 
-	const existingUsersForOrg = await userid.getUsersForOrg(jsonReq.org), 
-		notFirstUserForThisOrg = existingUsersForOrg && existingUsersForOrg.result && existingUsersForOrg.users.length,
+	const existingUsersForDomain = await userid.getUsersForDomain(_getRootDomain(jsonReq)), 
+		notFirstUserForThisOrg = existingUsersForDomain && existingUsersForDomain.result && existingUsersForDomain.users.length,
 		approved = notFirstUserForThisOrg?0:1, role = notFirstUserForThisOrg?"user":"admin";
 
-	const result = await userid.register(jsonReq.id, jsonReq.name, jsonReq.org, jsonReq.pwph, jsonReq.totpSecret, role, approved);
+	await exports.updateOrgAndDomain(jsonReq);	// set domain and override org if needed
+
+	const result = await userid.register(jsonReq.id, jsonReq.name, jsonReq.org, jsonReq.pwph, jsonReq.totpSecret, role, 
+		approved, jsonReq.domain);
 
 	if (result.result) LOG.info(`User registered and logged in: ${jsonReq.name}, ID: ${jsonReq.id}`); else LOG.error(`Unable to register: ${jsonReq.name}, ID: ${jsonReq.id} DB error`);
 
 	return {result: result.result, role, tokenflag: approved?true:false};
+}
+
+exports.updateOrgAndDomain = async jsonReq => {
+	const rootDomain = _getRootDomain(jsonReq);
+	const existingUsersForDomain = await userid.getUsersForDomain(rootDomain);
+	if (existingUsersForDomain && existingUsersForDomain.result && existingUsersForDomain.users.length) 
+		jsonReq.org = (await userid.getOrgForDomain(rootDomain))||jsonReq.org;	// if this domain already exists, override the org to the existing organization
+	jsonReq.domain = rootDomain;
+}
+
+function _getRootDomain(jsonReq) {
+	const domain = jsonReq.id.indexOf("@") != -1 ? jsonReq.id.substring(jsonReq.id.indexOf("@")+1) : "undefined",
+		domainSplits = domain.split("."), rootDomain = domainSplits.length >= 3 ? 
+			domainSplits.slice(0, domainSplits.length-2).join(".") : domain;
+	return rootDomain;
 }
 
 const validateRequest = jsonReq => (jsonReq && jsonReq.pwph && jsonReq.id && jsonReq.name && jsonReq.org && jsonReq.totpSecret && jsonReq.totpCode);
