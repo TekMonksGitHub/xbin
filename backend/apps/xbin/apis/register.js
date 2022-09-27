@@ -38,10 +38,8 @@ exports.updateOrgAndDomain = async jsonReq => {
 }
 
 function _getRootDomain(jsonReq) {
-	const domain = jsonReq.id.indexOf("@") != -1 ? jsonReq.id.substring(jsonReq.id.indexOf("@")+1) : "undefined",
-		domainSplits = domain.split("."), rootDomain = domainSplits.length >= 3 ? 
-			domainSplits.slice(0, domainSplits.length-2).join(".") : domain;
-	return rootDomain;
+	const domain = jsonReq.id.indexOf("@") != -1 ? jsonReq.id.substring(jsonReq.id.indexOf("@")+1) : "undefined"
+	return domain;
 }
 
 const validateRequest = jsonReq => (jsonReq && jsonReq.pwph && jsonReq.id && jsonReq.name && jsonReq.org && jsonReq.totpSecret && jsonReq.totpCode);
