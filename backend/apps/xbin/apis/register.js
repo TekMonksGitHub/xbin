@@ -15,18 +15,21 @@ exports.doService = async jsonReq => {
 		return CONSTANTS.FALSE_RESULT;
 	}
 
-	const existingUsersForDomain = await userid.getUsersForDomain(_getRootDomain(jsonReq)), 
-		notFirstUserForThisOrg = existingUsersForDomain && existingUsersForDomain.result && existingUsersForDomain.users.length,
-		approved = notFirstUserForThisOrg?0:1, role = notFirstUserForThisOrg?"user":"admin";
-
 	await exports.updateOrgAndDomain(jsonReq);	// set domain and override org if needed
+
+	const existingUsersForDomain = await userid.getUsersForDomain(_getRootDomain(jsonReq)), 
+		existingUsersForOrg = await userid.getUsersForOrg(jsonReq.org), 
+		notFirstUserForThisDomain = existingUsersForDomain && existingUsersForDomain.result && existingUsersForDomain.users.length,
+		notFirstUserForThisOrg = existingUsersForOrg && existingUsersForOrg.result && existingUsersForOrg.users.length,
+		approved = notFirstUserForThisOrg||notFirstUserForThisDomain?0:1, 
+		role = notFirstUserForThisOrg||notFirstUserForThisDomain?"user":"admin";
 
 	const result = await userid.register(jsonReq.id, jsonReq.name, jsonReq.org, jsonReq.pwph, jsonReq.totpSecret, role, 
 		approved, jsonReq.domain);
 
 	if (result.result) LOG.info(`User registered and logged in: ${jsonReq.name}, ID: ${jsonReq.id}`); else LOG.error(`Unable to register: ${jsonReq.name}, ID: ${jsonReq.id} DB error`);
 
-	return {result: result.result, role, tokenflag: approved?true:false};
+	return {result: result.result, name: result.name, id: result.id, org: result.org, role: result.role, tokenflag: result.approved?true:false};
 }
 
 exports.updateOrgAndDomain = async jsonReq => {

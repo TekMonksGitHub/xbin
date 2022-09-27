@@ -5,9 +5,8 @@
 const totp = require(`${APP_CONSTANTS.LIB_DIR}/totp.js`);
 const userid = require(`${APP_CONSTANTS.LIB_DIR}/userid.js`);
 const jwttokenmanager = APIREGISTRY.getExtension("JWTTokenManager");
-init();
 
-function init() {
+exports.init = _ => {
 	jwttokenmanager.addListener((event, object) => {
 		if (event == "token_generated") try {
 			const token = ("Bearer "+object.token).toLowerCase(); 
@@ -31,7 +30,7 @@ exports.doService = async jsonReq => {
 	const result = await userid.checkPWPH(jsonReq.id, jsonReq.pwph); 
 
 	if (result.result && result.approved) {	// perform second factor
-		result.result = /*totp.verifyTOTP(result.totpsec, jsonReq.otp); */ true; // <-- remove this post testing.
+		result.result = totp.verifyTOTP(result.totpsec, jsonReq.otp); 
 		if (!result.result) LOG.error(`Bad OTP given for: ${result.id}.`);
 		else result.tokenflag = true;
 	} else if (result.result && (!result.approved)) {LOG.info(`User not approved, ${result.id}.`); result.tokenflag = false;}
