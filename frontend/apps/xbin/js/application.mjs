@@ -3,6 +3,7 @@
  * License: See enclosed license.txt file.
  */
 
+import {util} from "/framework/js/util.mjs";
 import {router} from "/framework/js/router.mjs";
 import {session} from "/framework/js/session.mjs";
 import {securityguard} from "/framework/js/securityguard.mjs";
@@ -30,7 +31,7 @@ const init = async hostname => {
 
 const main = async (desiredURL, desiredData) => {
 	await _addPageLoadInterceptors(); await _readConfig();
-	const decodedURL = new URL(desiredURL || router.decodeURL(window.location.href)), justURL = decodedURL.href.split("?")[0];
+	const decodedURL = new URL(desiredURL || router.decodeURL(window.location.href)), justURL = util.baseURL(decodedURL);
 
 	if (justURL == APP_CONSTANTS.INDEX_HTML) router.loadPage(APP_CONSTANTS.REGISTER_HTML);
 	else if (securityguard.isAllowed(justURL)) {

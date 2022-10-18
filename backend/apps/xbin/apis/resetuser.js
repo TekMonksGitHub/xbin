@@ -22,9 +22,9 @@ exports.doService = async jsonReq => {
     const cryptID = crypt.encrypt(jsonReq.id), cryptTime = crypt.encrypt(Date.now().toString()), 
         action_url = APP_CONSTANTS.CONF.base_url + Buffer.from(`${APP_CONSTANTS.CONF.reset_url}?e=${cryptID}&t=${cryptTime}`).toString("base64"),
         button_code_pre = mustache.render(template.button_code_pre, {action_url}), button_code_post = mustache.render(template.button_code_post, {action_url}),
-        email_title = mustache.render(template[`${jsonReq.lang}_resetuser_title`], {name: checkExists.name, org: checkExists.org, action_url}),
-        email_html = mustache.render(template[`${jsonReq.lang}_resetuser_email_html`], {name: checkExists.name, org: checkExists.org, button_code_pre, button_code_post}),
-        email_text = mustache.render(template[`${jsonReq.lang}_resetuser_email_text`], {name: checkExists.name, org: checkExists.org, action_url});
+        email_title = mustache.render(template[`${jsonReq.lang||"en"}_resetuser_title`], {name: checkExists.name, org: checkExists.org, action_url}),
+        email_html = mustache.render(template[`${jsonReq.lang||"en"}_resetuser_email_html`], {name: checkExists.name, org: checkExists.org, button_code_pre, button_code_post}),
+        email_text = mustache.render(template[`${jsonReq.lang||"en"}_resetuser_email_text`], {name: checkExists.name, org: checkExists.org, action_url});
 
 	const result = await mailer.email(jsonReq.id, email_title, email_html, email_text);
 

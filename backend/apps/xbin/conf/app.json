@@ -1,8 +1,15 @@
 {
     "reset_url": "https://{{{hostname}}}/apps/{{{app}}}/reset.html",
+    "verify_url": "https://{{{hostname}}}/apps/{{{app}}}/verify.html",
     "initiallogin_url": "https://{{{hostname}}}/apps/{{{app}}}/initiallogin.html",
     "base_url": "https://{{{hostname}}}/apps/{{{app}}}/index.html?.=",
     "reset_expiry_time": 43200000,
     "remote_log": true,
-    "loginlisteners": ["lib/cms.initID"]
+    "loginlisteners": ["lib/cms.initID"],
+    "max_logins_to_remember": 45,
+    "login_update_delay": 100,
+    "verify_email_on_registeration": true,
+    "email_verification_expiry_timeout_hours": 24,
+    "cleanup_unverified_accounts_frequency": 600000,
+    "verifyurl_safe_time_range": 10
 }

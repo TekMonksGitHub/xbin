@@ -85,7 +85,8 @@ export const i18n = {
 "RegisterMsg": "Customer Registration",
 "ResetMsg": "Reset Profile",
 "ResetSuccess": "Reset was successful",
-"RegisterSuccess": "Welcome! Registration successful",
+"RegisterSuccess": "Welcome {{name}}! Registration successful.",
+"RegisterSuccessNeedsVerification": "Welcome {{name}}! Registration successful.<br><br>Please check your email to verify your account, as soon as possible, to prevent auto-deletion.",
 "UserID" : "Login",
 "DesiredUserID" : "Desired User ID",
 "Password" : "Password",
@@ -143,5 +144,8 @@ export const i18n = {
 "iOSTOTPHelp1": "Click the ⨁ icon located at the bottom,",
 "iOSTOTPHelp2": "Then select “Enter a setup key”,",
 "iOSTOTPHelp3": "Then type “Telemeet” into the “Account” field and select the “Paste” operation to fill the value in the “Key” field and click “Add” to setup a new code.",
-"OpenGoogleAuthenticator": "Open Authenticator"
+"OpenGoogleAuthenticator": "Open Authenticator",
+"EmailVerified": "Email successfully verified.",
+"EmailNotVerified": "Email verification failed.",
+"ClickHereToContinueLogin": "Click here to continue to login."
 }

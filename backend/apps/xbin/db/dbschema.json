@@ -1,6 +1,6 @@
 [
     "BEGIN TRANSACTION",
-    "CREATE TABLE users(id varchar not null primary key, name varchar not null, pwph varchar not null, org varchar not null, totpsec varchar not null, role varchar not null, approved integer DEFAULT 0, domain varchar not null)",
+    "CREATE TABLE users(id varchar not null primary key, name varchar not null, pwph varchar not null, org varchar not null, totpsec varchar not null, role varchar not null, approved integer default 0, verified integer default 0, domain varchar not null default 'undefined', registerdate integer(4) not null default (strftime('%s','now')), lastlogin integer not null default -1, lastip varchar not null default -1, loginsandips_json varchar not null default '[]')",
     
     "/* The following is for XBin DB schemas */",
     "CREATE TABLE shares(fullpath varchar not null, id varchar primary key, expiry varchar not null)",

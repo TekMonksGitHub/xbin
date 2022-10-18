@@ -2,9 +2,14 @@
  * Logs a user in. 
  * (C) 2015 TekMonks. All rights reserved.
  */
+const utils = require(`${CONSTANTS.LIBDIR}/utils.js`);
 const totp = require(`${APP_CONSTANTS.LIB_DIR}/totp.js`);
+const CONF = require(`${API_CONSTANTS.CONF_DIR}/app.json`);
 const userid = require(`${APP_CONSTANTS.LIB_DIR}/userid.js`);
 const jwttokenmanager = APIREGISTRY.getExtension("JWTTokenManager");
+const queueExecutor = require(`${CONSTANTS.LIBDIR}/queueExecutor.js`);
+
+const DEFAULT_QUEUE_DELAY = 500;
 
 exports.init = _ => {
 	jwttokenmanager.addListener((event, object) => {
@@ -22,7 +27,7 @@ exports.init = _ => {
 		}
 	});
 }
-exports.doService = async jsonReq => {
+exports.doService = async (jsonReq, servObject) => {
 	if (!validateRequest(jsonReq)) {LOG.error("Validation failure."); return CONSTANTS.FALSE_RESULT;}
 	
 	LOG.debug(`Got login request for ID ${jsonReq.id}`);
@@ -36,7 +41,11 @@ exports.doService = async jsonReq => {
 	} else if (result.result && (!result.approved)) {LOG.info(`User not approved, ${result.id}.`); result.tokenflag = false;}
 	else LOG.error(`Bad PWPH, given for ID: ${jsonReq.id}.`);
 
-	if (result.tokenflag) LOG.info(`User logged in: ${result.id}.`); else LOG.error(`Bad login or not approved for ID: ${jsonReq.id}.`);
+	if (result.tokenflag) {
+		LOG.info(`User logged in: ${result.id}${CONF.verify_email_on_registeration?`, email verification status is ${result.verified}.`:"."}`); 
+		queueExecutor.add(_=>userid.updateLoginStats(jsonReq.id, Date.now(), utils.getClientIP(servObject.req)), 
+			undefined, true, CONF.login_update_delay||DEFAULT_QUEUE_DELAY);
+	} else LOG.error(`Bad login or not approved for ID: ${jsonReq.id}.`);
 
 	if (result.result) return {result: result.result, name: result.name, id: result.id, org: result.org, role: result.role, tokenflag: result.tokenflag};
 	else return CONSTANTS.FALSE_RESULT;

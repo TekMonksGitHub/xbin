@@ -1,14 +1,20 @@
 /** 
+ * Helps with profile registration as well as resets.
+ * 
+ * The dataOnSuccess attribute contains the following
+ * fields - name, id, org, role, and needs_verification if
+ * the email needs to be verified by the user.
+ *
  * (C) 2018 TekMonks. All rights reserved.
  * License: See enclosed license file.
- * 
- * Helps with profile registration as well as resets
  */
 import {base32} from "./3p/base32.mjs";
 import {i18n} from "/framework/js/i18n.mjs";
 import {util} from "/framework/js/util.mjs";
 import {router} from "/framework/js/router.mjs";
+import {session} from "/framework/js/session.mjs";
 import {loginmanager} from "../../js/loginmanager.mjs";
+import {securityguard} from "/framework/js/securityguard.mjs";
 import {apimanager as apiman} from "/framework/js/apimanager.mjs";
 import {monkshu_component} from "/framework/js/monkshu_component.mjs";
 
@@ -61,7 +67,8 @@ async function initialRender(host) {
 }
 
 async function registerOrUpdate(element) {	
-	const shadowRoot = register_box.getShadowRootByContainedElement(element); if (!_validateForm(shadowRoot)) return;
+	const shadowRoot = register_box.getShadowRootByContainedElement(element); _resetUI(shadowRoot); 
+	if (!_validateForm(shadowRoot)) return;
 	const memory = register_box.getMemoryByContainedElement(element);
 
 	const nameSelector = shadowRoot.querySelector("input#name"); const name = nameSelector.value;
@@ -72,13 +79,17 @@ async function registerOrUpdate(element) {
 	const totpCodeSelector = shadowRoot.querySelector("input#otp"); const totpCode = totpCodeSelector.value && totpCodeSelector.value != ""?totpCodeSelector.value:null;
 	const routeOnSuccess = register_box.getHostElement(element).getAttribute("routeOnSuccess");
 	const routeOnNotApproved = register_box.getHostElement(element).getAttribute("routeOnNotApproved");
-	const dataOnSuccess = JSON.parse(register_box.getHostElement(element).getAttribute("dataOnSuccess")||"{}");
 
 	const registerResult = await loginmanager.registerOrUpdate(id_old, name, id, pass, org, totpCode?memory.totpKey:null, totpCode);
+
+	const dataOnSuccess = JSON.parse(await router.expandPageData(register_box.getHostElement(element).getAttribute("dataOnSuccess")||"{}",
+		undefined, {name, id, org, role: securityguard.getCurrentRole(), needs_verification: session.get(APP_CONSTANTS.USER_NEEDS_VERIFICATION)}));
+
 	switch (registerResult) {
 		case loginmanager.ID_OK: router.loadPage(routeOnSuccess, dataOnSuccess); break;
 		case loginmanager.ID_FAILED: shadowRoot.querySelector("span#error").style.display = "inline"; break;
 		case loginmanager.ID_NOT_YET_APPROVED: router.loadPage(routeOnNotApproved, dataOnSuccess); break;
+		case loginmanager.ID_INTERNAL_ERROR: shadowRoot.querySelector("span#errorInternal").style.display = "inline"; break;
 		default: shadowRoot.querySelector("span#error").style.display = "inline"; break;
 	}
 }
@@ -135,6 +146,11 @@ async function _checkAndFillAccountProfile(data, email, time) {
 	const profileData = await loginmanager.getProfileData(email, time);
 	if (!profileData || !profileData.id) router.doIndexNavigation();	// bad profile or hack attempt
 	else Object.assign(data, profileData);
+}
+
+function _resetUI(shadowRoot) {
+	shadowRoot.querySelector("span#error").style.display = "none";
+	shadowRoot.querySelector("span#errorInternal").style.display = "none";
 }
 
 const trueWebComponentMode = true;	// making this false renders the component without using Shadow DOM

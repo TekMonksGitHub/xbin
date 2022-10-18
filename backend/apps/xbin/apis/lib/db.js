@@ -25,7 +25,8 @@ let dbInstance = [], dbRunAsync = [], dbAllAsync = [];
  */
 exports.runCmd = async (cmd, params=[], dbPath=DB_PATH, dbCreationSQLs=DB_CREATION_SQLS) => {
     dbPath = path.resolve(dbPath);
-    await _initDB(dbPath, dbCreationSQLs); params = Array.isArray(params)?params:[params];
+    if (!await _initDB(dbPath, dbCreationSQLs)) {LOG.error(`DB error running, ${cmd}, with params ${params}, error: DB Init Error`) ; return false;}
+    params = Array.isArray(params)?params:[params];
     try {await dbRunAsync[dbPath](cmd, params); return true}
     catch (err) {LOG.error(`DB error running, ${cmd}, with params ${params}, error: ${err}`); return false;}
 }
@@ -40,7 +41,8 @@ exports.runCmd = async (cmd, params=[], dbPath=DB_PATH, dbCreationSQLs=DB_CREATI
  */
 exports.getQuery = async(cmd, params=[], dbPath=DB_PATH, dbCreationSQLs=DB_CREATION_SQLS) => {
     dbPath = path.resolve(dbPath);
-    await _initDB(dbPath, dbCreationSQLs); params = Array.isArray(params)?params:[params];
+    if (!await _initDB(dbPath, dbCreationSQLs)) {LOG.error(`DB error running, ${cmd}, with params ${params}, error: DB Init Error`) ; return false;}
+    params = Array.isArray(params)?params:[params];
     try {return await dbAllAsync[dbPath](cmd, params);}
     catch (err) {LOG.error(`DB error running, ${cmd}, with params ${params}, error: ${err}`); return false;}
 }
@@ -57,11 +59,13 @@ async function _createDB(dbPath, dbCreationSQLs) {
     } catch (err) {  // db doesn't exist
         LOG.error("DB doesn't exist, creating and initializing");
         try{await mkdirAsync(APP_CONSTANTS.DB_DIR)} catch(err){if (err.code != "EEXIST") {LOG.error(`Error creating DB dir, ${err}`); return false;}}   
-        if (!await _openDB()) return false; // creates the DB file
+        if (!await _openDB(dbPath)) return false; // creates the DB file
         
-        for (const dbCreationSQL of dbCreationSQLs) try{await dbRunAsync[dbPath](dbCreationSQL, [])} catch(err) {
-            LOG.error(`DB creation DDL failed on: ${dbCreationSQL}, due to ${err}`); 
-            return false;
+        for (const dbCreationSQL of dbCreationSQLs) {
+            if (!dbCreationSQL.trim().startsWith("/*")) try{await dbRunAsync[dbPath](dbCreationSQL, [])} catch(err) {
+                LOG.error(`DB creation DDL failed on: ${dbCreationSQL}, due to ${err}`); 
+                return false;
+            }
         }
         LOG.info("DB created successfully."); return true;
     }
@@ -70,7 +74,7 @@ async function _createDB(dbPath, dbCreationSQLs) {
 function _openDB(dbPath) {
     return new Promise(resolve => {
         if (!dbInstance[dbPath]) dbInstance[dbPath] = new sqlite3.Database(dbPath, sqlite3.OPEN_READWRITE|sqlite3.OPEN_CREATE, err => {
-            if (err) {LOG.error(`Error opening DB, ${err}`); dbInstance = null; resolve(false);} 
+            if (err) {LOG.error(`Error opening DB, ${err}`); dbInstance[dbPath] = null; resolve(false);} 
             else {
                 dbRunAsync[dbPath] = util.promisify(dbInstance[dbPath].run.bind(dbInstance[dbPath])); 
                 dbAllAsync[dbPath] = util.promisify(dbInstance[dbPath].all.bind(dbInstance[dbPath])); 

@@ -31,7 +31,7 @@ body::after {
 	position: absolute;
 	z-index: -1;   
 	top: 0;
-    left: 0;
+	left: 0;
 }
 
 div#header {
@@ -48,31 +48,11 @@ img.logo {
 	height: 4em;
 	cursor: pointer;
 }
-span#signin {
-	font-size: 0.8em;
-	font-weight: 500;
-	color: #ffffff;
-	cursor: default;
-	overflow: hidden;
-    text-align: right;
-	flex-grow: 1;
-}
-span#signin > span {padding-right: 3em;}
-span#signin > span:last-child {
-	color: #ffca36;
-	font-weight: 700;
-	text-transform: uppercase;
-	padding-right: 0px;
-}
-span#signin > span > a {
-	text-decoration: none;
-	color: inherit;
-}
 
 div#maincontent {
 	display: flex;
-    justify-content: space-around;
-    align-items: center;
+	justify-content: space-around;
+	align-items: center;
 	width: 100%;
 	flex-direction: row;
 }
@@ -85,7 +65,11 @@ div#maincontent {
 	padding: 2em;
 	text-align: center;
 	font-size: smaller;
-	margin-bottom: 1em;
+	min-height: 6em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+	flex-direction: column;
 }
 
 div.lgbox > span {
@@ -93,15 +77,20 @@ div.lgbox > span {
 	font-size: small;
 }
 
+div.lgbox > span#linklogin {
+	margin-top: 2em;
+    font-weight: normal;
+    cursor: pointer;
+}
+
 .advtextbox{
 	color: #ffffff;
 	text-align: center;
 	max-width: 30em;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    height: fit-content;
-	margin-bottom: min(10%, 4em);
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	height: fit-content;
 }
 .advtextbox > h1 {
 	font-weight: 250;
@@ -120,7 +109,7 @@ div.lgbox > span {
 	padding: 1em;
 	font-size: smaller;
 	margin: 1em 0em 0em 0em;
-    cursor: default;
+	cursor: default;
 }
 
 .langbox {
@@ -133,12 +122,17 @@ div.lgbox > span {
 	cursor: pointer;
 	font-size: x-small;
 }
+
+span.error {color: #FF716D;}
+
+span.link:hover {text-decoration: underline;}
 </style>
 {{{APP_CONSTANTS.MOBILE_MEDIA_QUERY_START}}}
 	div#maincontent {flex-direction: column;}
-	div#header {flex-direction: column-reverse; height: 6em;}
+	div#header {justify-content: space-around; height: 6em;}
 	span#signin {text-align: center;}
 	.lgbox {padding: 1em; box-shadow: none;}
+	.advtextbox {margin-bottom: min(10%, 4em);}
 {{{APP_CONSTANTS.MOBILE_MEDIA_QUERY_END}}}
 
 <!doctype html>
@@ -150,6 +144,7 @@ div.lgbox > span {
 	<title>{{i18n.Title}}</title>
 	
 	<script type="module">
+	import {loginmanager} from "./js/loginmanager.mjs"; loginmanager.checkResetSecurity();
 	import {register_box} from "./components/register-box/register-box.mjs"; 
 	import {language} from "./js/language.mjs"; window.language=language;
 	</script>
@@ -161,11 +156,6 @@ div.lgbox > span {
 <span id="imgheader">
 	<img class="logo" src="./img/logo.svg" onclick="window.open('http://teleworkr.com', '_blank')"></img>
 </span>
-<span id="signin">
-	<span><a href="{{#_org_monkshu_makeLink}}./loginroom.html{{/_org_monkshu_makeLink}}">{{i18n.RoomLoginMsg}}</a></span>
-	<span><a href="{{#_org_monkshu_makeLink}}./register.html{{/_org_monkshu_makeLink}}">{{i18n.Register}}</a></span>
-	<span><a href="{{#_org_monkshu_makeLink}}./login.html{{/_org_monkshu_makeLink}}">{{i18n.SignIn}}</a></span>
-</span>
 </div>
 
 <div id="maincontent">
@@ -176,13 +166,8 @@ div.lgbox > span {
 </div>
 
 <div class="lgbox">
-	<span><br><br>{{i18n.RegisterMsg}}<br><br></span>
-	<register-box id="register" roles='["{{APP_CONSTANTS.GUEST_ROLE}}", "{{APP_CONSTANTS.USER_ROLE}}"]' 
-		routeOnSuccess="./main.html" type="register" minlength="{{APP_CONSTANTS.MIN_PASS_LENGTH}}"
-		dataOnSuccess='{"showDialog":{"message": "&#x7B;&#x7B;#needs_verification&#x7D;&#x7D;{{i18n.RegisterSuccessNeedsVerification}}&#x7B;&#x7B;/needs_verification&#x7D;&#x7D;&#x7B;&#x7B;^needs_verification&#x7D;&#x7D;{{i18n.RegisterSuccess}}&#x7B;&#x7B;/needs_verification}}"}}' 
-		routeOnNotApproved="./notapproved.html" 
-		mobileQueries='{"start": "{{APP_CONSTANTS.MOBILE_MEDIA_QUERY_START}}", "end": "{{APP_CONSTANTS.MOBILE_MEDIA_QUERY_END}}"}',
-		apiPath='{{APP_CONSTANTS.BACKEND}}/apps/{{APP_CONSTANTS.APP_NAME}}'></register-box>
+	<span {{^emailVerified}}class="error"{{/emailVerified}}>{{emailVerifyMsg}}</span>
+	{{#emailVerified}}<span id="linklogin" onclick="window.location.replace(window.monkshu_env.frameworklibs.router.encodeURL('./login.html'))">{{i18n.ClickHereToContinueLogin}}</span>{{/emailVerified}}
 </div>
 </div>
 
@@ -192,7 +177,5 @@ div.lgbox > span {
 	<span class="langsel" onclick="language.changeLanguage('ja')">日本語</span>
 </div>	
 </div>
-
-</body>
 
 </html>
