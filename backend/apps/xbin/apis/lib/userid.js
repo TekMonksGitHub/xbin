@@ -83,6 +83,7 @@ exports.verifyEmail = async id => {
 
 exports.deleteAllUnverifiedAndExpiredAccounts = async verificationExpiryInSeconds => {
 	const unverifiedRows = await db.getQuery(`SELECT * from users WHERE verified=0 AND ${serverutils.getUnixEpoch()}-registerdate>=${verificationExpiryInSeconds}`);
+	if ((!unverifiedRows) || (!Array.isArray(unverifiedRows))) {LOG.error("Error deleting unverified accounts due to DB error."); return {result: false};}
 	const usersDropped = []; for (const unverifiedRow of unverifiedRows) 
 		if ((await exports.delete(unverifiedRow.id)).result) usersDropped.push(unverifiedRow);
 	return {result: true, usersDropped};

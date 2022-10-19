@@ -25,7 +25,7 @@ let dbInstance = [], dbRunAsync = [], dbAllAsync = [];
  */
 exports.runCmd = async (cmd, params=[], dbPath=DB_PATH, dbCreationSQLs=DB_CREATION_SQLS) => {
     dbPath = path.resolve(dbPath);
-    if (!await _initDB(dbPath, dbCreationSQLs)) {LOG.error(`DB error running, ${cmd}, with params ${params}, error: DB Init Error`) ; return false;}
+    if (!(await _initDB(dbPath, dbCreationSQLs))) {LOG.error(`DB error running, ${cmd}, with params ${params}, error: DB Init Error`) ; return false;}
     params = Array.isArray(params)?params:[params];
     try {await dbRunAsync[dbPath](cmd, params); return true}
     catch (err) {LOG.error(`DB error running, ${cmd}, with params ${params}, error: ${err}`); return false;}
@@ -41,15 +41,15 @@ exports.runCmd = async (cmd, params=[], dbPath=DB_PATH, dbCreationSQLs=DB_CREATI
  */
 exports.getQuery = async(cmd, params=[], dbPath=DB_PATH, dbCreationSQLs=DB_CREATION_SQLS) => {
     dbPath = path.resolve(dbPath);
-    if (!await _initDB(dbPath, dbCreationSQLs)) {LOG.error(`DB error running, ${cmd}, with params ${params}, error: DB Init Error`) ; return false;}
+    if (!(await _initDB(dbPath, dbCreationSQLs))) {LOG.error(`DB error running, ${cmd}, with params ${params}, error: DB Init Error`) ; return false;}
     params = Array.isArray(params)?params:[params];
     try {return await dbAllAsync[dbPath](cmd, params);}
     catch (err) {LOG.error(`DB error running, ${cmd}, with params ${params}, error: ${err}`); return false;}
 }
 
 async function _initDB(dbPath, dbCreationSQLs) {
-    if (!await _createDB(dbPath, dbCreationSQLs)) return false;
-    if (!await _openDB(dbPath)) return false; else return true;
+    if (!(await _createDB(dbPath, dbCreationSQLs))) return false;
+    if (!(await _openDB(dbPath))) return false; else return true;
 }
 
 async function _createDB(dbPath, dbCreationSQLs) {
@@ -59,7 +59,7 @@ async function _createDB(dbPath, dbCreationSQLs) {
     } catch (err) {  // db doesn't exist
         LOG.error("DB doesn't exist, creating and initializing");
         try{await mkdirAsync(APP_CONSTANTS.DB_DIR)} catch(err){if (err.code != "EEXIST") {LOG.error(`Error creating DB dir, ${err}`); return false;}}   
-        if (!await _openDB(dbPath)) return false; // creates the DB file
+        if (!(await _openDB(dbPath))) return false; // creates the DB file
         
         for (const dbCreationSQL of dbCreationSQLs) {
             if (!dbCreationSQL.trim().startsWith("/*")) try{await dbRunAsync[dbPath](dbCreationSQL, [])} catch(err) {

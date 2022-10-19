@@ -21,7 +21,7 @@ exports.doService = async jsonReq => {
     if (!result.result) {LOG.error(`Email verification failure due to missing ID: ${id}.`); return CONSTANTS.FALSE_RESULT;}
     if (result.verified == 1) {LOG.error(`Email verification ID already verified: ${id}.`); return CONSTANTS.TRUE_RESULT;}
     if (utils.getUnixEpoch() - result.registerdate > email_expiry_limit) {LOG.error(`Email verification timed out for email: ${id}`); return CONSTANTS.FALSE_RESULT;}
-    if (Math.abs(result.registerdate - urltime) > (APP_CONSTANTS.CONF.verifyurl_safe_time_range||DEFAULT_VERIFYRUL_SAFE_TIMERANGE)) {
+    if (Math.abs(result.registerdate - urltime) > (APP_CONSTANTS.CONF.verifyurl_safe_time_range_seconds||DEFAULT_VERIFYRUL_SAFE_TIMERANGE)) {
         LOG.error(`Email verification url time and user ID register time out of safe range for: ${id}`); return CONSTANTS.FALSE_RESULT; }
 
     result = await userid.verifyEmail(id);
