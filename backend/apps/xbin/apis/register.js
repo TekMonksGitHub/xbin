@@ -38,7 +38,7 @@ exports.doService = async (jsonReq, servObject) => {
 	if (!result.result) LOG.error(`Unable to register: ${jsonReq.name}, ID: ${jsonReq.id} DB error.`);
 
 	if (result.result && APP_CONSTANTS.CONF.verify_email_on_registeration) {
-		const mailVerificationResult = await _emailAccountVerification(result.id, result.name, result.org, jsonReq.lang);
+		let mailVerificationResult = false; try{mailVerificationResult = _emailAccountVerification(result.id, result.name, result.org, jsonReq.lang);} catch (err) {}
 		if (!mailVerificationResult) {
 			try {userid.delete(id)} catch(_) {};	// try to drop the account
 			LOG.info(`Unable to register: ${jsonReq.name}, ID: ${jsonReq.id} verification email error.`); 
@@ -70,7 +70,7 @@ function _getRootDomain(jsonReq) {
 }
 
 async function _emailAccountVerification(id, name, org, lang) {
-	const cryptID = crypt.encrypt(id), cryptTime = crypt.encrypt(utils.getUnixEpoch()), 
+	const cryptID = crypt.encrypt(id), cryptTime = crypt.encrypt(utils.getUnixEpoch().toString()), 
         action_url = APP_CONSTANTS.CONF.base_url + Buffer.from(`${APP_CONSTANTS.CONF.verify_url}?e=${cryptID}&t=${cryptTime}`).toString("base64"),
         button_code_pre = mustache.render(emailTemplate.button_code_pre, {action_url}), 
 			button_code_post = mustache.render(emailTemplate.button_code_post, {action_url}),
