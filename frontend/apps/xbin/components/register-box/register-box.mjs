@@ -139,7 +139,7 @@ async function _getTOTPQRCode(key) {
 
 const _getTOTPURL = async (key, host) => {
 	const id = host?register_box.getShadowRootByHost(host).querySelector("input#id").value:undefined; 
-	return `${$$.getOS()=="ios"?"totp":"otpauth"}://totp/${await i18n.get("Title")+(id?`:${id}`:"")}?secret=${key}&issuer=TekMonks&algorithm=sha1&digits=6&period=30`;
+	return `${$$.getOS()=="ios"?"totp":"otpauth"}://totp/${await i18n.get("Title")+(id?`:${id}`:"")}?secret=${key}&issuer=TekMonks&digits=6&period=30`;
 } 
 
 async function _checkAndFillAccountProfile(data, email, time) {
