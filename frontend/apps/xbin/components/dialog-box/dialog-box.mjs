@@ -60,8 +60,8 @@ function error(element, message) {
  * @param {function} callback The callback function once OK is clicked, optional
  */
 const showMessage = (message, hostID, callback=_=>{}) => monkshu_env.components['dialog-box'].showDialog(
-    `${APP_CONSTANTS.COMPONENTS_PATH}/dialog-box/templates/message.html`, true, 
-    false, {message}, hostID, [], _=> {monkshu_env.components['dialog-box'].hideDialog(hostID); callback();});
+    `${COMPONENT_PATH}/templates/message.html`, true, false, {message}, hostID, [], 
+    _=> {monkshu_env.components['dialog-box'].hideDialog(hostID); callback();} );
 
 /**
  * Hides the error being shown on the dialog
