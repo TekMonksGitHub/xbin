@@ -1,5 +1,6 @@
 /** 
  * db.js - DB layer. Auto creates the DB with the DDL if needed.
+ * This version uses SQLite.
  * 
  * (C) 2020 TekMonks. All rights reserved.
  * License: See enclosed LICENSE file.
@@ -19,15 +20,15 @@ let dbInstance = [], dbRunAsync = [], dbAllAsync = [];
  * Runs the given SQL command e.g. insert, delete etc.
  * @param {string} cmd The command to run
  * @param {array} params The params for SQL
- * @param {string} dbPath Optional - The path to the DB file, else default is used from the constants
+ * @param {string} dbConnectInfo Optional - DB connection info. For this driver it is the path to the DB file.
  * @param {array} dbCreationSQLs Optional - The DB creation SQLs as string array, else default is used from the constants
  * @return true on success, and false on error
  */
-exports.runCmd = async (cmd, params=[], dbPath=DB_PATH, dbCreationSQLs=DB_CREATION_SQLS) => {
-    dbPath = path.resolve(dbPath);
-    if (!(await _initDB(dbPath, dbCreationSQLs))) {LOG.error(`DB error running, ${cmd}, with params ${params}, error: DB Init Error`) ; return false;}
+exports.runCmd = async (cmd, params=[], dbConnectInfo=DB_PATH, dbCreationSQLs=DB_CREATION_SQLS) => {
+    dbConnectInfo = path.resolve(dbConnectInfo);
+    if (!(await _initDB(dbConnectInfo, dbCreationSQLs))) {LOG.error(`DB error running, ${cmd}, with params ${params}, error: DB Init Error`) ; return false;}
     params = Array.isArray(params)?params:[params];
-    try {await dbRunAsync[dbPath](cmd, params); return true}
+    try {await dbRunAsync[dbConnectInfo](cmd, params); return true}
     catch (err) {LOG.error(`DB error running, ${cmd}, with params ${params}, error: ${err}`); return false;}
 }
 
@@ -35,15 +36,15 @@ exports.runCmd = async (cmd, params=[], dbPath=DB_PATH, dbCreationSQLs=DB_CREATI
  * Runs the given query e.g. select and returns the rows from the result.
  * @param {string} cmd The command to run
  * @param {array} params The params for SQL
- * @param {string} dbPath Optional - The path to the DB file
+ * @param {string} dbConnectInfo Optional - DB connection info. For this driver it is the path to the DB file.
  * @param {array} dbCreationSQLs Optional - The DB creation SQLs as string array
  * @return rows array on success, and false on error 
  */
-exports.getQuery = async(cmd, params=[], dbPath=DB_PATH, dbCreationSQLs=DB_CREATION_SQLS) => {
-    dbPath = path.resolve(dbPath);
-    if (!(await _initDB(dbPath, dbCreationSQLs))) {LOG.error(`DB error running, ${cmd}, with params ${params}, error: DB Init Error`) ; return false;}
+exports.getQuery = async(cmd, params=[], dbConnectInfo=DB_PATH, dbCreationSQLs=DB_CREATION_SQLS) => {
+    dbConnectInfo = path.resolve(dbConnectInfo);
+    if (!(await _initDB(dbConnectInfo, dbCreationSQLs))) {LOG.error(`DB error running, ${cmd}, with params ${params}, error: DB Init Error`) ; return false;}
     params = Array.isArray(params)?params:[params];
-    try {return await dbAllAsync[dbPath](cmd, params);}
+    try {return await dbAllAsync[dbConnectInfo](cmd, params);}
     catch (err) {LOG.error(`DB error running, ${cmd}, with params ${params}, error: ${err}`); return false;}
 }
 

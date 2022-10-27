@@ -9,14 +9,14 @@ const CONF = require(`${API_CONSTANTS.CONF_DIR}/app.json`);
 const serverutils = require(`${CONSTANTS.LIBDIR}/utils.js`);
 const getUserHash = async text => await (util.promisify(bcryptjs.hash))(text, 12);
 
-exports.register = async (id, name, org, pwph, totpSecret, role, approved, domain) => {
+exports.register = async (id, name, org, pwph, totpSecret, role, approved, verifyEmail=1, domain) => {
 	const existsID = await exports.existsID(id);
 	if (existsID.result) return({result:false}); 
 	const pwphHashed = await getUserHash(pwph);
-	const registerResult = await db.runCmd("INSERT INTO users (id, name, org, pwph, totpsec, role, approved, domain) VALUES (?,?,?,?,?,?,?,?)", 
-		[id, name, org, pwphHashed, totpSecret, role, approved?1:0, domain]);
+	const registerResult = await db.runCmd("INSERT INTO users (id, name, org, pwph, totpsec, role, approved, verified, domain) VALUES (?,?,?,?,?,?,?,?,?)", 
+		[id, name, org, pwphHashed, totpSecret, role, approved?1:0, verifyEmail?0:1, domain]);
 
-	return {result: registerResult, id, name, org, pwph: pwphHashed, totpsec: totpSecret, role, approved:approved?1:0, domain};
+	return {result: registerResult, id, name, org, pwph: pwphHashed, totpsec: totpSecret, role, approved:approved?1:0, verified:verifyEmail?0:1, domain};
 }
 
 exports.delete = async id => {
@@ -96,4 +96,9 @@ exports.updateLoginStats = async (id, date, ip) => {
 	if (currentLoginsAndIPsJSON.length > maxLoginsToRemember) currentLoginsAndIPsJSONawait = currentLoginsAndIPsJSON.slice(0, maxLoginsToRemember);
 	await db.runCmd("UPDATE users SET lastlogin=?, lastip=?, loginsandips_json=? WHERE id=?", [date, ip, 
 		JSON.stringify(currentLoginsAndIPsJSON), id]);
+}
+
+exports.getAdminsFor = async id => {
+	const admins = await db.getQuery("SELECT * FROM users WHERE role = 'admin' AND org = (select org from users where id = ? COLLATE NOCASE) COLLATE NOCASE", [id]);
+	if (admins && admins.length) return admins; else return null;
 }

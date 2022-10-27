@@ -7,19 +7,22 @@
 const mustache = require('mustache');
 const crypt = require(`${CONSTANTS.LIBDIR}/crypt.js`);
 const totp = require(`${APP_CONSTANTS.LIB_DIR}/totp.js`);
+const login = require(`${APP_CONSTANTS.API_DIR}/login.js`);
 const mailer = require(`${APP_CONSTANTS.LIB_DIR}/mailer.js`);
-const userid = require(`${APP_CONSTANTS.LIB_DIR}/userid.js`);
+const register = require(`${APP_CONSTANTS.API_DIR}/register.js`);
 const template = require(`${APP_CONSTANTS.CONF_DIR}/email.json`);
 
-exports.doService = async jsonReq => {
+exports.doService = async (jsonReq, servObject, headers) => {
     if (!validateRequest(jsonReq)) {LOG.error("Validation failure."); return CONSTANTS.FALSE_RESULT;}
     
     LOG.debug("Got add user request for ID: " + jsonReq.id);
 
-    const result = await userid.register(jsonReq.id, jsonReq.name, jsonReq.org, totp.getSecret(), totp.getSecret(), jsonReq.role, (jsonReq.approved==true||jsonReq.approved==1)?1:0);
+    const result = await register.addUser({pwph: '', id: jsonReq.id, name: jsonReq.name, org: jsonReq.org,
+        totpSecret: totp.getSecret(), lang: jsonReq.lang, role: jsonReq.role, verifyEmail : 0,
+        approved: (jsonReq.approved==true||jsonReq.approved==1)?1:0}, servObject, true);
 
     if (result.result) {
-        LOG.info(`User registered ${jsonReq.name}, ID: ${jsonReq.id}, emailing them login instructions.`); 
+        LOG.info(`User registered ${jsonReq.name}, ID: ${jsonReq.id}, by admin with ID: ${login.getID(headers)}, emailing them initial login instructions.`); 
 
         const cryptID = crypt.encrypt(jsonReq.id), cryptTime = crypt.encrypt(Date.now().toString()), 
             action_url = APP_CONSTANTS.CONF.base_url + Buffer.from(`${APP_CONSTANTS.CONF.initiallogin_url}?e=${cryptID}&t=${cryptTime}`).toString("base64"),
@@ -38,5 +41,6 @@ exports.doService = async jsonReq => {
     }
 }
  
-const validateRequest = jsonReq => (jsonReq && jsonReq.id && jsonReq.name && jsonReq.org && jsonReq.role && jsonReq.approved && jsonReq.lang);
+const validateRequest = jsonReq => (jsonReq && jsonReq.id && jsonReq.name && jsonReq.org && jsonReq.role && 
+    jsonReq.approved && jsonReq.lang);
  
