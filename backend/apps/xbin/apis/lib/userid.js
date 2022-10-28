@@ -11,7 +11,7 @@ const serverutils = require(`${CONSTANTS.LIBDIR}/utils.js`);
 const DB_PATH = path.resolve(`${APP_CONSTANTS.DB_DIR}/app.db`);
 const DB_CREATION_SQLS = require(`${APP_CONSTANTS.DB_DIR}/dbschema.json`);
 const getUserHash = async text => await (util.promisify(bcryptjs.hash))(text, 12);
-const db = require(`${CONSTANTS.LIBDIR}/db.js`).getDBDriver('sqlite', DB_PATH, DB_CREATION_SQLS);
+const db = require(`${CONSTANTS.LIBDIR}/db.js`).getDBDriver("sqlite", DB_PATH, DB_CREATION_SQLS);
 
 exports.register = async (id, name, org, pwph, totpSecret, role, approved, verifyEmail=1, domain) => {
 	const existsID = await exports.existsID(id);
