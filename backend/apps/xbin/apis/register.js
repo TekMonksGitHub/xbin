@@ -22,7 +22,7 @@ exports.doService = async (jsonReq, servObject) => {
 exports.addUser = async (jsonReq, servObject, byAdmin=false) => {	
 	LOG.debug("Got register request for ID: " + jsonReq.id);
 
-	if (!totp.verifyTOTP(jsonReq.totpSecret, jsonReq.totpCode)) {
+	if ((!byAdmin) && (!totp.verifyTOTP(jsonReq.totpSecret, jsonReq.totpCode))) {	// verify TOTP for non admin registrations
 		LOG.error(`Unable to register: ${jsonReq.name}, ID: ${jsonReq.id}, wrong totp code`);
 		return CONSTANTS.FALSE_RESULT;
 	}

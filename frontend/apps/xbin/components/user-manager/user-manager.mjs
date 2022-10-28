@@ -16,7 +16,7 @@ const CONTEXT_MENU_ID = "usermanagerContextMenu", API_GETORGUSERS = "getorgusers
 	API_APPROVEUSER = "approveuser", API_EDITUSER = "updateuserbyadmin", API_RESETUSER = "resetuser", 
 	API_ADDUSER = "adduserbyadmin", COMPONENT_PATH = util.getModulePath(import.meta);
 
-let conf;
+let conf, mustache_instance;
 
 async function elementConnected(element) {
 	conf = await $$.requireJSON(`${COMPONENT_PATH}/conf/usermanager.json`);
@@ -29,6 +29,8 @@ async function elementConnected(element) {
 	user_manager.setDataByHost(element, data);
 
 	user_manager.getMemory(element.id).users = users;
+
+	if (!mustache_instance) mustache_instance = await router.getMustache();
 }
 
 async function elementRendered(host, initialRender) {	// for some weird reason we need to set value via JS only
@@ -68,10 +70,10 @@ async function addUser(element) {
 		const addResult = await apiman.rest(`${backendURL}/${API_ADDUSER}`, "POST", ret, true);
 
 		if (!addResult?.result) {	// account creation failed
-			const err = router.getMustache().render(await i18n.get("AddError"), {name: ret.name, id: ret.id}); 
+			const err = mustache_instance.render(await i18n.get("AddError"), {name: ret.name, id: ret.id}); 
 			LOG.error(err); monkshu_env.components['dialog-box'].hideDialog("dialog"); _showMessage("dialog", err);
 		} else if (!addResult.emailresult) {	// account created but login email send failed
-			const err = router.getMustache().render(await i18n.get("AddEmailError"), {name: ret.name, id: ret.id, loginurl: addResult.loginurl}); 
+			const err = mustache_instance.render(await i18n.get("AddEmailError"), {name: ret.name, id: ret.id, loginurl: addResult.loginurl}); 
 			LOG.error(err); monkshu_env.components['dialog-box'].hideDialog("dialog"); _showError(err);
 		} else monkshu_env.components['dialog-box'].hideDialog("dialog");
 
@@ -89,7 +91,7 @@ async function editUser(name, id, role, approved, element) {
 		const backendURL = user_manager.getHostElement(element).getAttribute("backendurl");
 		const editResult = await apiman.rest(`${backendURL}/${API_EDITUSER}`, "POST", ret, true);
 		if (!editResult?.result) {
-			const err = router.getMustache().render(await i18n.get("EditError"), {name, id}); 
+			const err = mustache_instance.render(await i18n.get("EditError"), {name, id}); 
 			LOG.error(err); monkshu_env.components['dialog-box'].error("dialog", err);
 		} else {
 			monkshu_env.components['dialog-box'].hideDialog("dialog");
@@ -99,19 +101,19 @@ async function editUser(name, id, role, approved, element) {
 }
 
 async function _deleteUser(name, id, element) {
-	_execOnConfirm(router.getMustache().render(await i18n.get("ConfirmUserDelete"), {name, id}), async _ =>{
+	_execOnConfirm(mustache_instance.render(await i18n.get("ConfirmUserDelete"), {name, id}), async _ =>{
 		const backendURL = user_manager.getHostElement(element).getAttribute("backendurl");
 		const deleteResult = await apiman.rest(`${backendURL}/${API_DELETEUSER}`, "GET", {name, id}, true);
-		if (!deleteResult?.result) {const err = router.getMustache().render(await i18n.get("DeleteError"), {name, id}); LOG.error(err); _showError(err);}
+		if (!deleteResult?.result) {const err = mustache_instance.render(await i18n.get("DeleteError"), {name, id}); LOG.error(err); _showError(err);}
 		else user_manager.reload(user_manager.getHostElementID(element));
 	});
 }
 
 async function _resetUser(name, id, element) {
-	_execOnConfirm((await router.getMustache()).render(await i18n.get("ConfirmUserReset"), {name, id}), async _ =>{
+	_execOnConfirm(mustache_instance.render(await i18n.get("ConfirmUserReset"), {name, id}), async _ =>{
 		const backendURL = user_manager.getHostElement(element).getAttribute("backendurl"), lang = i18n.getSessionLang();
 		const resetResult = await apiman.rest(`${backendURL}/${API_RESETUSER}`, "GET", {id, lang}, true);
-		if (!resetResult?.result) {const err = router.getMustache().render(await i18n.get("ResetError"), {name, id}); LOG.error(err); _showError(err);}
+		if (!resetResult?.result) {const err = mustache_instance.render(await i18n.get("ResetError"), {name, id}); LOG.error(err); _showError(err);}
 		else _showMessage(await i18n.get("ResetSuccess"));
 	});
 }
@@ -120,10 +122,10 @@ async function _approveUser(name, id, element) {
 	const backendURL = user_manager.getHostElement(element).getAttribute("backendurl");
 	const approveResult = await apiman.rest(`${backendURL}/${API_APPROVEUSER}`, "GET", {id}, true);
 	if (!approveResult?.result) {
-		const err = router.getMustache().render(await i18n.get("ApproveError"), {name, id}); 
+		const err = mustache_instance.render(await i18n.get("ApproveError"), {name, id}); 
 		LOG.error(err); _showError(err);
 	} else { 
-		await _showMessage(router.getMustache().render(await i18n.get("Approved"), {name, id})); 
+		await _showMessage(mustache_instance.render(await i18n.get("Approved"), {name, id})); 
 		user_manager.reload(user_manager.getHostElementID(element)); 
 	}
 }

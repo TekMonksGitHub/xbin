@@ -132,7 +132,7 @@ export const i18n = {
 "GenericBackendError": "Failed due to a backend error, please contact your support team.",
 "AddEmailError": "Account created, initial login email failed. Please ask the user {{name}} with email {{id}} to login using this URL <br> {{loginurl}}",
 "ResetError": "Can't reset the user {{name}} with email {{id}}, backend returned with an error.",
-"Approved": "User {{name}} with email {{id}} approved.al",
+"Approved": "User {{name}} with email {{id}} approved.",
 "ConfirmUserDelete": "Please confirm you want to delete {{name}} with email {{id}}?",
 "ConfirmUserReset": "Please confirm you want to reset {{name}} with email {{id}}?",
 "Role": "Role",

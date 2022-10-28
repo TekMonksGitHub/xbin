@@ -46,7 +46,7 @@ function getTOTP(secret, duration=30, algorithm="sha1", digits=6, time0=0) {
  * @param {number} duration             The selected TOTP duration, default is 30 seconds. Optional.
  * @param {string} algorithm            The TOTP algorithm. Refer to algorithms supported by Node.js crypto. Optional.
  */
-function verifyTOTP(secret, token, historicalWindows=1, duration=30, algorithm="sha1") {
+function verifyTOTP(secret, token='', historicalWindows=1, duration=30, algorithm="sha1") {
     const totpDigits = token.toString(10).length;
     for (let n = 0; n <= historicalWindows; n++) if (getTOTP(secret, duration, algorithm, totpDigits, n*duration) == token) 
         return true;
