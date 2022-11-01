@@ -66,7 +66,7 @@ const interceptPageData = _ => router.addOnLoadPageData(APP_CONSTANTS.MAIN_HTML,
 
 async function _getTOTPQRCode(key) {
 	const title = await i18n.get("Title");
-	await $$.require("./js/3p/qrcode.min.js");
+	await $$.require(`${APP_CONSTANTS.COMPONENTS_PATH}/register-box/3p/qrcode.min.js`);
 	return new Promise(resolve => QRCode.toDataURL(
 	    `otpauth://totp/${title}?secret=${key}&issuer=TekMonks&algorithm=sha1&digits=6&period=30`, (_, data_url) => resolve(data_url)));
 }
