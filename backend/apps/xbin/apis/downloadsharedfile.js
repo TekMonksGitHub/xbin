@@ -1,7 +1,8 @@
 /** 
+ * API for downloading a shared file.
  * (C) 2020 TekMonks. All rights reserved.
  */
-const db = require(`${API_CONSTANTS.LIB_DIR}/db.js`);
+const db = require(`${API_CONSTANTS.LIB_DIR}/xbindb.js`).getDB();
 const downloadfile = require(`${API_CONSTANTS.API_DIR}/downloadfile.js`);
 
 exports.handleRawRequest = async (jsonReq, servObject, headers, url) => {

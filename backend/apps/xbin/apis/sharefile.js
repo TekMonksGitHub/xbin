@@ -3,9 +3,9 @@
  */
 const path = require("path");
 const crypto = require("crypto");
-const db = require(`${API_CONSTANTS.LIB_DIR}/db.js`);
 const cms = require(`${API_CONSTANTS.LIB_DIR}/cms.js`);
 const CONF = require(`${API_CONSTANTS.CONF_DIR}/xbin.json`);
+const db = require(`${API_CONSTANTS.LIB_DIR}/xbindb.js`).getDB();
 
 exports.doService = async (jsonReq, _, headers) => {
 	if (!validateRequest(jsonReq)) {LOG.error("Validation failure."); return CONSTANTS.FALSE_RESULT;}

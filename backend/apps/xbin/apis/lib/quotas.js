@@ -2,14 +2,11 @@
  * Library for managing quotas
  * (C) 2022 TekMonks
  */
-const path = require("path");
 const fspromises = require("fs").promises;
 const cms = require(`${API_CONSTANTS.LIB_DIR}/cms.js`);
 const login = require(`${API_CONSTANTS.API_DIR}/login.js`);
 const CONF = require(`${API_CONSTANTS.CONF_DIR}/xbin.json`);
-const DB_PATH = path.resolve(`${APP_CONSTANTS.DB_DIR}/app.db`);
-const DB_CREATION_SQLS = require(`${APP_CONSTANTS.DB_DIR}/dbschema.json`);
-const db = require(`${CONSTANTS.LIBDIR}/db.js`).getDBDriver("sqlite", DB_PATH, DB_CREATION_SQLS);
+const db = require(`${API_CONSTANTS.LIB_DIR}/xbindb.js`).getDB();
 
 exports.checkQuota = async function(headers, writeLength, id) {
 	const cmsRoot = await cms.getCMSRoot(headers); if (!id) id = login.getID(headers);

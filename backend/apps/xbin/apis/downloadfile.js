@@ -9,7 +9,6 @@ const cms = require(`${API_CONSTANTS.LIB_DIR}/cms.js`);
 const CONF = require(`${API_CONSTANTS.CONF_DIR}/xbin.json`);
 const securid = require(`${API_CONSTANTS.API_DIR}/getsecurid.js`);
 
-
 exports.handleRawRequest = async function(jsonObj, servObject, headers, url) {
 	if (!validateRequest(jsonObj)) {LOG.error("Validation failure."); _sendError(servObject); return;}
 	if (!securid.check(jsonObj.securid)) {LOG.error("SecurID validation failure."); _sendError(servObject, true); return;}

@@ -15,7 +15,8 @@ import {blackboard} from "/framework/js/blackboard.mjs";
 import {apimanager as apiman} from "/framework/js/apimanager.mjs";
 import {monkshu_component} from "/framework/js/monkshu_component.mjs";
 
-let user, mouseX, mouseY, menuOpen, timer, selectedPath, selectedIsDirectory, selectedElement, filesAndPercents = {}, selectedCut, selectedCopy, shareDuration, showNotification;
+let user, mouseX, mouseY, menuOpen, timer, selectedPath, selectedIsDirectory, selectedElement, filesAndPercents = {}, 
+   selectedCutPath, selectedCopyPath, selectedCutCopyElement, shareDuration, showNotification;
 
 const API_GETFILES = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/getfiles";
 const API_COPYFILE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/copyfile";
@@ -47,11 +48,11 @@ async function elementConnected(host) {
    const path = host.getAttribute("path") || (file_manager.getSessionMemory(host.id))["__lastPath"] || "/"; 
    selectedPath = path.replace(/[\/]+/g,"/"); selectedIsDirectory = true;
    const resp = await apiman.rest(API_GETFILES, "GET", {path}, true); if (!resp || !resp.result) return; 
-   for (const entry of resp.entries) {if (entry.path.replace(/[\/]+/g,"/") == selectedCut) entry.cutimage = "_cutimage"; 
+   for (const entry of resp.entries) {if (entry.path.replace(/[\/]+/g,"/") == selectedCutPath) entry.cutimage = "_cutimage"; 
       entry.stats.name = entry.name; entry.stats.json = JSON.stringify(entry.stats);}
    
    // if a file or folder has been selected, show the paste button
-   if (selectedCopy || selectedCut) resp.entries.unshift({name: await i18n.get("Paste"), path, stats:{paste: true}});
+   if (selectedCopyPath || selectedCutPath) resp.entries.unshift({name: await i18n.get("Paste"), path, stats:{paste: true}});
 
    resp.entries.unshift({name: await i18n.get("Create"), path, stats:{create: true}});
    resp.entries.unshift({name: await i18n.get("Upload"), path, stats:{upload: true}});
@@ -189,7 +190,7 @@ function showMenu(element, documentMenuOnly) {
    if (documentMenuOnly) {
       shadowRoot.querySelector("div#contextmenu > span#upload").classList.remove("hidden");
       shadowRoot.querySelector("div#contextmenu > span#create").classList.remove("hidden");
-      if (selectedCopy || selectedCut) shadowRoot.querySelector("div#contextmenu > span#paste").classList.remove("hidden"); 
+      if (selectedCopyPath || selectedCutPath) shadowRoot.querySelector("div#contextmenu > span#paste").classList.remove("hidden"); 
       else shadowRoot.querySelector("div#contextmenu > span#paste").classList.add("hidden"); 
       shadowRoot.querySelector("div#contextmenu > span#edit").classList.add("hidden"); 
       shadowRoot.querySelector("div#contextmenu > span#hr1").classList.add("hidden"); 
@@ -223,7 +224,7 @@ function showMenu(element, documentMenuOnly) {
       shadowRoot.querySelector("div#contextmenu > span#hr2").classList.remove("hidden"); 
       shadowRoot.querySelector("div#contextmenu > span#cut").classList.remove("hidden"); 
       shadowRoot.querySelector("div#contextmenu > span#copy").classList.remove("hidden");
-      if (selectedCopy || selectedCut) shadowRoot.querySelector("div#contextmenu > span#paste").classList.remove("hidden"); 
+      if (selectedCopyPath || selectedCutPath) shadowRoot.querySelector("div#contextmenu > span#paste").classList.remove("hidden"); 
       else shadowRoot.querySelector("div#contextmenu > span#paste").classList.add("hidden"); 
       shadowRoot.querySelector("div#contextmenu > span#upload").classList.add("hidden");
       shadowRoot.querySelector("div#contextmenu > span#create").classList.add("hidden");
@@ -301,16 +302,17 @@ function getDragAndDropDownloadURL(path, element) {
 
 const showDownloadProgress = (path, element) => _showDownloadProgress(element, path, element["data-reqid"]);
 
-function cut(element) { selectedCut = selectedPath; file_manager.reload(file_manager.getHostElementID(element)); }
+function cut(element) { selectedCutPath = selectedPath; selectedCutCopyElement = selectedElement.cloneNode(); 
+   file_manager.reload(file_manager.getHostElementID(element)); }
 
-function copy(_element) { selectedCopy = selectedPath; }
+function copy(_element) { selectedCopyPath = selectedPath; selectedCutCopyElement = selectedElement.cloneNode(); }
 
-function paste(element) {
-   const selectedPathToOperate = selectedCut?selectedCut:selectedCopy;
+async function paste(element) {
+   const selectedPathToOperate = selectedCutPath?selectedCutPath:selectedCopyPath;
    const baseName = selectedPathToOperate.substring(selectedPathToOperate.lastIndexOf("/")+1);
-   if (selectedCut) _performRename(selectedCut, `${selectedPath}/${baseName}`, element);
-   else if (selectedCopy) _performCopy(selectedCopy, `${selectedPath}/${baseName}`, element);
-   selectedCut = null; selectedCopy = null;
+   if (selectedCutPath) await _performRename(selectedCutPath, `${selectedPath}/${baseName}`, element);
+   else if (selectedCopyPath) await _performCopy(selectedCopyPath, `${selectedPath}/${baseName}`, element);
+   selectedCutPath = null; selectedCopyPath = null; selectedCutCopyElement = null;
 }
 
 function _showDownloadProgress(element, path, reqid) {
@@ -403,7 +405,7 @@ async function _performRename(oldPath, newPath, element) {
 }
 
 async function _performCopy(fromPath, toPath, element) {
-   const sizeOfCopy = JSON.parse(selectedElement.dataset.stats).size; if (!(await _checkQuotaAndReportError(sizeOfCopy))) return;
+   const sizeOfCopy = JSON.parse(selectedCutCopyElement.dataset.stats).size; if (!(await _checkQuotaAndReportError(sizeOfCopy))) return;
    const resp = await apiman.rest(API_COPYFILE, "GET", {from: fromPath, to: toPath}, true), hostID = file_manager.getHostElementID(element)
    if (!resp || !resp.result) _showErrorDialog(_=>file_manager.reload(hostID)); else file_manager.reload(hostID);
 }
