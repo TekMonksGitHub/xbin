@@ -146,24 +146,23 @@ const uploadFiles = async (element, files) => {
 
 async function _uploadAFile(element, file) {
    const totalChunks = file.size != 0 ? Math.ceil(file.size / IO_CHUNK_SIZE) : 1, lastChunkSize = file.size - (totalChunks-1)*IO_CHUNK_SIZE;
-   const _getName = file => file.renameto || file.name;
-   if (filesAndPercents[_getName(file)]?.cancelled) filesAndPercents[_getName(file)].cancelled = false; // being reuploaded
+   const _getSavePath = (path, file) => `${path}/${file.renameto || file.name}`;
+   if (filesAndPercents[_getSavePath(selectedPath, file)]?.cancelled) filesAndPercents[_getSavePath(selectedPath, file)].cancelled = false; // being reuploaded
    const waitingReaders = [];  
 
-   const queueReadFileChunk = (fileToRead, chunkNumber, resolve, reject) => {
+   const queueReadFileChunk = (savePath, fileToRead, chunkNumber, resolve, reject) => {
       const _rejectReadPromises = error => {
          LOG.error(`Error reading ${fileToRead}, error is: ${error}`); 
          while (waitingReaders.length) (waitingReaders.pop())(error);   // reject all waiting readers too
          reject(error);
       }
-      const reader = new FileReader(), savePath = selectedPath;
-      reader.onload = async loadResult => {
+      const reader = new FileReader(), filePath = _getSavePath(savePath, fileToRead); reader.onload = async loadResult => {
          const dataToPost = file.size != 0 ? loadResult.target.result : "data:;base64,";  // handle 0 byte files
-         const resp = await apiman.rest(API_UPLOADFILE, "POST", {data:dataToPost, path:`${savePath}/${_getName(fileToRead)}`, user}, true);
+         const resp = await apiman.rest(API_UPLOADFILE, "POST", {data:dataToPost, path:filePath, user}, true);
          if (!resp.result) _rejectReadPromises("Error writing to the server."); else {
-            _showProgress(element, chunkNumber+1, totalChunks, _getName(fileToRead), UPLOAD_ICON);
-            if (!filesAndPercents[_getName(fileToRead)]?.cancelled && (waitingReaders.length)) (waitingReaders.pop())();  // issue next chunk read if queued reads
-            else if (filesAndPercents[_getName(fileToRead)]?.cancelled) await apiman.rest(API_DELETEFILE, "GET", {path: `${savePath}/${_getName(fileToRead)}`}, true);
+            _showProgress(element, chunkNumber+1, totalChunks, filePath, UPLOAD_ICON);
+            if (!filesAndPercents[filePath]?.cancelled && (waitingReaders.length)) (waitingReaders.pop())();  // issue next chunk read if queued reads
+            else if (filesAndPercents[filePath]?.cancelled) await apiman.rest(API_DELETEFILE, "GET", {path: filePath}, true);
             resolve();
          }
       }
@@ -178,8 +177,8 @@ async function _uploadAFile(element, file) {
    }
 
    let readPromises = []; 
-   for (let i = 0; i < totalChunks; i++) readPromises.push(new Promise((resolve, reject) => queueReadFileChunk(file, i, resolve, reject)));
-   const startReaders = _ => {_showProgress(element, 0, totalChunks, _getName(file), UPLOAD_ICON); (waitingReaders.pop())();}
+   for (let i = 0; i < totalChunks; i++) readPromises.push(new Promise((resolve, reject) => queueReadFileChunk(selectedPath, file, i, resolve, reject)));
+   const startReaders = _ => {_showProgress(element, 0, totalChunks, _getSavePath(selectedPath, file), UPLOAD_ICON); (waitingReaders.pop())();}
    startReaders();   // kicks off the first read in the queue, which then fires others 
    return Promise.all(readPromises);
 }
