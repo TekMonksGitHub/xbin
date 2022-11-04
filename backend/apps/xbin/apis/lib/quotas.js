@@ -12,7 +12,7 @@ exports.checkQuota = async function(headers, writeLength, id) {
 	const cmsRoot = await cms.getCMSRoot(headers); if (!id) id = login.getID(headers);
     if (!id) {LOG.error("Not valid ID "+id); return {result: false};}
 	let quota; try {quota = (await db.getQuery("SELECT quota FROM quotas WHERE id = ?", [id]))[0]} catch (err) {
-		LOG.error(`Error retrieving quota for ID ${id} due to error: ${err}`);
+		LOG.error(`Error retrieving quota for ID ${id} due to error: ${err}, using DEFAULT_QUOTA of ${CONF.DEFAULT_QUOTA}`);
 	};
 	if (!quota) quota = CONF.DEFAULT_QUOTA;
 	const currentsize = await _dirSize(cmsRoot); if (currentsize+writeLength > quota) return {result: false, quota, 
@@ -21,7 +21,11 @@ exports.checkQuota = async function(headers, writeLength, id) {
 
 async function _dirSize(path) {
 	let currentDirSize = 0; 
-	for (const dirEntry of await fspromises.readdir(path)) { const stat = await fspromises.stat(`${path}/${dirEntry}`); 
-		currentDirSize += stat.isDirectory() ? (await _dirSize(`${path}/${dirEntry}`)) : stat.size; }
+	for (const dirEntry of (await fspromises.readdir(path))) { 
+		let stat; try {stat = await fspromises.stat(`${path}/${dirEntry}`);} catch (err) {
+			LOG.warn(`Error reading file entry ${path}/${dirEntry}. Skipping from quota calculations.`); continue;
+		}
+		currentDirSize += stat.isDirectory() ? (await _dirSize(`${path}/${dirEntry}`)) : stat.size; 
+	}
 	return currentDirSize;
 }

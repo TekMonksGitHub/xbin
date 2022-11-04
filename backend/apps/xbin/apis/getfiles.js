@@ -17,7 +17,8 @@ exports.doService = async (jsonReq, _, headers) => {
 		let retObj = {entries:[], result: true};
 		const entries = await fspromises.readdir(fullpath);
 		for (const entry of entries) {
-			let stats = await fspromises.stat(`${fullpath}/${entry}`);
+			let stats; try {stats = await fspromises.stat(`${fullpath}/${entry}`);} catch (err) {
+				LOG.error(`Error reading file entry ${fullpath}/${entry}. Skipping from listing.`); continue; }
 			stats.isFile()?stats.file=true:null; stats.isDirectory()?stats.directory=true:null; stats.isBlockDevice()?stats.blockDevice=true:null;
 			stats.isCharacterDevice()?stats.characterDevice=true:null; stats.isSymbolicLink()?stats.symbolicLink=true:null; stats.isFIFO()?stats.FIFO=true:null; 
 			stats.isSocket()?stats.socket=true:null;
