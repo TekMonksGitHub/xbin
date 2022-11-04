@@ -335,8 +335,11 @@ function _showDownloadProgress(element, path, reqid) {
 async function _showProgress(element, currentBlock, totalBlocks, fileName, icon) {
    if (filesAndPercents[fileName]?.cancelled) return; // already cancelled
 
+   const _notificationFriendlyName = path => path.replace(/\/+/g, "/").trim().replace(/^\//g,"");
+
    const percent = Math.floor(currentBlock/totalBlocks*100);
-   filesAndPercents[fileName] = {name: fileName, percent, icon, cancellable: (icon==UPLOAD_ICON && percent != 100?true:null)}; 
+   filesAndPercents[fileName] = {name: _notificationFriendlyName(fileName), percent, icon, 
+      cancellable: (icon==UPLOAD_ICON && percent != 100?true:null)}; 
    await _showNotification(element, PROGRESS_TEMPLATE);
 
    _reloadIfAllFilesUpOrDownloaded(element, filesAndPercents);
