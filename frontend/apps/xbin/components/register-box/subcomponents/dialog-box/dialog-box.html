@@ -38,7 +38,7 @@ div#dialog {
     background:white;
     padding: 3em;
     position: fixed;
-    border-radius: 1em;
+    border-radius: 10px;
     display: none;
     z-index: 105;
     box-shadow: 2px 2px 10px -2px rgba(0,0,0,0.25);
@@ -65,8 +65,8 @@ span#ok, span#cancel {
     border-style: none;
     outline: none;
     text-align: center;
-    background-color: rgb(51, 204, 102);
-    color: white;
+    background-color: lightgray;
+    color: rgba(0, 0, 0, 0.75);
     font-family: inherit;
     font-size: smaller;
     text-transform: uppercase;
@@ -84,7 +84,7 @@ div#buttonbar {
     display: flex;
     flex-direction: row;
     flex-wrap: nowrap;
-    justify-content: space-around;
+    justify-content: space-between;
 }
 
 div#dialogcontent {
@@ -110,10 +110,15 @@ span#close {
 
 {{{styleBody}}}
 
-<div id="modalcurtain"></div>
-<div id="dialog">
-    <span id="close" onclick="monkshu_env.components['dialog-box'].hideDialog(this)">X</span>
+<div id="modalcurtain" onclick="event.stopPropagation()"></div>
+<div id="dialog" onclick="event.stopPropagation()"onclick="event.stopPropagation()">
+    <span id="close" onclick="event.stopPropagation(); monkshu_env.components['dialog-box'].cancel(this)">X</span>
     <div id="error">bad input</div>
     <div id="dialogcontent"></div>
-    <div id="buttonbar"><span id="ok" onclick="onOK(this)">{{i18n.OK}}</span><span id="cancel" onclick="monkshu_env.components['dialog-box'].hideDialog(this)">{{i18n.Cancel}}</span></div>
+    <div id="buttonbar">
+        <span id="ok" onclick="event.stopPropagation(); 
+            monkshu_env.components['dialog-box'].submit(this)">{{i18n.OK}}</span>
+        <span id="cancel" onclick="event.stopPropagation();
+            monkshu_env.components['dialog-box'].cancel(this)">{{i18n.Cancel}}</span>
+    </div>
 </div>
