@@ -152,14 +152,19 @@ async function _uploadAFile(element, file) {
 
    const queueReadFileChunk = (savePath, fileToRead, chunkNumber, resolve, reject) => {
       const _rejectReadPromises = error => {
-         LOG.error(`Error reading ${fileToRead}, error is: ${error}`); 
+         LOG.error(`Error reading ${fileToRead.name}, error is: ${error}, aborting all readers.`); 
          while (waitingReaders.length) (waitingReaders.pop())(error);   // reject all waiting readers too
          reject(error);
       }
       const reader = new FileReader(), filePath = _getSavePath(savePath, fileToRead); reader.onload = async loadResult => {
          const dataToPost = file.size != 0 ? loadResult.target.result : "data:;base64,";  // handle 0 byte files
+         LOG.info(`Read chunk number ${chunkNumber} from local file ${fileToRead.name}, size is: ${dataToPost.length} bytes. Sending to the server.`); 
          const resp = await apiman.rest(API_UPLOADFILE, "POST", {data:dataToPost, path:filePath, user}, true);
-         if (!resp.result) _rejectReadPromises("Error writing to the server."); else {
+         if (!resp.result) {
+            LOG.info(`Failed to write chunk number ${chunkNumber} from local file ${fileToRead.name}, to the server at path ${filePath}.`); 
+            _rejectReadPromises("Error writing to the server."); 
+         } else {
+            LOG.info(`Written chunk number ${chunkNumber} from local file ${fileToRead.name}, to the server at path ${filePath}.`); 
             _showProgress(element, chunkNumber+1, totalChunks, filePath, UPLOAD_ICON);
             if (!filesAndPercents[filePath]?.cancelled && (waitingReaders.length)) (waitingReaders.pop())();  // issue next chunk read if queued reads
             else if (filesAndPercents[filePath]?.cancelled) await apiman.rest(API_DELETEFILE, "GET", {path: filePath}, true);
@@ -171,8 +176,10 @@ async function _uploadAFile(element, file) {
       // queue reads if we are waiting for a chunk to be returned, so the writes are in correct order 
       const sizeToRead = chunkNumber == totalChunks-1 ? lastChunkSize : IO_CHUNK_SIZE;
       waitingReaders.unshift(abortRead=>{
-         if (!abortRead) reader.readAsDataURL(fileToRead.slice(IO_CHUNK_SIZE*chunkNumber, IO_CHUNK_SIZE*chunkNumber+sizeToRead));
-         else reject(abortRead);
+         if (!abortRead) {
+            LOG.info(`Requesting read of file ${fileToRead.name}, chunk number ${chunkNumber}, size ${sizeToRead} bytes.`);
+            reader.readAsDataURL(fileToRead.slice(IO_CHUNK_SIZE*chunkNumber, IO_CHUNK_SIZE*chunkNumber+sizeToRead));
+         } else reject(abortRead);
       });
    }
 
