@@ -25,7 +25,7 @@ const init = async hostname => {
 
 	apiman.registerAPIKeys(APP_CONSTANTS.API_KEYS, APP_CONSTANTS.KEY_HEADER); 
 	const API_GETREMOTELOG = APP_CONSTANTS.API_PATH+"/getremotelog", API_REMOTELOG = APP_CONSTANTS.API_PATH+"/log";
-	const remoteLogResponse = (await apiman.rest(API_GETREMOTELOG, "GET", {})), remoteLogFlag = remoteLogResponse?remoteLogResponse.remote_log:false;
+	const remoteLogResponse = (await apiman.rest(API_GETREMOTELOG, "GET")), remoteLogFlag = remoteLogResponse?remoteLogResponse.remote_log:false;
 	LOG.setRemote(remoteLogFlag, API_REMOTELOG);
 }
 
