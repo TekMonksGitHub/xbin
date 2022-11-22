@@ -16,7 +16,7 @@ import {apimanager as apiman} from "/framework/js/apimanager.mjs";
 import {monkshu_component} from "/framework/js/monkshu_component.mjs";
 
 let user, mouseX, mouseY, menuOpen, timer, selectedPath, selectedIsDirectory, selectedElement, filesAndPercents = {}, 
-   selectedCutPath, selectedCopyPath, selectedCutCopyElement, shareDuration, showNotification;
+   selectedCutPath, selectedCopyPath, selectedCutCopyElement, shareDuration, showNotification, currentWriteBufferSize;
 
 const API_GETFILES = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/getfiles";
 const API_COPYFILE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/copyfile";
@@ -40,7 +40,8 @@ const DOUBLE_CLICK_DELAY=400, DOWNLOADFILE_REFRESH_INTERVAL = 500, UPLOAD_ICON =
 const dialog = _ => monkshu_env.components['dialog-box'];
 const isMobile = _ => $$.isMobile();
 
-const IO_CHUNK_SIZE = 10485760;   // 10M read buffer
+const IO_CHUNK_SIZE = 10485760, INITIAL_UPLOAD_BUFFER_SIZE = 40960, MAX_UPLOAD_WAIT_TIME = 5, 
+   MAX_UPLOAD_BUFFER_SIZE = 10485760;   // 10M read buffer, 40K initial write buffer, wait max 5 seconds to upload each chunk
 
 async function elementConnected(host) {
    menuOpen = false; user = host.getAttribute("user");
@@ -159,15 +160,14 @@ async function _uploadAFile(element, file) {
       const reader = new FileReader(), filePath = _getSavePath(savePath, fileToRead); reader.onload = async loadResult => {
          const dataToPost = file.size != 0 ? loadResult.target.result : "data:;base64,";  // handle 0 byte files
          LOG.info(`Read chunk number ${chunkNumber} from local file ${fileToRead.name}, size is: ${dataToPost.length} bytes. Sending to the server.`); 
-         const resp = await apiman.rest(API_UPLOADFILE, "POST", {data:dataToPost, path:filePath, user}, true);
+         const resp = await _uploadChunkAtOptimumSpeed(dataToPost, filePath, chunkNumber, file.size||dataToPost.length, element);   // if the file size is zero then the length of the data is dataToPost.length due to us sending empty data with base64 headers
          if (!resp.result) {
             LOG.info(`Failed to write chunk number ${chunkNumber} from local file ${fileToRead.name}, to the server at path ${filePath}.`); 
             _rejectReadPromises("Error writing to the server."); 
          } else {
             LOG.info(`Written chunk number ${chunkNumber} from local file ${fileToRead.name}, to the server at path ${filePath}.`); 
-            _showProgress(element, chunkNumber+1, totalChunks, filePath, UPLOAD_ICON);
             if (!filesAndPercents[filePath]?.cancelled && (waitingReaders.length)) (waitingReaders.pop())();  // issue next chunk read if queued reads
-            else if (filesAndPercents[filePath]?.cancelled) await apiman.rest(API_DELETEFILE, "GET", {path: filePath}, true);
+            else if (filesAndPercents[filePath]?.cancelled) await apiman.rest(API_DELETEFILE, "GET", {path: filePath}, true); // has been cancelled, so delete remotely and also stop reading and transferring any more chunks
             resolve();
          }
       }
@@ -188,6 +188,31 @@ async function _uploadAFile(element, file) {
    const startReaders = _ => {_showProgress(element, 0, totalChunks, _getSavePath(selectedPath, file), UPLOAD_ICON); (waitingReaders.pop())();}
    startReaders();   // kicks off the first read in the queue, which then fires others 
    return Promise.all(readPromises);
+}
+
+async function _uploadChunkAtOptimumSpeed(data, remotePath, chunkNumber, totalSize, element) {  // adjusts upload buffers dynamically based on network speed
+   if (!currentWriteBufferSize) currentWriteBufferSize = INITIAL_UPLOAD_BUFFER_SIZE;
+
+   let bytesWritten = 0, lastResp, subchunknumber = 0; while (bytesWritten < data.length) {
+      const bytesToSend = bytesWritten + currentWriteBufferSize > data.length ? data.length - bytesWritten : currentWriteBufferSize;
+      const dataToSend = data.substring(bytesWritten, bytesToSend);
+      const startTime = Date.now();
+      LOG.info(`Starting upload of subchunk with length ${bytesToSend} of chunk ${chunkNumber}`);
+      lastResp = await apiman.rest(API_UPLOADFILE, "POST", {data: (subchunknumber++)==0?dataToSend:"data:;base64,"+dataToSend, 
+         path: remotePath, user}, true);
+      if (!lastResp.result) {
+         LOG.error(`Upload of subchunk failed, sending back error, the response is ${JSON.stringify(lastResp)}.`);
+         return lastResp;   // failed
+      }
+      const timeTakenToPost = Date.now() - startTime;
+      bytesWritten += bytesToSend;
+      LOG.info(`Ended upload of subchunk with length ${bytesToSend} of chunk ${chunkNumber}, time taken = ${timeTakenToPost/1000} seconds.`);
+      const netSpeedBytesPerSecond = bytesToSend / (timeTakenToPost/1000);
+      currentWriteBufferSize = Math.min(MAX_UPLOAD_BUFFER_SIZE, netSpeedBytesPerSecond * MAX_UPLOAD_WAIT_TIME);  // max wait should not execeed this
+      LOG.info(`Current upload speed in Mbps is ${netSpeedBytesPerSecond/(1024*1024)}, adjusted upload buffer size in MB is ${currentWriteBufferSize/(1024*1024)}`);
+      _showProgress(element, (chunkNumber*IO_CHUNK_SIZE)+bytesWritten, totalSize, remotePath, UPLOAD_ICON);
+   }
+   return lastResp;
 }
 
 function showMenu(element, documentMenuOnly) {
