@@ -40,7 +40,7 @@ const DOUBLE_CLICK_DELAY=400, DOWNLOADFILE_REFRESH_INTERVAL = 500, UPLOAD_ICON =
 const dialog = _ => monkshu_env.components['dialog-box'];
 const isMobile = _ => $$.isMobile();
 
-const IO_CHUNK_SIZE = 10485760, INITIAL_UPLOAD_BUFFER_SIZE = 40960, MAX_UPLOAD_WAIT_TIME = 5, 
+const IO_CHUNK_SIZE = 10485760, INITIAL_UPLOAD_BUFFER_SIZE = 40960, MAX_UPLOAD_WAIT_TIME_SECONDS = 5, 
    MAX_UPLOAD_BUFFER_SIZE = 10485760;   // 10M read buffer, 40K initial write buffer, wait max 5 seconds to upload each chunk
 
 async function elementConnected(host) {
@@ -158,9 +158,9 @@ async function _uploadAFile(element, file) {
          reject(error);
       }
       const reader = new FileReader(), filePath = _getSavePath(savePath, fileToRead); reader.onload = async loadResult => {
-         const dataToPost = file.size != 0 ? loadResult.target.result : "data:;base64,";  // handle 0 byte files
-         LOG.info(`Read chunk number ${chunkNumber} from local file ${fileToRead.name}, size is: ${dataToPost.length} bytes. Sending to the server.`); 
-         const resp = await _uploadChunkAtOptimumSpeed(dataToPost, filePath, chunkNumber, file.size||dataToPost.length, element);   // if the file size is zero then the length of the data is dataToPost.length due to us sending empty data with base64 headers
+         const dataToPost = file.size != 0 ? loadResult.target.result : new ArrayBuffer(0);  // handle 0 byte files
+         LOG.info(`Read chunk number ${chunkNumber} from local file ${fileToRead.name}, size is: ${dataToPost.byteLength} bytes. Sending to the server.`); 
+         const resp = await _uploadChunkAtOptimumSpeed(dataToPost, filePath, chunkNumber, file.size, element);   
          if (!resp.result) {
             LOG.info(`Failed to write chunk number ${chunkNumber} from local file ${fileToRead.name}, to the server at path ${filePath}.`); 
             _rejectReadPromises("Error writing to the server."); 
@@ -178,7 +178,7 @@ async function _uploadAFile(element, file) {
       waitingReaders.unshift(abortRead=>{
          if (!abortRead) {
             LOG.info(`Requesting read of file ${fileToRead.name}, chunk number ${chunkNumber}, size ${sizeToRead} bytes.`);
-            reader.readAsDataURL(fileToRead.slice(IO_CHUNK_SIZE*chunkNumber, IO_CHUNK_SIZE*chunkNumber+sizeToRead));
+            reader.readAsArrayBuffer(fileToRead.slice(IO_CHUNK_SIZE*chunkNumber, IO_CHUNK_SIZE*chunkNumber+sizeToRead));
          } else reject(abortRead);
       });
    }
@@ -193,23 +193,25 @@ async function _uploadAFile(element, file) {
 async function _uploadChunkAtOptimumSpeed(data, remotePath, chunkNumber, totalSize, element) {  // adjusts upload buffers dynamically based on network speed
    if (!currentWriteBufferSize) currentWriteBufferSize = INITIAL_UPLOAD_BUFFER_SIZE;
 
-   let bytesWritten = 0, lastResp, subchunknumber = 0; while (bytesWritten < data.length) {
-      const bytesToSend = bytesWritten + currentWriteBufferSize > data.length ? data.length - bytesWritten : currentWriteBufferSize;
-      const dataToSend = data.substring(bytesWritten, bytesToSend);
+   const _bufferToBase64URL = buffer => "data:;base64,"+btoa(new Uint8Array(buffer).reduce((acc, i) => acc += String.fromCharCode.apply(null, [i]), ''));
+
+   let bytesWritten = 0, lastResp, subchunknumber = 0; while (bytesWritten < data.byteLength) {
+      const bytesToSend = bytesWritten + currentWriteBufferSize > data.byteLength ? data.byteLength - bytesWritten : currentWriteBufferSize;
+      const dataToSend = data.slice(bytesWritten, bytesWritten+bytesToSend);
       const startTime = Date.now();
       LOG.info(`Starting upload of subchunk with length ${bytesToSend} of chunk ${chunkNumber}`);
-      lastResp = await apiman.rest(API_UPLOADFILE, "POST", {data: (subchunknumber++)==0?dataToSend:"data:;base64,"+dataToSend, 
-         path: remotePath, user}, true);
+      const test = _bufferToBase64URL(dataToSend);
+      lastResp = await apiman.rest(API_UPLOADFILE, "POST", {data: _bufferToBase64URL(dataToSend), path: remotePath, user}, true);
       if (!lastResp.result) {
          LOG.error(`Upload of subchunk failed, sending back error, the response is ${JSON.stringify(lastResp)}.`);
          return lastResp;   // failed
       }
       const timeTakenToPost = Date.now() - startTime;
       bytesWritten += bytesToSend;
-      LOG.info(`Ended upload of subchunk with length ${bytesToSend} of chunk ${chunkNumber}, time taken = ${timeTakenToPost/1000} seconds.`);
+      LOG.info(`Ended upload of subchunk #${subchunknumber} with length ${bytesToSend} of chunk ${chunkNumber}, time taken = ${timeTakenToPost/1000} seconds.`);
       const netSpeedBytesPerSecond = bytesToSend / (timeTakenToPost/1000);
-      currentWriteBufferSize = Math.min(MAX_UPLOAD_BUFFER_SIZE, netSpeedBytesPerSecond * MAX_UPLOAD_WAIT_TIME);  // max wait should not execeed this
-      LOG.info(`Current upload speed in Mbps is ${netSpeedBytesPerSecond/(1024*1024)}, adjusted upload buffer size in MB is ${currentWriteBufferSize/(1024*1024)}`);
+      currentWriteBufferSize = Math.min(MAX_UPLOAD_BUFFER_SIZE, Math.round(netSpeedBytesPerSecond * MAX_UPLOAD_WAIT_TIME_SECONDS));  // max wait should not execeed this
+      LOG.info(`Current upload speed in Mbps is ${netSpeedBytesPerSecond/(1024*1024)}, adjusted upload buffer size in MB is ${currentWriteBufferSize/(1024*1024)} or ${currentWriteBufferSize} bytes.`);
       _showProgress(element, (chunkNumber*IO_CHUNK_SIZE)+bytesWritten, totalSize, remotePath, UPLOAD_ICON);
    }
    return lastResp;
