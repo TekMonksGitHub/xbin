@@ -38,6 +38,7 @@ export const i18n = {
 "File": "File",
 "Directory": "Directory",
 "Error": "Unexpected error 😢",
+"LastOpError": "Error",
 "Copied": "Copied",
 "AttachWorkflow": "Attach Workflow",
 "FolderBanner": "XBin Enterprise Content Manager",

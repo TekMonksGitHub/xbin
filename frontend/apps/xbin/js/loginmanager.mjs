@@ -22,12 +22,12 @@ async function signin(id, pass, otp) {
         session.set(APP_CONSTANTS.USERORG, resp.org);
         session.set("__org_telemeet_cuser_pass", pass);
         securityguard.setCurrentRole(resp.role);
-        LOG.info(`Login succeeded for ${id}`);
+        LOG.info(`Login succeeded for ${id}.`);
         return loginmanager.ID_OK;
-    } else if (resp.result && (!resp.tokenflag)){
-        LOG.warn(`Login OK but not approved yet for ${id}`); return loginmanager.ID_NOT_YET_APPROVED;
+    } else if (resp && resp.result && (!resp.tokenflag)){
+        LOG.warn(`Login OK but not approved yet for ${id}.`); return loginmanager.ID_NOT_YET_APPROVED;
     }
-    else {LOG.error(`Login failed for ${id}`); return loginmanager.ID_FAILED;}
+    else {LOG.error(`Login failed for ${id}.`); return loginmanager.ID_FAILED;}
 }
 
 const reset = id => apiman.rest(APP_CONSTANTS.API_RESET, "GET", {id, lang: i18n.getSessionLang()});

@@ -38,6 +38,7 @@ export const i18n = {
 "File": "ファイル",
 "Directory": "ディレクトリ",
 "Error": "予期しないエラー 😢",
+"LastOpError": "エラー",
 "Copied": "コピーされました。",
 "AttachWorkflow": "接続ワークフロー",
 "FolderBanner": "Xビンエンタープライズコンテンツマネージャー",

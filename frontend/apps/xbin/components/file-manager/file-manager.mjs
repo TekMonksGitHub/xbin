@@ -84,7 +84,7 @@ async function elementRendered(element) {
       if (!menuOpen) showMenu(container, true); else hideMenu(container); });
    if (!isMobile()) shadowRoot.addEventListener("click", e => { e.stopPropagation(); if (menuOpen) hideMenu(container); });
 
-   if (showNotification) _showNotification(container, PROGRESS_TEMPLATE);
+   if (showNotification) _updateProgress(container, null, null, null, null, null, null, true);  // rerender progress
 
    if (element.getAttribute("quotabarids")) _updateQuotaBars(element.getAttribute("quotabarids").split(","));
 }
@@ -122,10 +122,11 @@ async function create(element) {
 const uploadFiles = async (element, files) => {
    let uploadSize = 0; for (const file of files) uploadSize += file.size; if (!(await _checkQuotaAndReportError(uploadSize))) return;
    for (const file of files) {
-      if (Object.keys(filesAndPercents).includes(file.name) && filesAndPercents[file.name].percent != 100 && 
-         !filesAndPercents[file.name].cancelled) {LOG.info(`Skipped ${file.name}, already being uploaded.`); continue;}  // already being uploaded
+      const normalizedName = _notificationFriendlyName(`${selectedPath}/${file.name}`); 
+      if (Object.keys(filesAndPercents).includes(normalizedName) && (filesAndPercents[normalizedName].percent != 100) && 
+         (!_isFileCancelledOrErrored(normalizedName))) { LOG.info(`Skipped ${file.name}, already being uploaded.`); continue; }  // already being uploaded
       
-      const checkFileExists = await apiman.rest(API_CHECKFILEEXISTS, "GET", {path: `${selectedPath}/${file.name}`}, true); 
+      const checkFileExists = await apiman.rest(API_CHECKFILEEXISTS, "GET", {path: normalizedName}, true); 
       if (checkFileExists.result) {
          const cancelRenameRewrite = await dialog().showDialog(`${DIALOGS_PATH}/cancel_rename_overwrite.html`, true, false, 
             {fileexistswarning: await i18n.getRendered("FileExistsWarning", {name: file.name})}, "dialog", ["result"]);
@@ -141,32 +142,37 @@ const uploadFiles = async (element, files) => {
          }
       }
 
-      _uploadAFile(element, file);
+      try {_uploadAFile(element, file);} catch (error) {LOG.info(`Upload failed for the file ${file.name} due to error.`);}
    }
 }
 
 async function _uploadAFile(element, file) {
    const totalChunks = file.size != 0 ? Math.ceil(file.size / IO_CHUNK_SIZE) : 1, lastChunkSize = file.size - (totalChunks-1)*IO_CHUNK_SIZE;
    const _getSavePath = (path, file) => `${path}/${file.renameto || file.name}`;
-   if (filesAndPercents[_getSavePath(selectedPath, file)]?.cancelled) filesAndPercents[_getSavePath(selectedPath, file)].cancelled = false; // being reuploaded
-   const waitingReaders = [];  
+   delete filesAndPercents[_notificationFriendlyName(_getSavePath(selectedPath, file))];  // being reuploaded
+   const waitingReadersForThisFile = [];  
 
    const queueReadFileChunk = (savePath, fileToRead, chunkNumber, resolve, reject) => {
       const _rejectReadPromises = error => {
-         LOG.error(`Error reading ${fileToRead.name}, error is: ${error}, aborting all readers.`); 
-         while (waitingReaders.length) (waitingReaders.pop())(error);   // reject all waiting readers too
+         LOG.error(`Error reading ${fileToRead.name}, error is: ${error}, aborting all readers for this file.`); 
+         while (waitingReadersForThisFile.length) (waitingReadersForThisFile.pop())(error);   // reject all waiting readers too
          reject(error);
       }
-      const reader = new FileReader(), filePath = _getSavePath(savePath, fileToRead); reader.onload = async loadResult => {
+
+      const reader = new FileReader(), filePath = _getSavePath(savePath, fileToRead); 
+      reader.onload = async loadResult => {
          const dataToPost = file.size != 0 ? loadResult.target.result : new ArrayBuffer(0);  // handle 0 byte files
          LOG.info(`Read chunk number ${chunkNumber} from local file ${fileToRead.name}, size is: ${dataToPost.byteLength} bytes. Sending to the server.`); 
          const resp = await _uploadChunkAtOptimumSpeed(dataToPost, filePath, chunkNumber, file.size, element);   
          if (!resp.result) {
             LOG.info(`Failed to write chunk number ${chunkNumber} from local file ${fileToRead.name}, to the server at path ${filePath}.`); 
+            if (!filesAndPercents[_notificationFriendlyName(filePath)]) filesAndPercents[_notificationFriendlyName(filePath)] = {}; 
+            _updateProgress(element, chunkNumber, totalChunks, filePath, UPLOAD_ICON, true);
+            apiman.rest(API_DELETEFILE, "GET", {path: filePath}, true); // delete remotely as it errored out
             _rejectReadPromises("Error writing to the server."); 
          } else {
             LOG.info(`Written chunk number ${chunkNumber} from local file ${fileToRead.name}, to the server at path ${filePath}.`); 
-            if (!filesAndPercents[filePath]?.cancelled && (waitingReaders.length)) (waitingReaders.pop())();  // issue next chunk read if queued reads
+            if (!filesAndPercents[filePath]?.cancelled && (waitingReadersForThisFile.length)) (waitingReadersForThisFile.pop())();  // issue next chunk read if queued reads
             else if (filesAndPercents[filePath]?.cancelled) await apiman.rest(API_DELETEFILE, "GET", {path: filePath}, true); // has been cancelled, so delete remotely and also stop reading and transferring any more chunks
             resolve();
          }
@@ -175,7 +181,7 @@ async function _uploadAFile(element, file) {
 
       // queue reads if we are waiting for a chunk to be returned, so the writes are in correct order 
       const sizeToRead = chunkNumber == totalChunks-1 ? lastChunkSize : IO_CHUNK_SIZE;
-      waitingReaders.unshift(abortRead=>{
+      waitingReadersForThisFile.unshift(abortRead=>{
          if (!abortRead) {
             LOG.info(`Requesting read of file ${fileToRead.name}, chunk number ${chunkNumber}, size ${sizeToRead} bytes.`);
             reader.readAsArrayBuffer(fileToRead.slice(IO_CHUNK_SIZE*chunkNumber, IO_CHUNK_SIZE*chunkNumber+sizeToRead));
@@ -185,7 +191,7 @@ async function _uploadAFile(element, file) {
 
    let readPromises = []; 
    for (let i = 0; i < totalChunks; i++) readPromises.push(new Promise((resolve, reject) => queueReadFileChunk(selectedPath, file, i, resolve, reject)));
-   const startReaders = _ => {_showProgress(element, 0, totalChunks, _getSavePath(selectedPath, file), UPLOAD_ICON); (waitingReaders.pop())();}
+   const startReaders = _ => {_updateProgress(element, 0, totalChunks, _getSavePath(selectedPath, file), UPLOAD_ICON); (waitingReadersForThisFile.pop())();}
    startReaders();   // kicks off the first read in the queue, which then fires others 
    return Promise.all(readPromises);
 }
@@ -200,7 +206,6 @@ async function _uploadChunkAtOptimumSpeed(data, remotePath, chunkNumber, totalSi
       const dataToSend = data.slice(bytesWritten, bytesWritten+bytesToSend);
       const startTime = Date.now();
       LOG.info(`Starting upload of subchunk with length ${bytesToSend} of chunk ${chunkNumber}`);
-      const test = _bufferToBase64URL(dataToSend);
       lastResp = await apiman.rest(API_UPLOADFILE, "POST", {data: _bufferToBase64URL(dataToSend), path: remotePath, user}, true);
       if (!lastResp.result) {
          LOG.error(`Upload of subchunk failed, sending back error, the response is ${JSON.stringify(lastResp)}.`);
@@ -212,7 +217,7 @@ async function _uploadChunkAtOptimumSpeed(data, remotePath, chunkNumber, totalSi
       const netSpeedBytesPerSecond = bytesToSend / (timeTakenToPost/1000);
       currentWriteBufferSize = Math.min(MAX_UPLOAD_BUFFER_SIZE, Math.round(netSpeedBytesPerSecond * MAX_UPLOAD_WAIT_TIME_SECONDS));  // max wait should not execeed this
       LOG.info(`Current upload speed in Mbps is ${netSpeedBytesPerSecond/(1024*1024)}, adjusted upload buffer size in MB is ${currentWriteBufferSize/(1024*1024)} or ${currentWriteBufferSize} bytes.`);
-      _showProgress(element, (chunkNumber*IO_CHUNK_SIZE)+bytesWritten, totalSize, remotePath, UPLOAD_ICON);
+      _updateProgress(element, (chunkNumber*IO_CHUNK_SIZE)+bytesWritten, totalSize, remotePath, UPLOAD_ICON);
    }
    return lastResp;
 }
@@ -354,7 +359,7 @@ function _showDownloadProgress(element, path, reqid) {
       if (done) return;
       const fileDownloadStatus = await apiman.rest(`${API_DOWNLOADFILE_STATUS}`, "GET", {reqid}, true, false);
       if (fileDownloadStatus && fileDownloadStatus.result) {
-         if (fileDownloadStatus.size!=-1) _showProgress(element, fileDownloadStatus.bytesSent, fileDownloadStatus.size, path, DOWNLOAD_ICON);
+         if (fileDownloadStatus.size!=-1) _updateProgress(element, fileDownloadStatus.bytesSent, fileDownloadStatus.size, path, DOWNLOAD_ICON);
          if (fileDownloadStatus.size == fileDownloadStatus.bytesSent) {done = true; clearInterval(interval);}
       }
       else if (!done) {
@@ -365,21 +370,31 @@ function _showDownloadProgress(element, path, reqid) {
    interval = setInterval(updateProgress, DOWNLOADFILE_REFRESH_INTERVAL);
 }
 
-async function _showProgress(element, currentBlock, totalBlocks, fileName, icon) {
-   if (filesAndPercents[fileName]?.cancelled) return; // already cancelled
+const _notificationFriendlyName = path => path.replace(/\/+/g, "/").trim().replace(/^\//g,"");
 
-   const _notificationFriendlyName = path => path.replace(/\/+/g, "/").trim().replace(/^\//g,"");
+const _isFileCancelledOrErrored = path => filesAndPercents[_notificationFriendlyName(path)]?.cancelled || 
+   filesAndPercents[_notificationFriendlyName(path)]?.lastoperror;
 
-   const percent = Math.floor(currentBlock/totalBlocks*100);
-   filesAndPercents[fileName] = {name: _notificationFriendlyName(fileName), percent, icon, 
-      cancellable: (icon==UPLOAD_ICON && percent != 100?true:null)}; 
-   await _showNotification(element, PROGRESS_TEMPLATE);
+async function _updateProgress(element, currentBlock, totalBlocks, fileName, icon, hasError, wasCancelled, justRerender) {
+   if (!justRerender) {
+      if (_isFileCancelledOrErrored(fileName)) return; // already cancelled or error
+      const normalizedName = _notificationFriendlyName(fileName);
+      const percent = (!hasError) && (!wasCancelled) ? 0 : Math.floor(currentBlock/totalBlocks*100);
+      filesAndPercents[normalizedName] = {name: normalizedName, percent, icon, 
+         cancellable: (icon==UPLOAD_ICON) && (percent != 100) && (!hasError) && (!wasCancelled)?true:null,
+         cancelled: wasCancelled?true:null, 
+         lastoperror: hasError?true:null}; 
+   }
+   
+   const templateData = {files:[]}; for (const file of Object.keys(filesAndPercents)) templateData.files.unshift({...filesAndPercents[file]});
+   await _showNotification(element, PROGRESS_TEMPLATE, templateData);
 
    _reloadIfAllFilesUpOrDownloaded(element, filesAndPercents);
 }
 
 function _reloadIfAllFilesUpOrDownloaded(element, filesAndPercents) {
-   for (const file of Object.keys(filesAndPercents)) if (filesAndPercents[file].percent != 100) return;
+   for (const file of Object.keys(filesAndPercents)) if (filesAndPercents[file].percent != 100 && 
+      (!_isFileCancelledOrErrored(file))) return;
    file_manager.reload(file_manager.getHostElementID(element)); 
 }
 
@@ -406,10 +421,8 @@ async function shareFile() {
 
 const _showErrorDialog = async (hideAction, message) => dialog().showMessage(message||await i18n.get("Error"), "dialog", hideAction||undefined);
 
-async function _showNotification(element, dialogTemplateID) {
+async function _showNotification(element, dialogTemplateID, templateData) {
    showNotification = true;
-   const templateData = {files:[]}; for (const file of Object.keys(filesAndPercents))
-      templateData.files.unshift({name: file, ...filesAndPercents[file], cancelled: filesAndPercents[file].cancelled?true:null});
    const shadowRoot = file_manager.getShadowRootByContainedElement(element);
 
    let template = shadowRoot.querySelector(`template#${dialogTemplateID}`).innerHTML; 
@@ -431,9 +444,7 @@ function hideNotification(element) {
    hostElement.classList.remove("visible"); scrollElement.classList.remove("visible"); 
 }
 
-function cancelFile(file, element) {
-   filesAndPercents[file].cancelled = true; _showNotification(element, PROGRESS_TEMPLATE);  // updates the view
-}
+const cancelFile = (file, element) => _updateProgress(element, 0, 0, file, UPLOAD_ICON, false, true);  // cancels and updates the view
 
 async function _performRename(oldPath, newPath, element) {
    const resp = await apiman.rest(API_RENAMEFILE, "GET", {old: oldPath, new: newPath}, true), hostID = file_manager.getHostElementID(element);

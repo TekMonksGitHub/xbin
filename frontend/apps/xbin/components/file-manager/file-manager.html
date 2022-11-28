@@ -284,7 +284,13 @@ div#progress > span#icon {
     {{#files}}
     <div id="progress">
         <span id="name">{{name}}</span>
-        <span id="bar" {{#cancelled}}class="cancelled"{{/cancelled}}>{{^cancelled}}<span id="percent" style="width: {{percent}}%!important"></span>{{/cancelled}}{{#cancelled}}{{i18n.Cancelled}}{{/cancelled}}</span>
+        <span id="bar" {{#cancelled}}class="cancelled"{{/cancelled}} {{#lastoperror}}class="cancelled"{{/lastoperror}}>
+            {{^cancelled}}{{^lastoperror}}
+                <span id="percent" style="width: {{percent}}%!important"></span>
+            {{/lastoperror}}{{/cancelled}}
+            {{#cancelled}}{{i18n.Cancelled}}{{/cancelled}}
+            {{#lastoperror}}{{i18n.LastOpError}}{{/lastoperror}}
+        </span>
         <span id="percenttext">{{percent}}%</span>
         <span id="icon">{{icon}}</span>
         {{#cancellable}}<span id="cancel" onclick='event.stopPropagation(); this.innerHTML = "!"; 
