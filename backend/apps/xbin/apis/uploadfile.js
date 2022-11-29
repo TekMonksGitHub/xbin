@@ -11,7 +11,7 @@ exports.doService = async (jsonReq, _servObject, headers, _url) => {
 	
 	LOG.debug("Got uploadfile request for path: " + jsonReq.path);
 
-	const fullpath = path.resolve(`${await cms.getCMSRoot(headers)}/${jsonReq.path}`);
+	const fullpath = path.resolve(`${await cms.getCMSRoot(headers)}/${jsonReq.path}`), temppath = path.resolve(`${fullpath}${API_CONSTANTS.XBIN_IGNORE_PATH_SUFFIX}`);
 	if (!await cms.isSecure(headers, fullpath)) {LOG.error(`Path security validation failure: ${jsonReq.path}`); return CONSTANTS.FALSE_RESULT;}
 
 	try {
@@ -19,8 +19,11 @@ exports.doService = async (jsonReq, _servObject, headers, _url) => {
         if (!matches) throw `Bad data encoding: ${jsonReq.data}`;
 		const bufferToWrite = Buffer.from(matches[1], "base64");
 		if (!(await quotas.checkQuota(headers, bufferToWrite.length)).result) throw ("Quota is full write failed.");
-        await fspromises.appendFile(fullpath, bufferToWrite); 
-        return CONSTANTS.TRUE_RESULT;
+
+        if (jsonReq.startOfFile) await fspromises.writeFile(temppath, bufferToWrite); else await fspromises.appendFile(temppath, bufferToWrite)
+		if (jsonReq.endOfFile) await fspromises.rename(temppath, fullpath);
+        
+		return CONSTANTS.TRUE_RESULT;
 	} catch (err) {
 		LOG.error(`Error writing to path: ${fullpath}, error is: ${err}`); 
 		try {await fspromises.unlink(fullpath)} catch(err) {};
@@ -28,4 +31,4 @@ exports.doService = async (jsonReq, _servObject, headers, _url) => {
 	}
 }
 
-const validateRequest = jsonReq => (jsonReq && jsonReq.path && jsonReq.data);
+const validateRequest = jsonReq => (jsonReq && jsonReq.path && jsonReq.data && (jsonReq.startOfFile !== undefined) && (jsonReq.endOfFile  !== undefined));

@@ -15,8 +15,9 @@ import {blackboard} from "/framework/js/blackboard.mjs";
 import {apimanager as apiman} from "/framework/js/apimanager.mjs";
 import {monkshu_component} from "/framework/js/monkshu_component.mjs";
 
-let user, mouseX, mouseY, menuOpen, timer, selectedPath, selectedIsDirectory, selectedElement, filesAndPercents = {}, 
-   selectedCutPath, selectedCopyPath, selectedCutCopyElement, shareDuration, showNotification, currentWriteBufferSize;
+let user, mouseX, mouseY, menuOpen, timer, selectedPath, currentlyActiveFolder, selectedIsDirectory, selectedElement, 
+   filesAndPercents = {}, selectedCutPath, selectedCopyPath, selectedCutCopyElement, shareDuration, showNotification, 
+   currentWriteBufferSize;
 
 const API_GETFILES = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/getfiles";
 const API_COPYFILE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/copyfile";
@@ -47,7 +48,7 @@ async function elementConnected(host) {
    menuOpen = false; user = host.getAttribute("user");
 
    const path = host.getAttribute("path") || (file_manager.getSessionMemory(host.id))["__lastPath"] || "/"; 
-   selectedPath = path.replace(/[\/]+/g,"/"); selectedIsDirectory = true;
+   selectedPath = path.replace(/[\/]+/g,"/"); selectedIsDirectory = true; currentlyActiveFolder = selectedPath;
    const resp = await apiman.rest(API_GETFILES, "GET", {path}, true); if (!resp || !resp.result) return; 
    for (const entry of resp.entries) {if (entry.path.replace(/[\/]+/g,"/") == selectedCutPath) entry.cutimage = "_cutimage"; 
       entry.stats.name = entry.name; entry.stats.json = JSON.stringify(entry.stats);}
@@ -142,7 +143,7 @@ const uploadFiles = async (element, files) => {
          }
       }
 
-      try {_uploadAFile(element, file);} catch (error) {LOG.info(`Upload failed for the file ${file.name} due to error.`);}
+      _uploadAFile(element, file).catch(error => LOG.info(`Upload failed for the file ${file.name} due to error ${error}.`));
    }
 }
 
@@ -163,7 +164,7 @@ async function _uploadAFile(element, file) {
       reader.onload = async loadResult => {
          const dataToPost = file.size != 0 ? loadResult.target.result : new ArrayBuffer(0);  // handle 0 byte files
          LOG.info(`Read chunk number ${chunkNumber} from local file ${fileToRead.name}, size is: ${dataToPost.byteLength} bytes. Sending to the server.`); 
-         const resp = await _uploadChunkAtOptimumSpeed(dataToPost, filePath, chunkNumber, file.size, element);   
+         const resp = await _uploadChunkAtOptimumSpeed(dataToPost, filePath, chunkNumber, chunkNumber == totalChunks-1, file.size, element);   
          if (!resp.result) {
             LOG.info(`Failed to write chunk number ${chunkNumber} from local file ${fileToRead.name}, to the server at path ${filePath}.`); 
             if (!filesAndPercents[_notificationFriendlyName(filePath)]) filesAndPercents[_notificationFriendlyName(filePath)] = {}; 
@@ -190,23 +191,25 @@ async function _uploadAFile(element, file) {
    }
 
    let readPromises = []; 
-   for (let i = 0; i < totalChunks; i++) readPromises.push(new Promise((resolve, reject) => queueReadFileChunk(selectedPath, file, i, resolve, reject)));
-   const startReaders = _ => {_updateProgress(element, 0, totalChunks, _getSavePath(selectedPath, file), UPLOAD_ICON); (waitingReadersForThisFile.pop())();}
+   for (let i = 0; i < totalChunks; i++) readPromises.push(new Promise((resolve, reject) => queueReadFileChunk(currentlyActiveFolder, file, i, resolve, reject)));
+   const startReaders = _ => {_updateProgress(element, 0, totalChunks, _getSavePath(currentlyActiveFolder, file), UPLOAD_ICON); (waitingReadersForThisFile.pop())();}
    startReaders();   // kicks off the first read in the queue, which then fires others 
    return Promise.all(readPromises);
 }
 
-async function _uploadChunkAtOptimumSpeed(data, remotePath, chunkNumber, totalSize, element) {  // adjusts upload buffers dynamically based on network speed
+async function _uploadChunkAtOptimumSpeed(data, remotePath, chunkNumber, isLastChunk, totalSize, element) {  // adjusts upload buffers dynamically based on network speed
    if (!currentWriteBufferSize) currentWriteBufferSize = INITIAL_UPLOAD_BUFFER_SIZE;
 
    const _bufferToBase64URL = buffer => "data:;base64,"+btoa(new Uint8Array(buffer).reduce((acc, i) => acc += String.fromCharCode.apply(null, [i]), ''));
 
    let bytesWritten = 0, lastResp, subchunknumber = 0; while (bytesWritten < data.byteLength) {
       const bytesToSend = bytesWritten + currentWriteBufferSize > data.byteLength ? data.byteLength - bytesWritten : currentWriteBufferSize;
-      const dataToSend = data.slice(bytesWritten, bytesWritten+bytesToSend);
+      const dataToSend = data.slice(bytesWritten, bytesWritten+bytesToSend), isLastSubChunk = isLastChunk && 
+         (bytesWritten+bytesToSend == data.byteLength), isFirstSubChunk = chunkNumber == 0 && bytesWritten == 0;
       const startTime = Date.now();
       LOG.info(`Starting upload of subchunk with length ${bytesToSend} of chunk ${chunkNumber}`);
-      lastResp = await apiman.rest(API_UPLOADFILE, "POST", {data: _bufferToBase64URL(dataToSend), path: remotePath, user}, true);
+      lastResp = await apiman.rest(API_UPLOADFILE, "POST", {data: _bufferToBase64URL(dataToSend), path: remotePath, user, 
+         startOfFile: isFirstSubChunk, endOfFile: isLastSubChunk}, true);
       if (!lastResp.result) {
          LOG.error(`Upload of subchunk failed, sending back error, the response is ${JSON.stringify(lastResp)}.`);
          return lastResp;   // failed
@@ -379,7 +382,7 @@ async function _updateProgress(element, currentBlock, totalBlocks, fileName, ico
    if (!justRerender) {
       if (_isFileCancelledOrErrored(fileName)) return; // already cancelled or error
       const normalizedName = _notificationFriendlyName(fileName);
-      const percent = (!hasError) && (!wasCancelled) ? 0 : Math.floor(currentBlock/totalBlocks*100);
+      const percent = (hasError || wasCancelled) ? 0 : Math.floor(currentBlock/totalBlocks*100);
       filesAndPercents[normalizedName] = {name: normalizedName, percent, icon, 
          cancellable: (icon==UPLOAD_ICON) && (percent != 100) && (!hasError) && (!wasCancelled)?true:null,
          cancelled: wasCancelled?true:null, 
@@ -389,7 +392,7 @@ async function _updateProgress(element, currentBlock, totalBlocks, fileName, ico
    const templateData = {files:[]}; for (const file of Object.keys(filesAndPercents)) templateData.files.unshift({...filesAndPercents[file]});
    await _showNotification(element, PROGRESS_TEMPLATE, templateData);
 
-   _reloadIfAllFilesUpOrDownloaded(element, filesAndPercents);
+   if (!justRerender) _reloadIfAllFilesUpOrDownloaded(element, filesAndPercents);
 }
 
 function _reloadIfAllFilesUpOrDownloaded(element, filesAndPercents) {

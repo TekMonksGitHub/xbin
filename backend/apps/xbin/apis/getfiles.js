@@ -17,6 +17,7 @@ exports.doService = async (jsonReq, _, headers) => {
 		let retObj = {entries:[], result: true};
 		const entries = await fspromises.readdir(fullpath);
 		for (const entry of entries) {
+			if (entry.endsWith(API_CONSTANTS.XBIN_IGNORE_PATH_SUFFIX)) continue;	// ignore our own working files
 			let stats; try {stats = await fspromises.stat(`${fullpath}/${entry}`);} catch (err) {
 				LOG.error(`Error reading file entry ${fullpath}/${entry}. Skipping from listing.`); continue; }
 			stats.isFile()?stats.file=true:null; stats.isDirectory()?stats.directory=true:null; stats.isBlockDevice()?stats.blockDevice=true:null;
