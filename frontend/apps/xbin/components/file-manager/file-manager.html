@@ -78,6 +78,8 @@ div#filelistingscontainer {
     justify-content: start;
     height: 100%;
     color: #168cd0;
+    overflow: auto;
+    flex: 1;
 }
 
 div#filelistingscontainer > div {
@@ -293,8 +295,8 @@ div#progress > span#icon {
         </span>
         <span id="percenttext">{{percent}}%</span>
         <span id="icon">{{icon}}</span>
-        {{#cancellable}}<span id="cancel" onclick='event.stopPropagation(); this.innerHTML = "!"; 
-            monkshu_env.components["file-manager"].cancelFile("{{name}}", this)'>ⓧ</span>{{/cancellable}}
+        <span id="cancel" {{^cancellable}}style="visibility: hidden"{{/cancellable}} onclick='event.stopPropagation(); this.innerHTML = "!"; 
+            monkshu_env.components["file-manager"].cancelFile("{{name}}", this)'>ⓧ</span>
     </div>
     {{/files}}
 </div>

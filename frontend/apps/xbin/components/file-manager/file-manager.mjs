@@ -123,7 +123,7 @@ async function create(element) {
 const uploadFiles = async (element, files) => {
    let uploadSize = 0; for (const file of files) uploadSize += file.size; if (!(await _checkQuotaAndReportError(uploadSize))) return;
    for (const file of files) {
-      const normalizedName = _notificationFriendlyName(`${selectedPath}/${file.name}`); 
+      const normalizedName = _notificationFriendlyName(`${currentlyActiveFolder}/${file.name}`); 
       if (Object.keys(filesAndPercents).includes(normalizedName) && (filesAndPercents[normalizedName].percent != 100) && 
          (!_isFileCancelledOrErrored(normalizedName))) { LOG.info(`Skipped ${file.name}, already being uploaded.`); continue; }  // already being uploaded
       
@@ -135,7 +135,7 @@ const uploadFiles = async (element, files) => {
             case "cancel": {LOG.info(`User selected to skip existing file ${file.name}, skipping.`); continue;}
             case "rename": file.renameto = checkFileExists.suggestedNewName; break;
             case "overwrite": {
-               const deleteResult = await apiman.rest(API_DELETEFILE, "GET", {path: `${selectedPath}/${file.name}`}, true);
+               const deleteResult = await apiman.rest(API_DELETEFILE, "GET", {path: normalizedName}, true);
                if (!deleteResult.result) {dialog().showMessage(`${await i18n.get("OverwriteFailed")}${file.name}`, "dialog"); continue;}
                else break;
             }
@@ -150,7 +150,7 @@ const uploadFiles = async (element, files) => {
 async function _uploadAFile(element, file) {
    const totalChunks = file.size != 0 ? Math.ceil(file.size / IO_CHUNK_SIZE) : 1, lastChunkSize = file.size - (totalChunks-1)*IO_CHUNK_SIZE;
    const _getSavePath = (path, file) => `${path}/${file.renameto || file.name}`;
-   delete filesAndPercents[_notificationFriendlyName(_getSavePath(selectedPath, file))];  // being reuploaded
+   delete filesAndPercents[_notificationFriendlyName(_getSavePath(currentlyActiveFolder, file))];  // being reuploaded
    const waitingReadersForThisFile = [];  
 
    const queueReadFileChunk = (savePath, fileToRead, chunkNumber, resolve, reject) => {
@@ -226,7 +226,7 @@ async function _uploadChunkAtOptimumSpeed(data, remotePath, chunkNumber, isLastC
 }
 
 function showMenu(element, documentMenuOnly) {
-   const shadowRoot = file_manager.getShadowRootByContainedElement(element);
+   let shadowRoot; try {shadowRoot = file_manager.getShadowRootByContainedElement(element);} catch(err) {return;} // element clicked not part of the component
 
    if (documentMenuOnly) {
       shadowRoot.querySelector("div#contextmenu > span#upload").classList.remove("hidden");

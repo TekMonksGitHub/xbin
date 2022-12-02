@@ -25,7 +25,7 @@ exports.doService = async (jsonReq, _, headers) => {
 async function _getIncrementedFileName(fullpath) {
     const fullpathNoExtension = fullpath.substring(0, fullpath.length - path.extname(fullpath).length), ext = path.extname(fullpath);
     let intValue = 2, found = false; while ((!found) && (intValue < Number.MAX_SAFE_INTEGER)) {
-        try {await fspromises.access(`${fullpathNoExtension}_${intValue}.${ext}`); found = false;} catch (err) {found = true; break;} };
+        try {await fspromises.access(`${fullpathNoExtension}_${intValue}${ext}`); intValue++; found = false;} catch (err) {found = true; break;} };
     return `${fullpathNoExtension}_${intValue}${ext}`;
 }
 
