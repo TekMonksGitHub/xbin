@@ -289,6 +289,13 @@ function menuEventDispatcher(name, element) {
    file_manager[name](element);
 }
 
+function showHideNotifications(hostID) {
+   const shadowRoot = file_manager.getShadowRootByHostId(hostID), divFilemanager = shadowRoot.querySelector("div#filemanager"),
+      notificationsShowing = shadowRoot.querySelector(`#${DIALOG_HOST_ELEMENT_ID}`).classList.contains("visible");
+   if (!notificationsShowing) _updateProgress(divFilemanager, null, null, null, null, null, null, true);
+   else hideNotification(divFilemanager);
+}
+
 async function deleteFile(element) {
    let resp = await apiman.rest(API_DELETEFILE, "GET", {path: selectedPath}, true);
    if (resp.result) file_manager.reload(file_manager.getHostElementID(element)); else _showErrorDialog();
@@ -488,5 +495,5 @@ const _updateQuotaBars = async quotabarIDs => {
 export const file_manager = { trueWebComponentMode: true, elementConnected, elementRendered, handleClick, 
    showMenu, deleteFile, editFile, downloadFile, cut, copy, paste, upload, uploadFiles, create, shareFile, 
    renameFile, menuEventDispatcher, isMobile, getDragAndDropDownloadURL, showDownloadProgress, hideNotification,
-   cancelFile, editFileVisible }
+   cancelFile, editFileVisible, showHideNotifications }
 monkshu_component.register("file-manager", `${COMPONENT_PATH}/file-manager.html`, file_manager);

@@ -71,7 +71,8 @@ span#desktopheader > span#rightheader {
     justify-content: space-between;
 }
 
-span#desktopheader > span#rightheader > span#signoff > img,  span#desktopheader > span#rightheader > span#refresh > img {
+span#desktopheader > span#rightheader > span#signoff > img,  span#desktopheader > span#rightheader > span#refresh > img, 
+	span#desktopheader > span#rightheader > span#notifications > img {
 	height: 2em;
 	width: 2em;
 }
@@ -175,6 +176,7 @@ file-manager#fm {height: 100%;}
 		filltextcolor="white" bgtextcolor="#4FB4ED" progresstext="{{{i18n.QuoteStatusDesktop}}}" 
 		progresstextsize="0.8em" textfont="Arial" roundedprogressbar="false" value="0"></progress-bar></span>
 	<span id="refresh"><img src="./img/reload.svg" onclick="location.reload()"></span>
+	<span id="notifications"><img src="./img/bell.svg" onclick="monkshu_env.components['file-manager'].showHideNotifications('fm')"></span>
 	<span-with-menu id="gear" styleBody="url(./pages/menu.stylebody.css)"><img src="./img/settings.svg" style="height: 2em;width: 2em;vertical-align: middle;">
 		<menu-item onclick="monkshu_env.apps[APP_CONSTANTS.APP_NAME].main.changePassword(this)" label="{{i18n.ChangePassword}}"></menu-item>
 		<menu-item onclick="monkshu_env.apps[APP_CONSTANTS.APP_NAME].main.showOTPQRCode(this)" label="{{i18n.ChangePhone}}"></menu-item>
@@ -196,6 +198,7 @@ file-manager#fm {height: 100%;}
 		filltextcolor="white" bgtextcolor="white" progresstext="{{{i18n.QuoteStatusMobile}}}" 
 		progresstextsize="0.55em" textfont="Arial" roundedprogressbar="false" value="0" isvertical="true"></progress-bar></span>
 	<img src="./img/mobilefooter_reload.svg" onclick="location.reload()">
+	<img src="./img/mobilefooter_bell.svg" onclick="monkshu_env.components['file-manager'].showHideNotifications('fm')">
 	<span-with-menu id="gearmobile" bottommenu="true" styleBody="url(./pages/menu.stylebody.css)"><img src="./img/mobilefooter_settings.svg">
 		<menu-item onclick="monkshu_env.apps[APP_CONSTANTS.APP_NAME].main.changePassword(this)" label="{{i18n.ChangePassword}}"></menu-item>
 		<menu-item onclick="monkshu_env.apps[APP_CONSTANTS.APP_NAME].main.showOTPQRCode(this)" label="{{i18n.ChangePhone}}"></menu-item>
