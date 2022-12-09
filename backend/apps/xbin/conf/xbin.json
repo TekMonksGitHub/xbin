@@ -5,5 +5,8 @@
     "TIME_TO_WAIT_FOR_DOWNLOADS_TO_START": 20000,
     "CMS_ROOT": "C:/Users/rvkapoor/source/xbin/backend/apps/xbin/drive",
     "REMOTE_LOG": true,
-    "DEFAULT_QUOTA": 1073741824
+    "DEFAULT_QUOTA": 1073741824,
+    "DISK_SECURED": true, 
+    "SECURED_KEY":"2a5e639aa1826c25e049be58de42167af727c935862e92d372c75a7daabf092fb3a008d4dfbdcf7f0fbd",
+    "DONT_GZIP_EXTENSIONS": [".zip", ".gz", ".z", ".mp4", ".mov"]
 }
