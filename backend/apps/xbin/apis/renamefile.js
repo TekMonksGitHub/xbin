@@ -5,6 +5,7 @@ const path = require("path");
 const fspromises = require("fs").promises;
 const cms = require(`${API_CONSTANTS.LIB_DIR}/cms.js`);
 const db = require(`${API_CONSTANTS.LIB_DIR}/xbindb.js`).getDB();
+const uploadfile = require(`${API_CONSTANTS.API_DIR}/uploadfile.js`);
 
 exports.doService = async (jsonReq, _, headers) => {
 	if (!validateRequest(jsonReq)) {LOG.error("Validation failure."); return CONSTANTS.FALSE_RESULT;}
@@ -16,6 +17,7 @@ exports.doService = async (jsonReq, _, headers) => {
 
 	try {
 		await fspromises.rename(oldPath, newPath);
+		await uploadfile.renameDiskFileMetadata(oldPath, newPath);
 		await db.runCmd("UPDATE shares SET fullpath = ? WHERE fullpath = ?", [newPath, oldPath]);	// update shares
         return CONSTANTS.TRUE_RESULT;
 	} catch (err) {LOG.error(`Error renaming  path: ${oldPath}, error is: ${err}`); return CONSTANTS.FALSE_RESULT;}

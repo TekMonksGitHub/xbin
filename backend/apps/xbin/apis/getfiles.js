@@ -1,9 +1,11 @@
-/* 
+/**
+ * Returns file listings from the given path. 
  * (C) 2020 TekMonks. All rights reserved.
  */
 const path = require("path");
 const fspromises = require("fs").promises;
 const cms = require(`${API_CONSTANTS.LIB_DIR}/cms.js`);
+const uploadfile = require(`${API_CONSTANTS.API_DIR}/uploadfile.js`);
 
 exports.doService = async (jsonReq, _, headers) => {
 	if (!validateRequest(jsonReq)) {LOG.error("Validation failure."); return CONSTANTS.FALSE_RESULT;}
@@ -13,16 +15,19 @@ exports.doService = async (jsonReq, _, headers) => {
 	const fullpath = path.resolve(`${await cms.getCMSRoot(headers)}/${jsonReq.path}`);
 	if (!await cms.isSecure(headers, fullpath)) {LOG.error(`Path security validation failure: ${jsonReq.path}`); return CONSTANTS.FALSE_RESULT;}
 
+	const _ignoreFile = fullpathOrFilename => API_CONSTANTS.XBIN_IGNORE_PATH_SUFFIXES.includes(path.extname(fullpathOrFilename));
+
 	try {
 		let retObj = {entries:[], result: true};
 		const entries = await fspromises.readdir(fullpath);
-		for (const entry of entries) {
-			if (entry.endsWith(API_CONSTANTS.XBIN_IGNORE_PATH_SUFFIX)) continue;	// ignore our own working files
-			let stats; try {stats = await fspromises.stat(`${fullpath}/${entry}`);} catch (err) {
-				LOG.error(`Error reading file entry ${fullpath}/${entry}. Skipping from listing.`); continue; }
-			stats.isFile()?stats.file=true:null; stats.isDirectory()?stats.directory=true:null; stats.isBlockDevice()?stats.blockDevice=true:null;
-			stats.isCharacterDevice()?stats.characterDevice=true:null; stats.isSymbolicLink()?stats.symbolicLink=true:null; stats.isFIFO()?stats.FIFO=true:null; 
-			stats.isSocket()?stats.socket=true:null;
+		for (const entry of entries) {	
+			const entryPath = path.resolve(`${fullpath}/${entry}`); if (_ignoreFile(entryPath)) continue;	// ignore our own working files
+			if (!(await uploadfile.isFileConsistentOnDisk(entryPath))) {
+				LOG.error(`Error reading file entry ${fullpath}/${entry}. Skipping from listing. Error is inconsistent file.`); continue; }
+			let stats; try {stats = await uploadfile.getFileStats(entryPath);} catch (err) {
+				LOG.error(`Error reading file entry ${fullpath}/${entry}. Skipping from listing. Error is ${err}`); continue; }
+			stats.xbintype == API_CONSTANTS.XBIN_FILE?stats.file=true:null; 
+			stats.xbintype == API_CONSTANTS.XBIN_FOLDER?stats.directory=true:null; 
 
 			retObj.entries.push({name: entry, path: `${jsonReq.path}/${entry}`, stats});
 		}

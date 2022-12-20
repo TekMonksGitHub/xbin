@@ -5,6 +5,7 @@ const path = require("path");
 const fspromises = require("fs").promises;
 const cms = require(`${API_CONSTANTS.LIB_DIR}/cms.js`);
 const db = require(`${API_CONSTANTS.LIB_DIR}/xbindb.js`).getDB();
+const uploadfile = require(`${API_CONSTANTS.API_DIR}/uploadfile.js`);
 
 exports.doService = async (jsonReq, _, headers) => {
 	if (!validateRequest(jsonReq)) {LOG.error("Validation failure."); return CONSTANTS.FALSE_RESULT;}
@@ -28,12 +29,12 @@ async function rmrf(path) {
 		const stats = await fspromises.stat(`${path}/${entry}`);
 		if (stats.isFile()) await unlinkFileAndRemoveFromDB(`${path}/${entry}`); else if (stats.isDirectory()) await rmrf(`${path}/${entry}`);
 	}
-	await fspromises.rmdir(path);
+	await fspromises.rmdir(path); try {await uploadfile.deleteDiskFileMetadata(path);} catch (err) {};
 }
 
 async function unlinkFileAndRemoveFromDB(path) {
 	await db.runCmd("DELETE FROM shares WHERE fullpath = ?", [path]);	
-	await fspromises.unlink(path);
+	await fspromises.unlink(path); try {await uploadfile.deleteDiskFileMetadata(path);} catch (err) {};
 }
 
 const validateRequest = jsonReq => (jsonReq && jsonReq.path);

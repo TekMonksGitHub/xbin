@@ -117,7 +117,7 @@ async function create(element) {
       dialog().error("dialog", await i18n.get("FileAlreadyExists")); LOG.error(`Create failed as ${path} already exists.`); return;
    }
    const resp = await apiman.rest(API_CREATEFILE, "GET", {path, isDirectory}, true), hostID = file_manager.getHostElementID(element);
-   if (resp.result) {dialog().hideDialog("dialog"); file_manager.reload(hostID);} else dialog().error("dialog", await i18n.get("Error"));
+   if (resp?.result) {dialog().hideDialog("dialog"); file_manager.reload(hostID);} else dialog().error("dialog", await i18n.get("Error"));
 }
 
 const uploadFiles = async (element, files) => {
@@ -318,7 +318,7 @@ function editFile(element) {
 
 async function editFileLoadData() {
    const resp = await apiman.rest(API_OPERATEFILE, "POST", {path: selectedPath, op: "read"}, true);
-   if (resp.result) dialog().showDialog(`${DIALOGS_PATH}/editfile.html`, true, true, {fileContents: resp.data}, 
+   if (resp?.result) dialog().showDialog(`${DIALOGS_PATH}/editfile.html`, true, true, {fileContents: resp.data}, 
          "dialog", ["filecontents"], async result => {
 
       const resp = await apiman.rest(API_OPERATEFILE, "POST", {path: selectedPath, op: "write", data: result.filecontents}, true);
