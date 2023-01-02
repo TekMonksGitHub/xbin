@@ -33,5 +33,6 @@
     "ssl": true,
     "sslKeyFile": "C:\\Users\\rvkapoor\\source\\etc\\dnsip_privkey.pem",
     "sslCertFile": "C:\\Users\\rvkapoor\\source\\etc\\dnsip_fullchain.pem",
-    "port": 443
+    "port": 443,
+    "host": "{{{hostname}}}"
 }

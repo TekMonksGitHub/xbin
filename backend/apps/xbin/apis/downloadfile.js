@@ -32,7 +32,7 @@ exports.downloadFile = async (fileReq, servObject, headers, url) => {
 	LOG.debug(`Got downloadfile request for path ${fileReq.fullpath}, starting download, reqid is ${fileReq.reqid}.`);
 
 	const _handleDownloadError = err => { LOG.error(`Error sending download file for path ${fileReq.fullpath} due to ${err} reqid is ${fileReq.reqid}.`); 
-		_updateWriteStatus(fileReq.reqid, -1, 0, true); }
+		_updateWriteStatus(fileReq.reqid, undefined, 0, true); }
 	try {
 		let fullpath = fileReq.fullpath, stats = await uploadfile.getFileStats(fullpath), deleteOnDownloadComplete = false;
 		if (stats.xbintype == API_CONSTANTS.XBIN_FOLDER) {
@@ -52,7 +52,7 @@ exports.downloadFile = async (fileReq, servObject, headers, url) => {
 		if (zippable) readStream = readStream.pipe(zlib.createGunzip());	
         const writable = readStream.pipe(servObject.res, {end:true});
 		const old_write = writable.write; writable.write = function(chunk) {
-			_updateWriteStatus(fileReq.reqid, null, chunk.length); return old_write.apply(writable, arguments);}
+			_updateWriteStatus(fileReq.reqid, undefined, chunk.length); return old_write.apply(writable, arguments);}
 		writable.on("error", error => _handleDownloadError(error));
 		writable.on("finish", _ => {
 			LOG.debug(`Finished sending download file for path ${fileReq.fullpath} successfully, reqid is ${fileReq.reqid}.`);
@@ -111,10 +111,11 @@ async function _zipDirectory(path) {	// unencrypt, ungzip etc before packing to 
     });
 }
 
-function _updateWriteStatus(reqid, fileSize, bytesWrittenThisChunk, transferFailed) {
+function _updateWriteStatus(reqid, fileSize=0, bytesWrittenThisChunk, transferFailed) {
 	const statusStorage = CLUSTER_MEMORY.get("__org_xbin_file_writer_req_statuses") || {};
-	if (!statusStorage[reqid] && fileSize) statusStorage[reqid] = {size: fileSize, bytesSent: 0, failed: false};
-	if (statusStorage[reqid] && bytesWrittenThisChunk) statusStorage[reqid].bytesSent += bytesWrittenThisChunk;
+	if (!(statusStorage[reqid])) statusStorage[reqid] = {size: fileSize, bytesSent: 0, failed: false};
+	
+	if (bytesWrittenThisChunk) statusStorage[reqid].bytesSent += bytesWrittenThisChunk;
 	if (transferFailed) statusStorage[reqid].failed = true;
 	CLUSTER_MEMORY.set("__org_xbin_file_writer_req_statuses", statusStorage);
 	if (!transferFailed) LOG.debug(`Update status for reqid ${reqid} - file size is ${fileSize} bytes, bytes written so far = ${statusStorage[reqid].bytesSent} bytes.`);

@@ -58,17 +58,16 @@ exports.writeUTF8File = async function (headers, inpath, data) {
 	exports.updateFileStats(fullpath, inpath, data.length, true);
 }
 
-exports.updateFileStats = async function (fullpath, remotepath, dataLengthWritten, serializeStats, type=API_CONSTANTS.XBIN_FILE) {
+exports.updateFileStats = async function (fullpath, remotepath, dataLengthWritten, transferFinished, type=API_CONSTANTS.XBIN_FILE) {
 	const distributedMemory = DISTRIBUTED_MEMORY.get(API_CONSTANTS.DISTRIBUTED_MEM_KEY, {});
 	if (!distributedMemory.files_stats) distributedMemory.files_stats = {};
-	if (!distributedMemory.files_stats[fullpath]) {
-		distributedMemory.files_stats[fullpath] = {...(await fspromises.stat(fullpath)), remotepath, size: 0, byteswritten: 0, xbintype: type}; 
-	} else {
-		distributedMemory.files_stats[fullpath].byteswritten += dataLengthWritten; 
-		distributedMemory.files_stats[fullpath].size = distributedMemory.files_stats[fullpath].byteswritten;
-	}
+	if (!distributedMemory.files_stats[fullpath]) distributedMemory.files_stats[fullpath] = {
+		...(await fspromises.stat(fullpath)), remotepath, size: 0, byteswritten: 0, xbintype: type }; 
+	
+	distributedMemory.files_stats[fullpath].byteswritten += dataLengthWritten; 
+	distributedMemory.files_stats[fullpath].size = distributedMemory.files_stats[fullpath].byteswritten;
 
-	if (serializeStats) {
+	if (transferFinished) {
 		await fspromises.writeFile(fullpath+API_CONSTANTS.STATS_EXTENSION, JSON.stringify(distributedMemory.files_stats[fullpath]));
 		distributedMemory.files_stats[fullpath].byteswritten = 0; 
 	}
@@ -80,7 +79,7 @@ exports.getFileStats = async fullpath => {	// cache and return to avoid repeated
 	const distributedMemory = DISTRIBUTED_MEMORY.get(API_CONSTANTS.DISTRIBUTED_MEM_KEY, {});
 	if (!distributedMemory.files_stats) distributedMemory.files_stats = {};
 	if (!distributedMemory.files_stats[fullpath]) distributedMemory.files_stats[fullpath] = await JSON.parse(await fspromises.readFile(fullpath+API_CONSTANTS.STATS_EXTENSION, "utf8"));
-	return distributedMemory.files_stats[fullpath];
+	return {...distributedMemory.files_stats[fullpath]};
 }
 
 exports.createFolder = async function(headers, inpath) {
