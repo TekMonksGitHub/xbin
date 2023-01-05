@@ -59,27 +59,27 @@ exports.writeUTF8File = async function (headers, inpath, data) {
 }
 
 exports.updateFileStats = async function (fullpath, remotepath, dataLengthWritten, transferFinished, type=API_CONSTANTS.XBIN_FILE) {
-	const distributedMemory = DISTRIBUTED_MEMORY.get(API_CONSTANTS.DISTRIBUTED_MEM_KEY, {});
-	if (!distributedMemory.files_stats) distributedMemory.files_stats = {};
-	if (!distributedMemory.files_stats[fullpath]) distributedMemory.files_stats[fullpath] = {
+	const clusterMemory = CLUSTER_MEMORY.get(API_CONSTANTS.MEM_KEY_UPLOADFILE, {});
+	if (!clusterMemory.files_stats) clusterMemory.files_stats = {};
+	if (!clusterMemory.files_stats[fullpath]) clusterMemory.files_stats[fullpath] = {
 		...(await fspromises.stat(fullpath)), remotepath, size: 0, byteswritten: 0, xbintype: type }; 
 	
-	distributedMemory.files_stats[fullpath].byteswritten += dataLengthWritten; 
-	distributedMemory.files_stats[fullpath].size = distributedMemory.files_stats[fullpath].byteswritten;
+	clusterMemory.files_stats[fullpath].byteswritten += dataLengthWritten; 
+	clusterMemory.files_stats[fullpath].size = clusterMemory.files_stats[fullpath].byteswritten;
 
 	if (transferFinished) {
-		await fspromises.writeFile(fullpath+API_CONSTANTS.STATS_EXTENSION, JSON.stringify(distributedMemory.files_stats[fullpath]));
-		distributedMemory.files_stats[fullpath].byteswritten = 0; 
+		await fspromises.writeFile(fullpath+API_CONSTANTS.STATS_EXTENSION, JSON.stringify(clusterMemory.files_stats[fullpath]));
+		clusterMemory.files_stats[fullpath].byteswritten = 0; 
 	}
 
-	DISTRIBUTED_MEMORY.set(API_CONSTANTS.DISTRIBUTED_MEM_KEY, distributedMemory);
+	CLUSTER_MEMORY.set(API_CONSTANTS.MEM_KEY_UPLOADFILE, clusterMemory);
 }
 
 exports.getFileStats = async fullpath => {	// cache and return to avoid repeated reads
-	const distributedMemory = DISTRIBUTED_MEMORY.get(API_CONSTANTS.DISTRIBUTED_MEM_KEY, {});
-	if (!distributedMemory.files_stats) distributedMemory.files_stats = {};
-	if (!distributedMemory.files_stats[fullpath]) distributedMemory.files_stats[fullpath] = await JSON.parse(await fspromises.readFile(fullpath+API_CONSTANTS.STATS_EXTENSION, "utf8"));
-	return {...distributedMemory.files_stats[fullpath]};
+	const clusterMemory = CLUSTER_MEMORY.get(API_CONSTANTS.MEM_KEY_UPLOADFILE, {});
+	if (!clusterMemory.files_stats) clusterMemory.files_stats = {};
+	if (!clusterMemory.files_stats[fullpath]) clusterMemory.files_stats[fullpath] = await JSON.parse(await fspromises.readFile(fullpath+API_CONSTANTS.STATS_EXTENSION, "utf8"));
+	return {...clusterMemory.files_stats[fullpath]};
 }
 
 exports.createFolder = async function(headers, inpath) {
@@ -93,20 +93,20 @@ exports.isZippable = fullpath => !((CONF.DONT_GZIP_EXTENSIONS||[]).includes(path
 
 exports.deleteDiskFileMetadata = async function(fullpath) {
 	await fspromises.unlink(fullpath+API_CONSTANTS.STATS_EXTENSION);
-	const distributedMemory = DISTRIBUTED_MEMORY.get(API_CONSTANTS.DISTRIBUTED_MEM_KEY, {});
-	if (distributedMemory && distributedMemory.files_stats && distributedMemory.files_stats[fullpath]) {
-		delete distributedMemory.files_stats[fullpath];
-		DISTRIBUTED_MEMORY.set(API_CONSTANTS.DISTRIBUTED_MEM_KEY, distributedMemory);
+	const clusterMemory = CLUSTER_MEMORY.get(API_CONSTANTS.MEM_KEY_UPLOADFILE, {});
+	if (clusterMemory && clusterMemory.files_stats && clusterMemory.files_stats[fullpath]) {
+		delete clusterMemory.files_stats[fullpath];
+		CLUSTER_MEMORY.set(API_CONSTANTS.MEM_KEY_UPLOADFILE, clusterMemory);
 	}
 }
 
 exports.renameDiskFileMetadata = async function (oldpath, newpath) {
 	await fspromises.rename(oldpath+API_CONSTANTS.STATS_EXTENSION, newpath+API_CONSTANTS.STATS_EXTENSION);
-	const distributedMemory = DISTRIBUTED_MEMORY.get(API_CONSTANTS.DISTRIBUTED_MEM_KEY, {});
-	if (distributedMemory && distributedMemory.files_stats && distributedMemory.files_stats[oldpath]) {
-		distributedMemory.files_stats[newpath] == {...distributedMemory.files_stats[oldpath]};
-		delete distributedMemory.files_stats[oldpath];
-		DISTRIBUTED_MEMORY.set(API_CONSTANTS.DISTRIBUTED_MEM_KEY, distributedMemory);
+	const clusterMemory = CLUSTER_MEMORY.get(API_CONSTANTS.MEM_KEY_UPLOADFILE, {});
+	if (clusterMemory && clusterMemory.files_stats && clusterMemory.files_stats[oldpath]) {
+		clusterMemory.files_stats[newpath] == {...clusterMemory.files_stats[oldpath]};
+		delete clusterMemory.files_stats[oldpath];
+		CLUSTER_MEMORY.set(API_CONSTANTS.MEM_KEY_UPLOADFILE, clusterMemory);
 	}
 }
 

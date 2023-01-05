@@ -37,7 +37,7 @@ const API_DOWNLOADFILE_DND = APP_CONSTANTS.FRONTEND+"/apps/"+APP_CONSTANTS.APP_N
 let PAGE_DOWNLOADFILE_SHARED = `${APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/downloadsharedfile"}`;
 
 const DIALOG_SCROLL_ELEMENT_ID = "notificationscrollpositioner", DIALOG_HOST_ELEMENT_ID = "notification", PROGRESS_TEMPLATE="progressdialog", DEFAULT_SHARE_EXPIRY = 5;
-const DOUBLE_CLICK_DELAY=400, DOWNLOADFILE_REFRESH_INTERVAL = 500, UPLOAD_ICON = "⇧", DOWNLOAD_ICON = "⇩";
+const DOUBLE_CLICK_DELAY=400, DOWNLOADFILE_REFRESH_INTERVAL = 1000, UPLOAD_ICON = "⇧", DOWNLOAD_ICON = "⇩";
 const dialog = _ => monkshu_env.components['dialog-box'];
 const isMobile = _ => $$.isMobile();
 
@@ -365,18 +365,23 @@ async function paste(element) {
 
 function _showDownloadProgress(element, path, reqid) {
    let interval, done = false;
+
    const updateProgress = async _ => {
       if (done) return;
+      
+      const markDoneAndClearInterval = _ => {done=true; clearInterval(interval);};
+
       const fileDownloadStatus = await apiman.rest(`${API_DOWNLOADFILE_STATUS}`, "GET", {reqid}, true, false);
       if (fileDownloadStatus && fileDownloadStatus.result) {
-         if (fileDownloadStatus.size!=-1) _updateProgress(element, fileDownloadStatus.bytesSent, fileDownloadStatus.size, path, DOWNLOAD_ICON);
-         if (fileDownloadStatus.size == fileDownloadStatus.bytesSent) {done = true; clearInterval(interval);}
+         if (fileDownloadStatus.downloadStarted) _updateProgress(element, fileDownloadStatus.bytesSent, fileDownloadStatus.size, path, DOWNLOAD_ICON);
+         if ((fileDownloadStatus.finishedSuccessfully) || (fileDownloadStatus.size == fileDownloadStatus.bytesSent)) markDoneAndClearInterval();
       }
       else if (!done) {
-         done=true; clearInterval(interval); 
+         markDoneAndClearInterval();
          dialog().showMessage(await i18n.get("DownloadFailed"), "dialog"); 
       }
    }
+
    interval = setInterval(updateProgress, DOWNLOADFILE_REFRESH_INTERVAL);
 }
 

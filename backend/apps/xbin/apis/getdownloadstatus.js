@@ -5,29 +5,29 @@
  * (C) 2021 TekMonks. All rights reserved.
  */
 const REQIDS_WITH_NO_STATUS = {};
-const CONF = require(`${API_CONSTANTS.CONF_DIR}/xbin.json`);
-const EXPIRED_REQID_INTERVAL = CONF.TIME_TO_WAIT_FOR_DOWNLOADS_TO_START||20000;
+const EXPIRED_REQID_INTERVAL = API_CONSTANTS.CONF.TIME_TO_WAIT_FOR_DOWNLOADS_TO_START||20000;
 
 exports.doService = async jsonReq => {
 	if (!validateRequest(jsonReq)) {LOG.error("Validation failure."); return CONSTANTS.FALSE_RESULT;}
     const reqid = decodeURIComponent(jsonReq.reqid);
-	const statusStorage = CLUSTER_MEMORY.get("__org_xbin_file_writer_req_statuses") || {};
+	const statusStorage = CLUSTER_MEMORY.get(API_CONSTANTS.MEM_KEY_WRITE_STATUS) || {};
 
     let result;
     if (statusStorage[reqid]) {
-        result = statusStorage[reqid].failed?CONSTANTS.FALSE_RESULT:{result:true,...statusStorage[reqid]};
+        result = statusStorage[reqid].failed?CONSTANTS.FALSE_RESULT:{result:true,...statusStorage[reqid], downloadStarted: true};
         if (REQIDS_WITH_NO_STATUS[reqid]) delete REQIDS_WITH_NO_STATUS[reqid];  // has status now
-        if (statusStorage[reqid].size == statusStorage[reqid].bytesSent) {  // done 100%
+        if (statusStorage[reqid].bytesSent >= statusStorage[reqid].size) statusStorage[reqid].finishedSuccessfully = true;
+        if (statusStorage[reqid].finishedSuccessfully) {  // done 100%
             delete statusStorage[reqid];
-            CLUSTER_MEMORY.set("__org_xbin_file_writer_req_statuses", statusStorage);
+            CLUSTER_MEMORY.set(API_CONSTANTS.MEM_KEY_WRITE_STATUS, statusStorage);
         }
     } else {
         if (!REQIDS_WITH_NO_STATUS[reqid]) REQIDS_WITH_NO_STATUS[reqid] = Date.now();   // new transfer
 
-        if (REQIDS_WITH_NO_STATUS[reqid] - Date.now() < EXPIRED_REQID_INTERVAL) 
-            result = {result: true, size: -1, bytesSent: 0, failed: false}; // transfer hasn't started yet
+        if (Date.now() - REQIDS_WITH_NO_STATUS[reqid] < EXPIRED_REQID_INTERVAL) result = {result: true, size: 1, 
+            bytesSent: 0, failed: false, finishedSuccessfully: false, downloadStarted: false}; // transfer hasn't started yet
         else {
-            result = {result: false, size: -1, bytesSent: 0, failed: true}; // waited too long, has no status, failed.
+            result = CONSTANTS.FALSE_RESULT; // waited too long, has no status, failed.
             delete REQIDS_WITH_NO_STATUS[reqid];
         }
     }
