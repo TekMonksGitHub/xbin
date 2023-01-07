@@ -18,6 +18,8 @@ export const i18n = {
 "CreateMenu": "Create...",
 "CreateFile": "Create file...",
 "Share": "Share...",
+"SharedFileTitle": "Shared file",
+"SharedFileText": "Here is the link to the shared file",
 "DeleteFile": "Delete",
 "EditFile": "Open...",
 "DownloadFile": "Download",

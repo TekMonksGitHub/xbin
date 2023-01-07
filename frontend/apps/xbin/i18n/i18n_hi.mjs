@@ -15,6 +15,8 @@ export const i18n = {
 "Upload":"अपलोड करें",
 "Create": "नई",
 "Share": "कृपया भेजें...",
+"SharedFileTitle": "साझा की गई फ़ाइल",
+"SharedFileText": "यहां साझा फ़ाइल का लिंक दिया गया है",
 "UploadMenu":"अपलोड करें...",
 "CreateMenu": "नई...",
 "CreateFile": "फ़ाइल बनाए...",

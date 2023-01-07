@@ -15,6 +15,8 @@ export const i18n = {
 "Upload":"アップロードする",
 "Create": "作成する",
 "Share": "送信してください...",
+"SharedFileTitle": "共有ファイル",
+"SharedFileText": "共有ファイルへのリンクはこちらです",
 "UploadMenu":"アップロードする...",
 "CreateMenu": "作成する...",
 "CreateFile": "新しいファイル...",

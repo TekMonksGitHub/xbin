@@ -272,7 +272,7 @@ function showMenu(element, documentMenuOnly) {
    }
 
    const contextMenu = shadowRoot.querySelector("div#contextmenu");
-   contextMenu.style.top = mouseY+"px"; contextMenu.style.left = mouseX+"px";
+   contextMenu.style.top = mouseY+"px"; contextMenu.style.left = mouseX+"px"; contextMenu.style.maxWidth = `calc(100vw - ${mouseX}px - 5px)`;
    contextMenu.classList.add("visible");   
    menuOpen = true;
 }
@@ -427,7 +427,7 @@ async function shareFile() {
    const paths = selectedPath.split("/"), name = paths[paths.length-1];
    const resp = await apiman.rest(API_SHAREFILE, "GET", {path: selectedPath, expiry: shareDuration}, true);
    if (!resp || !resp.result) _showErrorDialog(); else dialog().showDialog( `${DIALOGS_PATH}/sharefile.html`, true, true, 
-      {link: router.encodeURL(`${PAGE_DOWNLOADFILE_SHARED}?id=${resp.id}&name=${name}`), id: resp.id, shareDuration}, 
+      {link: router.encodeURL(`${PAGE_DOWNLOADFILE_SHARED}?id=${resp.id}&name=${name}`), id: resp.id, shareDuration, dialogpath: DIALOGS_PATH}, 
       "dialog", ["expiry"], async result => {
             dialog().hideDialog("dialog");
             if (result.expiry != shareDuration) apiman.rest(API_SHAREFILE, "GET", {id: resp.id, expiry: result.expiry}, true); 
