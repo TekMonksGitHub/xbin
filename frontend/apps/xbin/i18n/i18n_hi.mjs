@@ -70,6 +70,7 @@ export const i18n = {
 "FileAlreadyExists": "File already exists, can't overwrite.",
 "Comments": "Comments",
 "Kind": "Kind",
+"NotApplicable": "Not applicable",
 
 "logintagline": "XBin Enterprise Content Manager",
 "loginsubtag": "Secure, integrated, and easy to use. Cloud content manager.",

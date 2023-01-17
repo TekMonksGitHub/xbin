@@ -402,11 +402,11 @@ span.button {
 <template id="informationboxDivContents">
 <!-- {{=<% %>=}} 
     <table id="filestats">
-        <tr><td>{{i18n.Kind}}</td><td>{{#directory}}{{i18n.Folder}}{{/directory}}{{#file}}{{i18n.File}}{{/file}}{{^directory}}{{^file}}Not applicable{{/file}}{{/directory}}</td></tr>
-        <tr><td>{{i18n.Size}}</td><td>{{#sizeLocale}}{{.}} bytes{{/sizeLocale}}{{^sizeLocale}}Not applicable{{/sizeLocale}}</td></tr>
+        <tr><td>{{i18n.Kind}}</td><td>{{#directory}}{{i18n.Folder}}{{/directory}}{{#file}}{{i18n.File}}{{/file}}{{^directory}}{{^file}}{{i18n.NotApplicable}}{{/file}}{{/directory}}</td></tr>
+        <tr><td>{{i18n.Size}}</td><td>{{#sizeLocale}}{{.}} bytes{{/sizeLocale}}{{^sizeLocale}}{{i18n.NotApplicable}}{{/sizeLocale}}</td></tr>
         <tr><td>{{i18n.Location}}</td><td>{{pathBreadcrumbs}}</td></tr>
-        <tr><td>{{i18n.Created}}</td><td>{{#birthTimestampLocale}}{{.}}{{/birthTimestampLocale}}{{^birthTimestampLocale}}Not applicable{{/birthTimestampLocale}}</td></tr>
-        <tr><td>{{i18n.Modified}}</td><td>{{#modifiedTimestampLocale}}{{.}}{{/modifiedTimestampLocale}}{{^modifiedTimestampLocale}}Not Applicable{{/modifiedTimestampLocale}}</td></tr>
+        <tr><td>{{i18n.Created}}</td><td>{{#birthTimestampLocale}}{{.}}{{/birthTimestampLocale}}{{^birthTimestampLocale}}{{i18n.NotApplicable}}{{/birthTimestampLocale}}</td></tr>
+        <tr><td>{{i18n.Modified}}</td><td>{{#modifiedTimestampLocale}}{{.}}{{/modifiedTimestampLocale}}{{^modifiedTimestampLocale}}{{i18n.NotApplicable}}{{/modifiedTimestampLocale}}</td></tr>
         <tr><td>{{i18n.Name}}</td><td>{{name}}</td></tr>
     </table>
     
