@@ -6,7 +6,7 @@
  -->
 
 <style>
-::-webkit-scrollbar {width: 5px;}
+::-webkit-scrollbar {width: 0.5em; height: 0.5em}
  
 ::-webkit-scrollbar-thumb {
     border-radius: 100px;
@@ -17,18 +17,21 @@
 ::-webkit-scrollbar-track {
     background-color: lightgray;
     border-radius: 10px;
+    margin: 2em 1em;
 }
 
 html, body {
-    margin: 0; padding: 0;
+    margin: 0; 
+    padding: 0;
     user-select: none;
     height: 100%;
 }
 
 div#filemanager {
     display: flex;
-    flex-direction: column;
-    height: 100%;
+    flex-direction: row;
+    overflow: auto;
+    height: calc(100% - 1em);
 }
 
 div#notificationscrollpositioner {
@@ -44,12 +47,6 @@ div#notificationscrollpositioner {
     position: relative;
     width: 80%;
     left: 10%;
-}
-@media (max-width:1000px) {	/* On small screens widen notifications */
-	div#notificationscrollpositioner {
-        width: 100%;
-        left: 0%;
-    }
 }
 div#notificationscrollpositioner.visible {display: block;}
 
@@ -75,40 +72,81 @@ div#notification.visible {
 div#filelistingscontainer {
     display: flex;
     flex-flow: row wrap;
-    justify-content: start;
-    height: 100%;
     color: #168cd0;
-    overflow: auto;
+    row-gap: 2em;
+    align-content: flex-start;
     flex: 1;
+    margin-right: 2em;
 }
 
-div#filelistingscontainer > div {
+div#filelistingscontainer div#operations {
+    display: flex;
+    flex-direction: row;
+    height: fit-content;
+    background: #FAFAFB;
+    border: 1px solid #C8CDD1;
+    border-radius: 0.5em;
+}
+
+div#filelistingscontainer div.filemanagerentries {
     height: fit-content;
     display: flex;
     flex-direction: column;
-    padding: 10px;
+    padding: 0em 1.5em 0.5em 1.5em;
     align-items: center;
-    margin: 2px;
-    flex: 1 1 150px;
     justify-content: center;
-    max-width: 150px;
+    max-width: 8em;
     text-align: center;
 }
 
-div#filelistingscontainer > div:focus, div#filelistingscontainer > div:hover {
+div#filelistingscontainer div.filemanagerentries:focus, div#filelistingscontainer div.filemanagerentries:hover {
     border-radius: 10px;
     background-color: #cdeaf260;
     outline: none;
 }
 
-div#filelistingscontainer > div > img {width: 5em;}
+div#filelistingscontainer div.filemanagerentries > img {width: 5em;}
 
-div#filelistingscontainer > div > span {
+div#filelistingscontainer div.filemanagerentries > span {
     display: inline-block;
     text-overflow: ellipsis;
     overflow: hidden;
     width: 100%;
 }
+
+div#informationbox {
+    height: calc(100% - 2px - 2em);
+    width: 40%;
+    border: 1px solid #168cd0;
+    border-radius: 1em;
+    color: #168cd0;
+    padding: 2em;
+    box-sizing: border-box;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    overflow: auto;
+}
+div#informationbox table {
+    font: inherit;
+    color: inherit;
+    width: 100%;
+}
+div#informationbox table td {padding: 0 0.5em 0.4em 0}
+div#informationbox span#comments {margin-top: 2em; margin-bottom: 0.5em; width: 100%;}
+div#informationbox textarea#filecomments, div#informationbox textarea#filecomments:focus {
+    border: 1px solid #9BC1D7;
+    border-radius: 1em;
+    flex-grow: 1;
+    resize: none;
+    outline: none !important;
+    padding: 1em;
+    font: inherit;
+    color: inherit;
+    width: 100%;
+    min-height: 5em;
+}
+div#informationbox.visible {display: flex !important;}
 
 div#contextmenu {
     display: none;
@@ -231,6 +269,38 @@ div#progress > span#icon {
     font-size: 1.1em;
     text-align: center;
 } 
+
+span.button {
+    padding: 10px;
+    margin: 0;
+    box-sizing: border-box;
+    border-radius: 10px;
+    border-style: none;
+    outline: none;
+    text-align: center;
+    background-color: lightgray;
+    color: rgba(0, 0, 0, 0.75);
+    font-family: inherit;
+    font-size: smaller;
+    text-transform: uppercase;
+    cursor: default;
+    user-select: none;
+    min-width: 100px;
+    align-items: center;
+    max-width: 8em;
+    margin-top: 2em;
+}
+
+@media (max-width:960px) {	
+	div#notificationscrollpositioner {  /* On small screens widen notifications */
+        width: 100%;
+        left: 0%;
+    }
+
+    ::-webkit-scrollbar {   /* Don't show the scrollbar */
+      -webkit-appearance: none;
+    }
+}
 </style>
 
 <script type="module">
@@ -242,23 +312,46 @@ div#progress > span#icon {
 <div id="filemanager">
 <div id="filelistingscontainer" ondragover="event.preventDefault(); event.dataTransfer.dropEffect='copy';"
         ondrop="event.preventDefault(); monkshu_env.components['file-manager'].upload(this, event.dataTransfer.files)">
-    {{#entries}}
-    <div tabindex="0" id="{{#stats.home}}home{{/stats.home}}{{#stats.back}}back{{/stats.back}}{{#stats.upload}}upload{{/stats.upload}}{{#stats.create}}create{{/stats.create}}{{#stats.paste}}paste{{/stats.paste}}"
-            onkeyup='event.preventDefault(); event.stopPropagation(); if (event.key == "Enter" || event.keyCode == 13) {
-                monkshu_env.components["file-manager"].handleClick(this, "{{path}}", "{{#stats.directory}}true{{/stats.directory}}{{#stats.home}}true{{/stats.home}}{{#stats.back}}true{{/stats.back}}{{#stats.upload}}false{{/stats.upload}}{{#stats.create}}false{{/stats.create}}{{#stats.paste}}false{{/stats.paste}}", true, true);
-                monkshu_env.components["file-manager"].menuEventDispatcher("editFile",this); }'
-            onfocusin='event.preventDefault(); event.stopPropagation(); monkshu_env.components["file-manager"].handleClick(this, "{{path}}", "{{#stats.directory}}true{{/stats.directory}}{{#stats.home}}true{{/stats.home}}{{#stats.back}}true{{/stats.back}}{{#stats.upload}}false{{/stats.upload}}{{#stats.create}}false{{/stats.create}}{{#stats.paste}}false{{/stats.paste}}", false, true);'
-            onclick='event.preventDefault(); event.stopPropagation(); monkshu_env.components["file-manager"].handleClick(this, "{{path}}", "{{#stats.directory}}true{{/stats.directory}}{{#stats.home}}true{{/stats.home}}{{#stats.back}}true{{/stats.back}}{{#stats.upload}}false{{/stats.upload}}{{#stats.create}}false{{/stats.create}}{{#stats.paste}}false{{/stats.paste}}", true);' 
-            oncontextmenu='if (monkshu_env.components["file-manager"].isMobile()) return; event.preventDefault(); event.stopPropagation(); monkshu_env.components["file-manager"].handleClick(this, "{{path}}", "{{#stats.directory}}true{{/stats.directory}}{{#stats.home}}true{{/stats.home}}{{#stats.back}}true{{/stats.back}}{{#stats.upload}}false{{/stats.upload}}{{#stats.create}}false{{/stats.create}}{{#stats.paste}}false{{/stats.paste}}");'
-            {{#stats.json}}data-stats='{{{.}}}'{{/stats.json}}
-            title="{{name}}">
+    <div id="operations">
+    {{#operations}}
+    <div tabindex="0" class="filemanagerentries"
+        id="{{#stats.home}}home{{/stats.home}}{{#stats.back}}back{{/stats.back}}{{#stats.upload}}upload{{/stats.upload}}{{#stats.create}}create{{/stats.create}}{{#stats.paste}}paste{{/stats.paste}}"
+        onkeyup='event.preventDefault(); event.stopPropagation(); if (event.key == "Enter" || event.keyCode == 13) {
+            monkshu_env.components["file-manager"].handleClick(this, "{{path}}", "{{#stats.home}}true{{/stats.home}}{{#stats.back}}true{{/stats.back}}", true, true);
+            monkshu_env.components["file-manager"].menuEventDispatcher("editFile",this); }'
+        onfocusin='event.preventDefault(); event.stopPropagation(); monkshu_env.components["file-manager"].handleClick(this, "{{path}}", "{{#stats.home}}true{{/stats.home}}{{#stats.back}}true{{/stats.back}}", false, true);'
+        onclick='event.preventDefault(); event.stopPropagation(); monkshu_env.components["file-manager"].handleClick(this, "{{path}}", "{{#stats.home}}true{{/stats.home}}{{#stats.back}}true{{/stats.back}}", true);' 
+        oncontextmenu='if (monkshu_env.components["file-manager"].isMobile()) return; event.preventDefault(); event.stopPropagation(); monkshu_env.components["file-manager"].handleClick(this, "{{path}}", "{{#stats.directory}}true{{/stats.directory}}{{#stats.home}}true{{/stats.home}}{{#stats.back}}true{{/stats.back}}");'
+        {{#stats.json}}data-stats='{{{.}}}'{{/stats.json}}
+        title="{{name}}">
+
         <img src="{{COMPONENT_PATH}}/img/{{#stats.directory}}folder{{cutimage}}{{/stats.directory}}{{#stats.file}}file{{cutimage}}{{/stats.file}}{{#stats.back}}back{{/stats.back}}{{#stats.home}}home{{/stats.home}}{{#stats.upload}}upload{{/stats.upload}}{{#stats.create}}create{{/stats.create}}{{#stats.paste}}paste{{/stats.paste}}.svg"
+            ondragstart="event.dataTransfer.setData('DownloadURL',`application/octet-stream:{{name}}:${monkshu_env.components['file-manager'].getDragAndDropDownloadURL('{{{path}}}', this)}`)"
+            ondragend="monkshu_env.components['file-manager'].showDownloadProgress('{{path}}', this)">
+        <span>{{name}}</span>
+    </div>
+    {{/operations}}
+    </div>
+    {{#entries}}
+    <div tabindex="0" class="filemanagerentries"
+        onkeyup='event.preventDefault(); event.stopPropagation(); if (event.key == "Enter" || event.keyCode == 13) {
+                monkshu_env.components["file-manager"].handleClick(this, "{{path}}", "{{#stats.directory}}true{{/stats.directory}}{{#stats.home}}true{{/stats.home}}{{#stats.back}}true{{/stats.back}}", true, true);
+                monkshu_env.components["file-manager"].menuEventDispatcher("editFile",this); }'
+        onfocusin='event.preventDefault(); event.stopPropagation(); monkshu_env.components["file-manager"].handleClick(this, "{{path}}", "{{#stats.directory}}true{{/stats.directory}}{{#stats.file}}false{{/stats.file}}", false, true);'
+        onclick='event.preventDefault(); event.stopPropagation(); monkshu_env.components["file-manager"].handleClick(this, "{{path}}", "{{#stats.directory}}true{{/stats.directory}}{{#stats.file}}false{{/stats.file}}", true);' 
+        oncontextmenu='if (monkshu_env.components["file-manager"].isMobile()) return; event.preventDefault(); event.stopPropagation(); monkshu_env.components["file-manager"].handleClick(this, "{{path}}", "{{#stats.directory}}true{{/stats.directory}}{{#stats.file}}false{{/stats.file}}");'
+        {{#stats.json}}data-stats='{{{.}}}'{{/stats.json}}
+        title="{{name}}">
+        <img src="{{COMPONENT_PATH}}/img/{{#stats.directory}}folder{{cutimage}}{{/stats.directory}}{{#stats.file}}file{{cutimage}}{{/stats.file}}.svg"
             ondragstart="event.dataTransfer.setData('DownloadURL',`application/octet-stream:{{name}}:${monkshu_env.components['file-manager'].getDragAndDropDownloadURL('{{{path}}}', this)}`)"
             ondragend="monkshu_env.components['file-manager'].showDownloadProgress('{{path}}', this)">
         <span>{{name}}</span>
     </div>
     {{/entries}}
     <input id="upload" type="file" multiple onchange='monkshu_env.components["file-manager"].uploadFiles(this, this.files)' onclick="event.stopPropagation(); this.value = null;">
+</div>
+
+<div id="informationbox" onclick="event.stopImmediatePropagation()">
 </div>
 
 <div id="notificationscrollpositioner">
@@ -278,6 +371,7 @@ div#progress > span#icon {
     <span id="paste" onclick='event.stopPropagation();monkshu_env.components["file-manager"].menuEventDispatcher("paste",this)'>{{i18n.Paste}}</span>
     <span id="hr2"><hr></span>
     <span id="sharefile" onclick='event.stopPropagation();monkshu_env.components["file-manager"].menuEventDispatcher("shareFile",this)'>{{i18n.Share}}</span>
+    <span id="getinfo" onclick='event.stopPropagation();monkshu_env.components["file-manager"].menuEventDispatcher("getInfoOnFile",this)'>{{i18n.GetInfo}}</span>
     <span id="renamefile" onclick='event.stopPropagation();monkshu_env.components["file-manager"].menuEventDispatcher("renameFile",this)'>{{i18n.Rename}}</span>
     <span id="deletefile" onclick='event.stopPropagation();monkshu_env.components["file-manager"].menuEventDispatcher("deleteFile",this)'>{{i18n.DeleteFile}}</span>
 </div>
@@ -304,4 +398,23 @@ div#progress > span#icon {
 </div>
 <%={{ }}=%> -->
 </template>
+
+<template id="informationboxDivContents">
+<!-- {{=<% %>=}} 
+    <table id="filestats">
+        <tr><td>{{i18n.Kind}}</td><td>{{#directory}}{{i18n.Folder}}{{/directory}}{{#file}}{{i18n.File}}{{/file}}{{^directory}}{{^file}}Not applicable{{/file}}{{/directory}}</td></tr>
+        <tr><td>{{i18n.Size}}</td><td>{{#sizeLocale}}{{.}} bytes{{/sizeLocale}}{{^sizeLocale}}Not applicable{{/sizeLocale}}</td></tr>
+        <tr><td>{{i18n.Location}}</td><td>{{pathBreadcrumbs}}</td></tr>
+        <tr><td>{{i18n.Created}}</td><td>{{#birthTimestampLocale}}{{.}}{{/birthTimestampLocale}}{{^birthTimestampLocale}}Not applicable{{/birthTimestampLocale}}</td></tr>
+        <tr><td>{{i18n.Modified}}</td><td>{{#modifiedTimestampLocale}}{{.}}{{/modifiedTimestampLocale}}{{^modifiedTimestampLocale}}Not Applicable{{/modifiedTimestampLocale}}</td></tr>
+        <tr><td>{{i18n.Name}}</td><td>{{name}}</td></tr>
+    </table>
+    
+    <span id="comments" {{^directory}}{{^file}}style="visibility:hidden"{{/file}}{{/directory}}>{{i18n.Comments}}</span>
+    <textarea id="filecomments" {{^directory}}{{^file}}style="visibility:hidden"{{/file}}{{/directory}}></textarea>
+
+    <span class="button" onclick="this.parentNode.classList.remove('visible')">{{i18n.Close}}</span>
+<%={{ }}=%> -->
+</template>
+
 <dialog-box id="dialog"></dialog-box>

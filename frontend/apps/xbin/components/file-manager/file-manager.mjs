@@ -50,22 +50,25 @@ async function elementConnected(host) {
    const path = host.getAttribute("path") || (file_manager.getSessionMemory(host.id))["__lastPath"] || "/"; 
    selectedPath = path.replace(/[\/]+/g,"/"); selectedIsDirectory = true; currentlyActiveFolder = selectedPath;
    const resp = await apiman.rest(API_GETFILES, "GET", {path}, true); if (!resp || !resp.result) return; 
-   for (const entry of resp.entries) {if (entry.path.replace(/[\/]+/g,"/") == selectedCutPath) entry.cutimage = "_cutimage"; 
-      entry.stats.name = entry.name; entry.stats.json = JSON.stringify(entry.stats);}
+   for (const entry of resp.entries) {
+      if (entry.path.replace(/[\/]+/g,"/") == selectedCutPath) entry.cutimage = "_cutimage"; 
+      entry.stats.name = entry.name; entry.stats.json = JSON.stringify(entry.stats);
+   }
    
    // if a file or folder has been selected, show the paste button
-   if (selectedCopyPath || selectedCutPath) resp.entries.unshift({name: await i18n.get("Paste"), path, stats:{paste: true}});
+   const folder_ops = [];
+   if (selectedCopyPath || selectedCutPath) folder_ops.unshift({name: await i18n.get("Paste"), path, stats:{paste: true}});
 
-   resp.entries.unshift({name: await i18n.get("Create"), path, stats:{create: true}});
-   resp.entries.unshift({name: await i18n.get("Upload"), path, stats:{upload: true}});
+   folder_ops.unshift({name: await i18n.get("Create"), path, stats:{create: true}});
+   folder_ops.unshift({name: await i18n.get("Upload"), path, stats:{upload: true}});
 
    if (!path.match(/^[\/]+$/g)) { // add in back and home buttons
       let parentPath = path.substring(0, path.lastIndexOf("/")); if (parentPath == "") parentPath = "/";
-      resp.entries.unshift({name: await i18n.get("Back"), path:parentPath, stats:{back: true}});
-      resp.entries.unshift({name: await i18n.get("Home"), path:"/", stats:{home: true}});
+      folder_ops.unshift({name: await i18n.get("Back"), path:parentPath, stats:{back: true}});
+      folder_ops.unshift({name: await i18n.get("Home"), path:"/", stats:{home: true}});
    }
 
-   const data = {entries: resp.entries, COMPONENT_PATH: `${APP_CONSTANTS.COMPONENTS_PATH}/file-manager`};
+   const data = {operations: folder_ops, entries: resp.entries, COMPONENT_PATH: `${APP_CONSTANTS.COMPONENTS_PATH}/file-manager`};
 
    if (host.getAttribute("styleBody")) data.styleBody = `<style>${host.getAttribute("styleBody")}</style>`;
    shareDuration = host.getAttribute("defaultShareDuration") || DEFAULT_SHARE_EXPIRY; 
@@ -99,10 +102,20 @@ function handleClick(element, path, isDirectory, fromClickEvent, nomenu) {
    if (nomenu) return;
    
    if (timer) {clearTimeout(timer); if (fromClickEvent) editFile(element); timer=null;}
-   else timer = setTimeout(_=> { timer=null; 
+   else timer = setTimeout(_=> { timer=null; _fileListingEntrySelected(element, event);
       if ((fromClickEvent && isMobile())||!fromClickEvent) {if (!menuOpen) showMenu(element); else hideMenu(element); return;}
       if (fromClickEvent && menuOpen) hideMenu(element); // menu is open and user clicked anywhere, close it
    }, DOUBLE_CLICK_DELAY);
+}
+
+function _fileListingEntrySelected(containedElement, event) {
+   const informationbox = file_manager.getShadowRootByContainedElement(containedElement).querySelector("div#informationbox");
+   if (event.size) event.sizeLocale = parseInt(event.size).toLocaleString(); 
+   if (event.birthtime) event.birthTimestampLocale = new Date(event.birthtime).toLocaleString(); 
+   if (event.mtime) event.modifiedTimestampLocale = new Date(event.mtime).toLocaleString(); 
+   const arrayForBreadcrumbs = selectedPath.trim().replace(/^\/+/, "").split("/").slice(0, -1); arrayForBreadcrumbs.unshift("Home");
+   event.pathBreadcrumbs = arrayForBreadcrumbs.join(" > "); if (!event.name) event.name = containedElement.innerText;
+   _renderTemplateOnElement("informationboxDivContents", event, informationbox);
 }
 
 function upload(containedElement, files) {
@@ -434,19 +447,18 @@ async function shareFile() {
       }, async _ => apiman.rest(API_SHAREFILE, "GET", {id: resp.id, expiry: 0}, true));
 }
 
+async function getInfoOnFile(containedElement) {
+   const shadowRoot = file_manager.getShadowRootByContainedElement(containedElement);
+   shadowRoot.querySelector("div#informationbox").classList.add("visible");
+}
+
 const _showErrorDialog = async (hideAction, message) => dialog().showMessage(message||await i18n.get("Error"), "dialog", hideAction||undefined);
 
 async function _showNotification(element, dialogTemplateID, templateData) {
    showNotification = true;
    const shadowRoot = file_manager.getShadowRootByContainedElement(element);
-
-   let template = shadowRoot.querySelector(`template#${dialogTemplateID}`).innerHTML; 
-   const matches = /<!--([\s\S]+)-->/g.exec(template);
-   if (!matches) return; template = matches[1]; // can't show progress if the template is bad
-
-   const rendered = await router.expandPageData(template, router.getLastSessionURL(), templateData);
    const hostElement = shadowRoot.querySelector(`#${DIALOG_HOST_ELEMENT_ID}`), scrollElement = shadowRoot.querySelector(`#${DIALOG_SCROLL_ELEMENT_ID}`);
-   hostElement.innerHTML = rendered; 
+   _renderTemplateOnElement(dialogTemplateID, templateData, hostElement);
    if (!hostElement.classList.contains("visible")) hostElement.classList.add("visible"); 
    if (!scrollElement.classList.contains("visible")) scrollElement.classList.add("visible"); 
 }
@@ -457,6 +469,16 @@ function hideNotification(element) {
    const hostElement = shadowRoot.querySelector(`#${DIALOG_HOST_ELEMENT_ID}`), scrollElement = shadowRoot.querySelector(`#${DIALOG_SCROLL_ELEMENT_ID}`);
    while (hostElement && hostElement.firstChild) hostElement.removeChild(hostElement.firstChild);
    hostElement.classList.remove("visible"); scrollElement.classList.remove("visible"); 
+}
+
+async function _renderTemplateOnElement(templateID, data, element) {
+   let template = file_manager.getShadowRootByContainedElement(element).querySelector(`template#${templateID}`).innerHTML; 
+   const matches = /<!--([\s\S]+)-->/g.exec(template);
+   if (!matches) return false; template = matches[1]; // can't show progress if the template is bad
+
+   const rendered = await router.expandPageData(template, router.getLastSessionURL(), data);
+   element.innerHTML = rendered; 
+   return true;
 }
 
 const cancelFile = (file, element) => _updateProgress(element, 0, 0, file, UPLOAD_ICON, false, true);  // cancels and updates the view
@@ -500,5 +522,5 @@ const _updateQuotaBars = async quotabarIDs => {
 export const file_manager = { trueWebComponentMode: true, elementConnected, elementRendered, handleClick, 
    showMenu, deleteFile, editFile, downloadFile, cut, copy, paste, upload, uploadFiles, create, shareFile, 
    renameFile, menuEventDispatcher, isMobile, getDragAndDropDownloadURL, showDownloadProgress, hideNotification,
-   cancelFile, editFileVisible, showHideNotifications }
+   cancelFile, editFileVisible, showHideNotifications, getInfoOnFile }
 monkshu_component.register("file-manager", `${COMPONENT_PATH}/file-manager.html`, file_manager);
