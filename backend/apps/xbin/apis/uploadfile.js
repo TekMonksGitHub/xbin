@@ -31,7 +31,7 @@ exports.doService = async (jsonReq, _servObject, headers, _url) => {
 		else await fspromises[jsonReq.startOfFile?"writeFile":"appendFile"](temppath, bufferToWrite);
 		if (jsonReq.endOfFile) await fspromises.rename(temppath, fullpath);
 
-		exports.updateFileStats(fullpath, jsonReq.path, bufferToWrite.length, jsonReq.endOfFile);
+		exports.updateFileStats(fullpath, jsonReq.path, bufferToWrite.length, jsonReq.endOfFile, API_CONSTANTS.XBIN_FILE);
 
 		LOG.debug(`Added ${bufferToWrite.length} bytes to the file at eventual path ${fullpath} using temp path ${temppath}.`);
         
@@ -55,21 +55,35 @@ exports.writeUTF8File = async function (headers, inpath, data) {
 	if (CONF.DISK_SECURED) await _appendOrWriteEncrypted(fullpath, data);
 	else await fspromises.writeFile(fullpath, zippable ? await util.promisify(zlib.gzip)(data) : data, "utf8");
 
-	exports.updateFileStats(fullpath, inpath, data.length, true);
+	exports.updateFileStats(fullpath, inpath, data.length, true, API_CONSTANTS.XBIN_FILE);
 }
 
-exports.updateFileStats = async function (fullpath, remotepath, dataLengthWritten, transferFinished, type=API_CONSTANTS.XBIN_FILE) {
-	const clusterMemory = CLUSTER_MEMORY.get(API_CONSTANTS.MEM_KEY_UPLOADFILE, {});
+exports.updateFileStats = async function (fullpathOrRequestHeaders, remotepath, dataLengthWritten, transferFinished, type, commentin) {
+	const fullpath = typeof fullpathOrRequestHeaders !== 'string' ? (await _getSecureFullPath(fullpathOrRequestHeaders, remotepath)) : fullpathOrRequestHeaders;
+	const metaPath = fullpath+API_CONSTANTS.STATS_EXTENSION, clusterMemory = CLUSTER_MEMORY.get(API_CONSTANTS.MEM_KEY_UPLOADFILE, {});
 	if (!clusterMemory.files_stats) clusterMemory.files_stats = {};
-	if (!clusterMemory.files_stats[fullpath]) clusterMemory.files_stats[fullpath] = {
-		...(await fspromises.stat(fullpath)), remotepath, size: 0, byteswritten: 0, xbintype: type }; 
+	if (!clusterMemory.files_stats[fullpath]){
+		try {
+			await fspromises.access(metaPath, fs.constants.W_OK & fs.constants.R_OK);
+			clusterMemory.files_stats[fullpath] = await fspromises.readFile(metaPath, "utf8"); 
+		} catch (err) {
+			if (!dataLengthWritten) throw "Can't update file stats for a non-existent file, when no new data has been written.";
+			const stats = await fspromises.stat(fullpath); 
+			clusterMemory.files_stats[fullpath] = { ...stats, remotepath, size: 0, byteswritten: 0, 
+				xbintype: type||(stats.isFile()?API_CONSTANTS.XBIN_FILE:(stats.isDirectory()?API_CONSTANTS.XBIN_FOLDER:"UNKNOWN")), 
+				comment: commentin||"" }; 
+		}
+	}
 	
-	clusterMemory.files_stats[fullpath].byteswritten += dataLengthWritten; 
-	clusterMemory.files_stats[fullpath].size = clusterMemory.files_stats[fullpath].byteswritten;
+	if (dataLengthWritten !== undefined) {
+		clusterMemory.files_stats[fullpath].byteswritten += dataLengthWritten; 
+		clusterMemory.files_stats[fullpath].size = clusterMemory.files_stats[fullpath].byteswritten;
+	}
+	if (commentin) clusterMemory.files_stats[fullpath].comment = commentin;
 
 	if (transferFinished) {
-		await fspromises.writeFile(fullpath+API_CONSTANTS.STATS_EXTENSION, JSON.stringify(clusterMemory.files_stats[fullpath]));
-		clusterMemory.files_stats[fullpath].byteswritten = 0; 
+		await fspromises.writeFile(metaPath, JSON.stringify(clusterMemory.files_stats[fullpath]));
+		if (dataLengthWritten) clusterMemory.files_stats[fullpath].byteswritten = 0; 	// we updated due to a write and have finished uploading
 	}
 
 	CLUSTER_MEMORY.set(API_CONSTANTS.MEM_KEY_UPLOADFILE, clusterMemory);
@@ -116,6 +130,12 @@ exports.isFileConsistentOnDisk = async fullpath => {
 		await fspromises.access(fullpath+API_CONSTANTS.STATS_EXTENSION, fs.constants.R_OK);
 		return true;
 	} catch (err) {return false;}
+}
+
+async function _getSecureFullPath(headers, inpath) {
+	const fullpath = path.resolve(`${await cms.getCMSRoot(headers)}/${inpath}`);
+	if (!await cms.isSecure(headers, fullpath)) {LOG.error(`Path security validation failure: ${inpath}`); throw `Path security validation failure: ${inpath}`;}
+	return fullpath;
 }
 
 function _appendOrWriteEncrypted(inpath, buffer, append) {

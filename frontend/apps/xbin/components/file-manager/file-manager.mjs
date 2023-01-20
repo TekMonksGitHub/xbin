@@ -108,14 +108,23 @@ function handleClick(element, path, isDirectory, fromClickEvent, nomenu) {
    }, DOUBLE_CLICK_DELAY);
 }
 
-function _fileListingEntrySelected(containedElement, event) {
+function _fileListingEntrySelected(containedElement, stats) {
    const informationbox = file_manager.getShadowRootByContainedElement(containedElement).querySelector("div#informationbox");
-   if (event.size) event.sizeLocale = parseInt(event.size).toLocaleString(); 
-   if (event.birthtime) event.birthTimestampLocale = new Date(event.birthtime).toLocaleString(); 
-   if (event.mtime) event.modifiedTimestampLocale = new Date(event.mtime).toLocaleString(); 
+   if (stats.size) stats.sizeLocale = parseInt(stats.size).toLocaleString(); 
+   if (stats.birthtime) stats.birthTimestampLocale = new Date(stats.birthtime).toLocaleString(); 
+   if (stats.mtime) stats.modifiedTimestampLocale = new Date(stats.mtime).toLocaleString(); 
    const arrayForBreadcrumbs = selectedPath.trim().replace(/^\/+/, "").split("/").slice(0, -1); arrayForBreadcrumbs.unshift("Home");
-   event.pathBreadcrumbs = arrayForBreadcrumbs.join(" > "); if (!event.name) event.name = containedElement.innerText;
-   _renderTemplateOnElement("informationboxDivContents", event, informationbox);
+   stats.path = selectedPath; stats.pathBreadcrumbs = arrayForBreadcrumbs.join(" > "); if (!stats.name) stats.name = containedElement.innerText;
+   _renderTemplateOnElement("informationboxDivContents", stats, informationbox);
+}
+
+async function updateFileEntryCommentIfModified(path, oldComment, newComment) {
+   const _getStringTrimmedValueOrNull = s => s ? s.trim() : null;
+
+   if (_getStringTrimmedValueOrNull(oldComment) != _getStringTrimmedValueOrNull(newComment)) {
+      selectedElement.dataset.stats = JSON.stringify({...JSON.parse(selectedElement.dataset.stats), comment: newComment});
+      await apiman.rest(API_OPERATEFILE, "POST", {path, op: "updatecomment", comment: JSON.parse(selectedElement.dataset.stats).comment}, true);
+   }
 }
 
 function upload(containedElement, files) {
@@ -522,5 +531,5 @@ const _updateQuotaBars = async quotabarIDs => {
 export const file_manager = { trueWebComponentMode: true, elementConnected, elementRendered, handleClick, 
    showMenu, deleteFile, editFile, downloadFile, cut, copy, paste, upload, uploadFiles, create, shareFile, 
    renameFile, menuEventDispatcher, isMobile, getDragAndDropDownloadURL, showDownloadProgress, hideNotification,
-   cancelFile, editFileVisible, showHideNotifications, getInfoOnFile }
+   cancelFile, editFileVisible, showHideNotifications, getInfoOnFile, updateFileEntryCommentIfModified }
 monkshu_component.register("file-manager", `${COMPONENT_PATH}/file-manager.html`, file_manager);
