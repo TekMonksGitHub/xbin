@@ -9,15 +9,13 @@ import {monkshu_component} from "/framework/js/monkshu_component.mjs";
 
 const COMPONENT_PATH = util.getModulePath(import.meta);
 
-async function elementConnected(element) {
+async function elementConnected(host) {
 	let data = {};
 
-	if (element.getAttribute("styleBody")) data.styleBody = `<style>${element.getAttribute("styleBody")}</style>`;
-	data.minlength = element.getAttribute("minlength");
-	
-	if (element.id) {
-		if (!login_box.datas) login_box.datas = {}; login_box.datas[element.id] = data;
-	} else login_box.data = data;
+	if (host.getAttribute("styleBody")) data.styleBody = `<style>${host.getAttribute("styleBody")}</style>`;
+	data.minlength = host.getAttribute("minlength");
+
+	login_box.setData(host.id, data);
 }
 
 async function signin(signInButton) {	

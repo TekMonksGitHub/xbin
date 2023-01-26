@@ -68,7 +68,12 @@ async function elementConnected(host) {
       folder_ops.unshift({name: await i18n.get("Home"), path:"/", stats:{home: true}});
    }
 
-   const data = {operations: folder_ops, entries: resp.entries, COMPONENT_PATH: `${APP_CONSTANTS.COMPONENTS_PATH}/file-manager`};
+   const pathcrumbs = [{action:`monkshu_env.components['file-manager'].changeToPath('${host.id}','/')`, name: await i18n.get("Home")}];
+   const pathSplits = path.split("/"); for (const [i, pathElement] of pathSplits.entries()) if (pathElement.trim()) pathcrumbs.push(
+      {action: `monkshu_env.components['file-manager'].changeToPath('${host.id}','${pathSplits.splice(0, i+1).join("/")}')`, name: pathElement});
+
+   const data = {operations: folder_ops, entries: resp.entries, 
+      COMPONENT_PATH: `${APP_CONSTANTS.COMPONENTS_PATH}/file-manager`, pathcrumbs: JSON.stringify(pathcrumbs)};
 
    if (host.getAttribute("styleBody")) data.styleBody = `<style>${host.getAttribute("styleBody")}</style>`;
    shareDuration = host.getAttribute("defaultShareDuration") || DEFAULT_SHARE_EXPIRY; 
@@ -264,6 +269,7 @@ function showMenu(element, documentMenuOnly) {
       shadowRoot.querySelector("div#contextmenu > span#hr2").classList.add("hidden"); 
       shadowRoot.querySelector("div#contextmenu > span#cut").classList.add("hidden"); 
       shadowRoot.querySelector("div#contextmenu > span#copy").classList.add("hidden");
+      shadowRoot.querySelector("div#contextmenu > span#getinfo").classList.add("hidden");
    } else if (element.getAttribute("id") && (element.getAttribute("id") == "home" || element.getAttribute("id") == "back" || element.getAttribute("id") == "upload" || element.getAttribute("id") == "create" || element.getAttribute("id") == "paste")) {
       shadowRoot.querySelector("div#contextmenu > span#upload").classList.add("hidden");
       shadowRoot.querySelector("div#contextmenu > span#create").classList.add("hidden");
@@ -277,6 +283,7 @@ function showMenu(element, documentMenuOnly) {
       shadowRoot.querySelector("div#contextmenu > span#copy").classList.add("hidden"); 
       shadowRoot.querySelector("div#contextmenu > span#paste").classList.add("hidden"); 
       shadowRoot.querySelector("div#contextmenu > span#edit").classList.remove("hidden");
+      shadowRoot.querySelector("div#contextmenu > span#getinfo").classList.add("hidden");
    } else {
       shadowRoot.querySelector("div#contextmenu > span#edit").classList.remove("hidden");
       shadowRoot.querySelector("div#contextmenu > span#hr1").classList.remove("hidden"); 
@@ -291,6 +298,7 @@ function showMenu(element, documentMenuOnly) {
       else shadowRoot.querySelector("div#contextmenu > span#paste").classList.add("hidden"); 
       shadowRoot.querySelector("div#contextmenu > span#upload").classList.add("hidden");
       shadowRoot.querySelector("div#contextmenu > span#create").classList.add("hidden");
+      shadowRoot.querySelector("div#contextmenu > span#getinfo").classList.remove("hidden");
    }
 
    const contextMenu = shadowRoot.querySelector("div#contextmenu");
@@ -324,10 +332,7 @@ async function deleteFile(element) {
 }
 
 function editFile(element) {
-   if (selectedIsDirectory) {
-      const host = file_manager.getHostElement(element); host.setAttribute("path", selectedPath); 
-      (file_manager.getSessionMemory(host.id))["__lastPath"] = selectedPath; file_manager.reload(host.id); return;
-   } 
+   if (selectedIsDirectory) {changeToPath(file_manager.getHostElement(element).id, selectedPath); return;}
 
    if (selectedElement.id == "upload") {upload(selectedElement); return;}
 
@@ -351,6 +356,11 @@ async function editFileLoadData() {
 function editFileVisible() {
    const shadowRootDialog = dialog().getShadowRootByHostId("dialog");
    const elementTextArea = shadowRootDialog.querySelector("textarea#filecontents"); elementTextArea.focus();
+}
+
+function changeToPath(hostid, path) {
+   const host = file_manager.getHostElementByID(hostid); host.setAttribute("path", path); 
+   (file_manager.getSessionMemory(hostid))["__lastPath"] = path; file_manager.reload(host.id); return;
 }
 
 const _getReqIDForDownloading = path => encodeURIComponent(path+Date.now()+Math.random());
@@ -531,5 +541,5 @@ const _updateQuotaBars = async quotabarIDs => {
 export const file_manager = { trueWebComponentMode: true, elementConnected, elementRendered, handleClick, 
    showMenu, deleteFile, editFile, downloadFile, cut, copy, paste, upload, uploadFiles, create, shareFile, 
    renameFile, menuEventDispatcher, isMobile, getDragAndDropDownloadURL, showDownloadProgress, hideNotification,
-   cancelFile, editFileVisible, showHideNotifications, getInfoOnFile, updateFileEntryCommentIfModified }
+   cancelFile, editFileVisible, showHideNotifications, getInfoOnFile, updateFileEntryCommentIfModified, changeToPath }
 monkshu_component.register("file-manager", `${COMPONENT_PATH}/file-manager.html`, file_manager);

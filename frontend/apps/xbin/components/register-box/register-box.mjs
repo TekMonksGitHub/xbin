@@ -53,9 +53,7 @@ async function elementConnected(host) {
 		data.MOBILE_MEDIA_QUERY_END = mobileQueries.end||"}</style>"; data.IS_MOBILE_PLATFORM = true;
 	}
 
-	if (host.id) {
-		if (!register_box.datas) register_box.datas = {}; register_box.datas[host.id] = data;
-	} else register_box.data = data;
+	register_box.setData(host.id, data);
 }
 
 async function initialRender(host) {

@@ -31,7 +31,15 @@ div#filemanager {
     display: flex;
     flex-direction: row;
     overflow: auto;
-    height: calc(100% - 1em);
+    height: 100%;
+    position: relative;
+    padding-top: 2.5em;
+}
+
+bread-crumbs#filepathcrumbs {
+    top: 0;
+    position: absolute;
+    height: 2em;
 }
 
 div#notificationscrollpositioner {
@@ -44,9 +52,10 @@ div#notificationscrollpositioner {
     display: none;
     z-index: 1;
     opacity: 0.7;
-    position: relative;
+    position: absolute;
     width: 80%;
     left: 10%;
+    bottom: 0;
 }
 div#notificationscrollpositioner.visible {display: block;}
 
@@ -115,7 +124,7 @@ div#filelistingscontainer div.filemanagerentries > span {
 }
 
 div#informationbox {
-    height: calc(100% - 2px - 2em);
+    height: calc(100% - 2px - 4em);
     width: 40%;
     border: 1px solid #168cd0;
     border-radius: 1em;
@@ -304,12 +313,15 @@ span.button {
 </style>
 
 <script type="module">
-    import {dialog_box} from "./components/dialog-box/dialog-box.mjs";
+    import {dialog_box} from "{{{COMPONENT_PATH}}}/../dialog-box/dialog-box.mjs";
+    import {bread_crumbs} from "{{{COMPONENT_PATH}}}/../bread-crumbs/bread-crumbs.mjs";
 </script>
 
 {{{styleBody}}}
 
 <div id="filemanager">
+<bread-crumbs id="filepathcrumbs" value='{{pathcrumbs}}'
+    styleBody="body{--font-color: #168cd0;} span.crumb{font-size: 0.8em;}"></bread-crumbs>
 <div id="filelistingscontainer" ondragover="event.preventDefault(); event.dataTransfer.dropEffect='copy';"
         ondrop="event.preventDefault(); monkshu_env.components['file-manager'].upload(this, event.dataTransfer.files)">
     <div id="operations">

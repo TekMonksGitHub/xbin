@@ -10,23 +10,21 @@ import {monkshu_component} from "/framework/js/monkshu_component.mjs";
 
 const COMPONENT_PATH = util.getModulePath(import.meta);
 
-async function elementConnected(element) {
+async function elementConnected(host) {
 	const data = {
-		closed_image: element.getAttribute("hide_password_image")||`${APP_CONSTANTS.COMPONENTS_PATH}/password-box/img/closed.svg`,
-		open_image: element.getAttribute("show_password_image")||`${APP_CONSTANTS.COMPONENTS_PATH}/password-box/img/open.svg`,
-		customValidity: element.getAttribute("customValidity"),
-		placeholder: element.getAttribute("placeholder"),
-		minlength: element.getAttribute("minlength"),
-		required: element.getAttribute("required"),
-		pattern: element.getAttribute("pattern"),
-		onkeyup: element.getAttribute("onkeyup")
+		closed_image: host.getAttribute("hide_password_image")||`${APP_CONSTANTS.COMPONENTS_PATH}/password-box/img/closed.svg`,
+		open_image: host.getAttribute("show_password_image")||`${APP_CONSTANTS.COMPONENTS_PATH}/password-box/img/open.svg`,
+		customValidity: host.getAttribute("customValidity"),
+		placeholder: host.getAttribute("placeholder"),
+		minlength: host.getAttribute("minlength"),
+		required: host.getAttribute("required"),
+		pattern: host.getAttribute("pattern"),
+		onkeyup: host.getAttribute("onkeyup")
 	}
 
-	if (element.getAttribute("styleBody")) data.styleBody = `<style>${element.getAttribute("styleBody")}</style>`;
+	if (host.getAttribute("styleBody")) data.styleBody = `<style>${host.getAttribute("styleBody")}</style>`;
 	
-	if (element.id) {
-		if (!password_box.datas) password_box.datas = {}; password_box.datas[element.id] = data;
-	} else password_box.data = data;
+	password_box.setData(host.id, data);
 }
 
 async function elementRendered(host) {

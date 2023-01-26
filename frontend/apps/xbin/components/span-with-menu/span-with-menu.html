@@ -64,10 +64,10 @@ div#menu > div.cancel {
 
 {{{styleBody}}}
 
-<span id="content" onclick='monkshu_env.components["span-with-menu"].showMenu(this)'>{{{content}}}</span>
+<span id="content" onclick='monkshu_env.components["span-with-menu"].toggleMenu(this)'>{{{content}}}</span>
 <div id="menu" {{#risesFromBottom}}class="bottom"{{/risesFromBottom}}>
 {{#menuitems}}
 <div class="menuitem" onclick="{{{onclick}}}">{{entry}}</div>
 {{/menuitems}}
-<div class="menuitem cancel">✗&nbsp;{{i18n.Cancel}}</div>
+<div class="menuitem cancel" onclick="monkshu_env.components['span-with-menu'].hideMenu(this, true)">✗&nbsp;{{i18n.Cancel}}</div>
 </div>

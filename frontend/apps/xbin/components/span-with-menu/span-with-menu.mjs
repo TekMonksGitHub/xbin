@@ -8,41 +8,44 @@ import {monkshu_component} from "/framework/js/monkshu_component.mjs";
 const COMPONENT_PATH = util.getModulePath(import.meta);
 let conf;
 
-async function initialRender(element) {
-	const data = {}; data.content = _getContent(element);
-	if (element.getAttribute("styleBody")) data.styleBody = `<style>${await span_with_menu.getAttrValue(element, "styleBody")}</style>`;
-	const menuItems = element.children; if (menuItems && menuItems.length) {
+async function initialRender(host) {
+	const data = {}; data.content = _getContent(host);
+	if (host.getAttribute("styleBody")) data.styleBody = `<style>${await span_with_menu.getAttrValue(host, "styleBody")}</style>`;
+	const menuItems = host.children; if (menuItems && menuItems.length) {
 		data.menuitems = [];
 		for (const menuItem of menuItems) if (menuItem.nodeType == 1 && menuItem.tagName.toUpperCase() == "MENU-ITEM")
 			data.menuitems.push({entry: menuItem.getAttribute("label")||menuItem.innerText, onclick: menuItem.getAttribute("onclick")});
 	}
-	if (util.parseBoolean(element.getAttribute("bottommenu"))) data.risesFromBottom = true;
+	if (util.parseBoolean(host.getAttribute("bottommenu"))) data.risesFromBottom = true;
 
 	conf = await $$.requireJSON(`${COMPONENT_PATH}/conf/config.json`);
 	for (const key in conf) data[key] = conf[key];
 
-	span_with_menu.bindData(data, element.id);
+	span_with_menu.bindData(data, host.id);
+}
 
-	const memory = span_with_menu.getMemory(element.id);
- 
-	document.addEventListener("click", _e => {
-	   if (!memory.menuOpen) return;
-	   if (memory.ignoreClick) {memory.ignoreClick = false; return;}
- 
-	   const contextMenu = span_with_menu.getShadowRootByHostId(element.getAttribute("id")).querySelector("div#menu");
-	   contextMenu.classList.remove("visible");
-	   memory.menuOpen = false;
-	});
- }
+function hideMenu(element) {
+	const shadowRoot = span_with_menu.getShadowRootByContainedElement(element);
+	const memory = span_with_menu.getMemoryByContainedElement(element);
+	if (!memory.menuOpen) return;
+
+	const contextMenu = shadowRoot.querySelector("div#menu"); contextMenu.classList.remove("visible");
+	memory.menuOpen = false;
+}
 
 function showMenu(element) {
 	const shadowRoot = span_with_menu.getShadowRootByContainedElement(element);
-	const memID = span_with_menu.getHostElementID(element); const memory = span_with_menu.getMemory(memID);
+	const memory = span_with_menu.getMemoryByContainedElement(element);
 	if (memory.menuOpen == true) return;
 
 	const contextMenu = shadowRoot.querySelector("div#menu");
 	contextMenu.classList.add("visible");
-	memory.menuOpen = true; memory.ignoreClick = true;
+	memory.menuOpen = true; 
+}
+
+function toggleMenu(element) {
+	const memory = span_with_menu.getMemoryByContainedElement(element);
+	if (memory.menuOpen) hideMenu(element, true); else showMenu(element);
 }
 
 function _getContent(element) {
@@ -55,5 +58,5 @@ function _getContent(element) {
 }
 
 const trueWebComponentMode = true;	// making this false renders the component without using Shadow DOM
-export const span_with_menu = {trueWebComponentMode, initialRender, showMenu}
+export const span_with_menu = {trueWebComponentMode, initialRender, showMenu, hideMenu, toggleMenu}
 monkshu_component.register("span-with-menu", `${COMPONENT_PATH}/span-with-menu.html`, span_with_menu);
