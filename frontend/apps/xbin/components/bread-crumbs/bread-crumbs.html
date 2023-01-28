@@ -42,15 +42,16 @@ span.crumb img {
 {{{styleBody}}}
 
 {{#showNestedCrumbs}}
-<span-with-menu styleBody="div#menu{font-size: 0.8em; margin-left: 0.25em;} div.menuitem {padding: 0.8em !important; cursor: pointer !important;} div.menuitem:hover {background-color: var(--font-color) !important; }">...
+<span-with-menu styleBody="div#menu{font-size: 0.8em; margin-left: 0.25em;} div.menuitem {padding: 0.8em !important; cursor: pointer !important;} div.menuitem:hover {background-color: var(--font-color) !important;}">...
     {{#nestedcrumbs}}
-    <menu-item onclick='monkshu_env.components["bread-crumbs"].doCrumbAction("{{{id}}}", this)' label="{{{name}}}"></menu-item>
+    <menu-item onclick='monkshu_env.components["bread-crumbs"].doCrumbAction("{{{actionID}}}", "{{{hostID}}}")' 
+        label="{{{name}}}" icon="{{{icon}}}" iconhover="{{{iconhover}}}"></menu-item>
     {{/nestedcrumbs}}
 </span-with-menu>
 <span id="crumbseperator">&nbsp;&gt;&nbsp;</span>
 {{/showNestedCrumbs}}
 
 {{#singlecrumbs}}
-<span class="crumb" onclick='monkshu_env.components["bread-crumbs"].doCrumbAction("{{{id}}}", this)'><img src="{{{icon}}}">{{{name}}}</span>
+<span class="crumb" onclick='monkshu_env.components["bread-crumbs"].doCrumbAction("{{{actionID}}}", "{{{hostID}}}")'><img src="{{{icon}}}">{{{name}}}</span>
 <span id="crumbseperator">&nbsp;&gt;&nbsp;</span>
 {{/singlecrumbs}}

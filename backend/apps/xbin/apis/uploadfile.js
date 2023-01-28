@@ -67,12 +67,11 @@ exports.updateFileStats = async function (fullpathOrRequestHeaders, remotepath, 
 			await fspromises.access(metaPath, fs.constants.W_OK & fs.constants.R_OK);
 			clusterMemory.files_stats[fullpath] = await fspromises.readFile(metaPath, "utf8"); 
 		} catch (err) {
-			if (!dataLengthWritten) throw "Can't update file stats for a non-existent file, when no new data has been written.";
 			const stats = await fspromises.stat(fullpath); 
 			clusterMemory.files_stats[fullpath] = { ...stats, remotepath, size: 0, byteswritten: 0, 
 				xbintype: type||(stats.isFile()?API_CONSTANTS.XBIN_FILE:(stats.isDirectory()?API_CONSTANTS.XBIN_FOLDER:"UNKNOWN")), 
 				comment: commentin||"" }; 
-		}
+		} 
 	}
 	
 	if (dataLengthWritten !== undefined) {
@@ -100,7 +99,7 @@ exports.createFolder = async function(headers, inpath) {
 	const fullpath = path.resolve(`${await cms.getCMSRoot(headers)}/${inpath}`);
 	if (!await cms.isSecure(headers, fullpath)) throw (`Path security validation failure: ${inpath}`);
 	try {await fspromises.mkdir(fullpath);} catch (err) {if (err.code !== "EEXIST") throw err; else LOG.warn("Told to create a folder which already exists, ignorning: "+fullpath);}	// already exists is ok
-	await exports.updateFileStats(fullpath, inpath, 0, true, API_CONSTANTS.XBIN_FOLDER);
+	await exports.updateFileStats(fullpath, inpath, undefined, true, API_CONSTANTS.XBIN_FOLDER);
 }
 
 exports.isZippable = fullpath => !((CONF.DONT_GZIP_EXTENSIONS||[]).includes(path.extname(fullpath)));

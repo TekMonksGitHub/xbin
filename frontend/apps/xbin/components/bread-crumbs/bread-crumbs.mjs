@@ -27,10 +27,10 @@ async function elementConnected(host) {
 	bread_crumbs.setData(host.id, data);
 }
 
-const doCrumbAction = (id, element) => {
-	const data = bread_crumbs.getDataByContainedElement(element), 
+const doCrumbAction = (actionID, hostID) => {
+	const data = bread_crumbs.getDataByHost(bread_crumbs.getHostElementByID(hostID !== "undefined"?hostID:undefined)), 
 		allcrumbs = [...data.singlecrumbs, ...data.nestedcrumbs];
-	Function(allcrumbs[id].action)();
+	Function(allcrumbs[actionID].action)();
 }
 
 async function attributeChanged(host, name, _oldValue, newValue) {
@@ -48,13 +48,14 @@ async function _createDataCrumbs(host, data, allcrumbsValue) {
 	data.singlecrumbs = nestedCrumbsSplit != -1 ? allcrumbs.slice(nestedCrumbsSplit, allcrumbs.length) : allcrumbs, 
 		data.nestedcrumbs = nestedCrumbsSplit != -1 ? allcrumbs.slice(0, nestedCrumbsSplit) : []; 
 	for (const [i, crumb] of [...data.singlecrumbs, ...data.nestedcrumbs].entries()) {
-		if (!crumb.icon) crumb.icon = _getCrumbIcon(host);
-		crumb.id = i;
+		if (!crumb.icon) crumb.icon = _getCrumbIcon(host); crumb.iconhover = _getCrumbHoverIcon(host);
+		crumb.actionID = i; crumb.hostID = host.id||"undefined";
 	}
 	if (data.nestedcrumbs.length) data.showNestedCrumbs = true; else data.showNestedCrumbs = undefined;
 }
 
 const _getCrumbIcon = host => host.getAttribute("crumbicon")||`${COMPONENT_PATH}/img/page.svg`;
+const _getCrumbHoverIcon = host => host.getAttribute("crumbiconhover")||`${COMPONENT_PATH}/img/page.svg`;
 
 export const bread_crumbs = {trueWebComponentMode: true, elementConnected, doCrumbAction, attributeChanged, 
 	getObservedAttributes}

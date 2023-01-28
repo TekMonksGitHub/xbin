@@ -44,6 +44,9 @@ div#menu > div.menuitem {
     padding: 15px 30px 15px 30px;
     cursor: default;
     white-space: nowrap;
+    display: flex;
+    align-items: center;
+    flex-direction: row;
 }
 
 div#menu > div.menuitem:hover {
@@ -56,18 +59,25 @@ div#menu > div.cancel {
     background-color: red;
     display: none;
 }
+
+div#menu > div.menuitem > img {
+    width: 1.5em;
+    height: 1.5em;
+    margin-right: 0.5em;
+}
 </style>
 
-{{{MOBILE_MEDIA_QUERY_START}}}
-{{#MOBILE_MEDIA_QUERY_START}}div#menu > div.cancel {display: block;}{{/MOBILE_MEDIA_QUERY_START}}
-{{{MOBILE_MEDIA_QUERY_END}}}
+{{#isMobile}}<style>div#menu > div.cancel {display: block;}</style>{{/isMobile}}
 
 {{{styleBody}}}
 
 <span id="content" onclick='monkshu_env.components["span-with-menu"].toggleMenu(this)'>{{{content}}}</span>
 <div id="menu" {{#risesFromBottom}}class="bottom"{{/risesFromBottom}}>
 {{#menuitems}}
-<div class="menuitem" onclick="{{{onclick}}}">{{entry}}</div>
+<div class="menuitem" onclick='monkshu_env.components["span-with-menu"].doAction(this, "{{{id}}}")'
+        {{#icon}}onmouseover="this.querySelector('img#icon').src='{{iconhover}}'" 
+            onmouseout="this.querySelector('img#icon').src='{{icon}}'"{{/icon}}>
+    {{#icon}}<img id="icon" src="{{icon}}">{{/icon}}{{entry}}</div>
 {{/menuitems}}
 <div class="menuitem cancel" onclick="monkshu_env.components['span-with-menu'].hideMenu(this, true)">✗&nbsp;{{i18n.Cancel}}</div>
 </div>

@@ -70,7 +70,7 @@ async function elementConnected(host) {
 
    const pathcrumbs = [{action:`monkshu_env.components['file-manager'].changeToPath('${host.id}','/')`, name: await i18n.get("Home")}];
    const pathSplits = path.split("/"); for (const [i, pathElement] of pathSplits.entries()) if (pathElement.trim()) pathcrumbs.push(
-      {action: `monkshu_env.components['file-manager'].changeToPath('${host.id}','${pathSplits.splice(0, i+1).join("/")}')`, name: pathElement});
+      {action: `monkshu_env.components['file-manager'].changeToPath('${host.id}','${pathSplits.slice(0, i+1).join("/")}')`, name: pathElement});
 
    const data = {operations: folder_ops, entries: resp.entries, 
       COMPONENT_PATH: `${APP_CONSTANTS.COMPONENTS_PATH}/file-manager`, pathcrumbs: JSON.stringify(pathcrumbs)};

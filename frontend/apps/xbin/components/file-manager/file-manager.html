@@ -321,7 +321,9 @@ span.button {
 
 <div id="filemanager">
 <bread-crumbs id="filepathcrumbs" value='{{pathcrumbs}}'
-    styleBody="body{--font-color: #168cd0;} span.crumb{font-size: 0.8em;}"></bread-crumbs>
+    styleBody="body{--font-color: #168cd0;} span.crumb{font-size: 0.8em;}" 
+    crumbicon="{{COMPONENT_PATH}}/img/crumbicon_folder.svg"
+    crumbiconhover="{{COMPONENT_PATH}}/img/crumbicon_folder_hover.svg"></bread-crumbs>
 <div id="filelistingscontainer" ondragover="event.preventDefault(); event.dataTransfer.dropEffect='copy';"
         ondrop="event.preventDefault(); monkshu_env.components['file-manager'].upload(this, event.dataTransfer.files)">
     <div id="operations">
