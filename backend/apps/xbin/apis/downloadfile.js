@@ -34,13 +34,13 @@ exports.downloadFile = async (fileReq, servObject, headers, url) => {
 	const _handleDownloadError = err => { LOG.error(`Error sending download file for path ${fileReq.fullpath} due to ${err} reqid is ${fileReq.reqid}.`); 
 		_updateWriteStatus(fileReq.reqid, undefined, 0, true); }
 	try {
-		let fullpath = fileReq.fullpath, stats = await uploadfile.getFileStats(fullpath), deleteOnDownloadComplete = false;
-		if (stats.xbintype == API_CONSTANTS.XBIN_FOLDER) {
-			deleteOnDownloadComplete = true; fullpath = await _zipDirectory(fullpath); stats = await fspromises.stat(fullpath); }
+		let fullpath = fileReq.fullpath, stats = await uploadfile.getFileStats(fullpath), isFolder = false;
+		if (stats.xbintype == API_CONSTANTS.XBIN_FOLDER) { isFolder = true; fullpath = await _zipDirectory(fullpath); 
+			stats = await fspromises.stat(fullpath); }
 
-		const zippable = uploadfile.isZippable(fullpath);
+		const zippable = isFolder?false:uploadfile.isZippable(fullpath);
 		let respHeaders = {}; APIREGISTRY.injectResponseHeaders(url, {}, headers, respHeaders, servObject);
-		respHeaders["content-disposition"] = "attachment;filename=" + path.basename(fullpath);
+		respHeaders["content-disposition"] = "attachment;filename=" + path.basename(isFolder?`${fileReq.fullpath}.zip`:fullpath);
 		respHeaders["content-length"] = stats.size;   
 		respHeaders["content-type"] = "application/octet-stream";
 		servObject.server.statusOK(respHeaders, servObject, true);
@@ -48,14 +48,14 @@ exports.downloadFile = async (fileReq, servObject, headers, url) => {
 		_updateWriteStatus(decodeURIComponent(fileReq.reqid), stats.size, null);
 		let readStream = fs.createReadStream(fullpath, {highWaterMark: CONF.DOWNLOAD_READ_BUFFER_SIZE||DEFAULT_READ_BUFFER_SIZE, 
 			flags:"r", autoClose:true});
-		if (CONF.DISK_SECURED) readStream = readStream.pipe(crypt.getDecipher(CONF.SECURED_KEY)); // decrypt the file before sending if it is encrypted
-		if (zippable) readStream = readStream.pipe(zlib.createGunzip());	
+		if (CONF.DISK_SECURED && (!isFolder)) readStream = readStream.pipe(crypt.getDecipher(CONF.SECURED_KEY)); // decrypt the file before sending if it is encrypted
+		if (zippable && (!isFolder)) readStream = readStream.pipe(zlib.createGunzip());	
         const writable = readStream.pipe(servObject.res, {end:true});
 		const old_write = writable.write, old_end = writable.end; 
 		writable.write = function(chunk) {_updateWriteStatus(fileReq.reqid, undefined, chunk.length); return old_write.apply(writable, arguments);}
 		writable.end = function() {
 			LOG.debug(`Finished sending download file for path ${fileReq.fullpath} successfully, reqid is ${fileReq.reqid}.`);
-			if (deleteOnDownloadComplete) fspromises.unlink(fullpath);	// delete temporarily created ZIP files
+			if (isFolder) fspromises.unlink(fullpath);	// delete temporarily created ZIP files
 			_updateWriteStatus(fileReq.reqid, undefined, undefined, false, true);
 			return old_end.apply(writable, arguments);
 		}
@@ -76,7 +76,7 @@ exports.readUTF8File = async function (headers, inpath) {
 
 function _readEncryptedUTF8Data(buffer, zippable) {
 	return new Promise((resolve, reject) => {
-		const buffersRead = []; readStream = stream.Readable.from(buffer).pipe(crypt.getDecipher(CONF.SECURED_KEY));
+		const buffersRead = []; let readStream = stream.Readable.from(buffer).pipe(crypt.getDecipher(CONF.SECURED_KEY));
 		if (zippable) readStream = readStream.pipe(zlib.createGunzip()); 
 		readStream.on("data", chunk => buffersRead.push(chunk));
 		readStream.on("finish", _ => resolve(Buffer.concat(buffersRead).toString("utf8")));
@@ -92,23 +92,27 @@ function _sendError(servObject, unauthorized) {
 	}
 }
 
-async function _zipDirectory(path) {	// unencrypt, ungzip etc before packing to send
+async function _zipDirectory(pathIn) {	// unencrypt, ungzip etc before packing to send
     return new Promise(async (resolve, reject) => {
         const tempFilePath = utils.getTempFile("zip"); const out = fs.createWriteStream(tempFilePath);
-        const archive = archiver("zip", { zlib: { level: 9 }});
-        out.on("close", _=>resolve(tempFilePath)); archive.on("error", err=>reject(err));
+        const archive = archiver("zip", { zlib: { level: 9 }}); 
+        out.on("close", _=>resolve(tempFilePath)); out.on("error", err=>reject(err)); archive.pipe(out);
+		
+		archive.on("error", err=>reject(err)); archive.on("warning", err => {if (err.code=="ENOENT") LOG.warn(`ZIP warning for ${pathIn} at temp file ${tempFilePath}, warning is ${err}`); else reject(err);});
+		archive.on("progress", event => LOG.info(`ZIP progress of ${pathIn} at temp file ${tempFilePath}, the entries written are ${event.entries.total} and entries processed are ${event.entries.processed} and the bytes written are ${event.fs.totalBytes} and processed are ${event.fs.processed}.`));
+		
 		try {
-			await utils.walkFolder(path, (fullPath, stats, relativePath) =>  new Promise((resolve, reject) => {
-				if (!stats.isFile()) {resolve(); return;}
-				try {
-					const zippable = uploadfile.isZippable(fullpath), readstreamEntry = fs.createReadStream(fullPath); 
-					if (CONF.DISK_SECURED) readstreamEntry = readstreamEntry.pipe(crypt.getDecipher(CONF.SECURED_KEY));
-					if (zippable) readstreamEntry = readstreamEntry.pipe(zlib.createGunzip());	
-					archive.append(readstreamEntry, {name: relativePath});
-					resolve();
-				} catch (err) {reject(err);}
-			}));
-			archive.finalize();
+			const _ignoreFile = fullpathOrFilename => API_CONSTANTS.XBIN_IGNORE_PATH_SUFFIXES.includes(path.extname(fullpathOrFilename));
+			await utils.walkFolder(pathIn, (fullPath, stats, relativePath) =>  {
+				if (stats.isDirectory()) {archive.append(null, {name: relativePath+"/"}); return;}
+				if ((!stats.isFile()) || _ignoreFile(fullPath)) return;	// nothing to do, only real files beyond this
+				
+				const zippable = uploadfile.isZippable(fullPath); 
+				let readstreamEntry = fs.createReadStream(fullPath); 
+				if (CONF.DISK_SECURED) readstreamEntry = readstreamEntry.pipe(crypt.getDecipher(CONF.SECURED_KEY));
+				if (zippable) readstreamEntry = readstreamEntry.pipe(zlib.createGunzip());	
+				archive.append(readstreamEntry, {name: relativePath});
+			}, false, _=>archive.finalize());
 		} catch (err) {reject(err);}
     });
 }
