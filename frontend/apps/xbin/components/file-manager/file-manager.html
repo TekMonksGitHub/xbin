@@ -85,7 +85,7 @@ div#filelistingscontainer {
     row-gap: 2em;
     align-content: flex-start;
     flex: 1;
-    margin-right: 2em;
+    width: 100%;
 }
 
 div#filelistingscontainer div#operations {
@@ -95,6 +95,9 @@ div#filelistingscontainer div#operations {
     background: #FAFAFB;
     border: 1px solid #C8CDD1;
     border-radius: 0.5em;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: auto;
 }
 
 div#filelistingscontainer div.filemanagerentries {
@@ -135,6 +138,7 @@ div#informationbox {
     flex-direction: column;
     align-items: center;
     overflow: auto;
+    margin-left: 2em;
 }
 div#informationbox table {
     font: inherit;
@@ -307,7 +311,7 @@ span.button {
     }
 
     ::-webkit-scrollbar {   /* Don't show the scrollbar */
-      -webkit-appearance: none;
+      -webkit-appearance: none; display: none;
     }
 
     div#informationbox { /* Information box is full screen */
@@ -316,6 +320,7 @@ span.button {
         bottom: 0;
         width: 100%;
         background-color: #ffffff;
+        margin: 0em;
     }
 }
 </style>

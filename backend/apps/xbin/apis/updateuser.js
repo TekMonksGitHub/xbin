@@ -27,8 +27,8 @@ exports.doService = async (jsonReq, _, headers) => {
 	if ( (jsonReq.approved==undefined) || (!login.isAdmin(headers)) ) jsonReq.approved = idEntry.approved;	// only admin can approve
 	await register.updateOrgAndDomain(jsonReq);
 
-	const result = await userid.update(jsonReq.old_id, jsonReq.id, 
-		jsonReq.name||idEntry.name, jsonReq.org||idEntry.org, jsonReq.pwph||idEntry.pwph, jsonReq.totpSecret||idEntry.totpsec, 
+	const result = await userid.update(jsonReq.old_id, jsonReq.id, jsonReq.name||idEntry.name, 
+		jsonReq.org||idEntry.org, idEntry.pwph, jsonReq.pwph, jsonReq.totpSecret||idEntry.totpsec, 
 		jsonReq.role||idEntry.role, (jsonReq.approved==true||jsonReq.approved==1)?1:0, jsonReq.domain);
 
 	if (result.result) LOG.info(`User updated and logged in: ${jsonReq.name}, old ID: ${jsonReq.old_id}, new ID: ${jsonReq.id}`); 

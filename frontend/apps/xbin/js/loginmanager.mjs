@@ -21,9 +21,10 @@ async function signin(id, pass, otp) {
         session.set(APP_CONSTANTS.USERNAME, resp.name);
         session.set(APP_CONSTANTS.USERORG, resp.org);
         session.set("__org_telemeet_cuser_pass", pass);
+        session.set(APP_CONSTANTS.USER_NEEDS_VERIFICATION, resp.verified);
         securityguard.setCurrentRole(resp.role);
         LOG.info(`Login succeeded for ${id}.`);
-        return loginmanager.ID_OK;
+        return resp.verified?loginmanager.ID_OK:loginmanager.ID_OK_NOT_YET_VERIFIED;
     } else if (resp && resp.result && (!resp.tokenflag)){
         LOG.warn(`Login OK but not approved yet for ${id}.`); return loginmanager.ID_NOT_YET_APPROVED;
     }
@@ -106,4 +107,4 @@ const _stopAutoLogoutTimer = _ => { if (currTimeout) {clearTimeout(currTimeout);
 
 export const loginmanager = {signin, reset, registerOrUpdate, logout, changepassword, startAutoLogoutTimer, 
     addLogoutListener, getProfileData, checkResetSecurity, getSessionUser, interceptPageLoad, 
-    ID_OK: 1, ID_FAILED: 0, ID_NOT_YET_APPROVED: -1, ID_INTERNAL_ERROR: -2, ID_DB_ERROR: -3}
+    ID_OK: 1, ID_FAILED: 0, ID_NOT_YET_APPROVED: -1, ID_INTERNAL_ERROR: -2, ID_DB_ERROR: -3, ID_OK_NOT_YET_VERIFIED: 2}

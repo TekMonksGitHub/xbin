@@ -47,7 +47,8 @@ exports.doService = async (jsonReq, servObject) => {
 			undefined, true, CONF.login_update_delay||DEFAULT_QUEUE_DELAY);
 	} else LOG.error(`Bad login or not approved for ID: ${jsonReq.id}.`);
 
-	if (result.result) return {result: result.result, name: result.name, id: result.id, org: result.org, role: result.role, tokenflag: result.tokenflag};
+	if (result.result) return {result: result.result, name: result.name, id: result.id, org: result.org, 
+		role: result.role, tokenflag: result.tokenflag, verified: result.verified==1?true:false};
 	else return CONSTANTS.FALSE_RESULT;
 }
 

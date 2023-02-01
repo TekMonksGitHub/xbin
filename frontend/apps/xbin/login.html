@@ -179,6 +179,7 @@ div.lgbox > span {
 <div class="lgbox">
 	<span><br><br>{{i18n.LoginMsg}}<br><br></span>
 	<login-box roles='["{{APP_CONSTANTS.GUEST_ROLE}}", "{{APP_CONSTANTS.USER_ROLE}}"]' routeOnSuccess="./main.html"
+		dataOnSuccessButNotVerified='{"showDialog":{"message": "&#x7B;&#x7B;#needs_verification&#x7D;&#x7D;{{i18n.RegisterSuccessNeedsVerification}}&#x7B;&#x7B;/needs_verification&#x7D;&#x7D;&#x7B;&#x7B;^needs_verification&#x7D;&#x7D;{{i18n.RegisterSuccess}}&#x7B;&#x7B;/needs_verification}}"}}'
 		routeOnNotApproved="./notapproved.html" minlength="{{APP_CONSTANTS.MIN_PASS_LENGTH}}"></login-box>
 </div>
 </div>

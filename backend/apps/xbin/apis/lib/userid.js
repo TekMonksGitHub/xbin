@@ -35,10 +35,10 @@ exports.delete = async id => {
 	if (!await db.runCmd("END TRANSACTION")) return {result: false}; else return {result: true};
 }
 
-exports.update = async (oldid, id, name, org, pwph, totpSecret, role, approved, domain) => {
-	const pwphHashed = await getUserHash(pwph);
+exports.update = async (oldid, id, name, org, oldPwphHashed, newPwph, totpSecret, role, approved, domain) => {
+	const pwphHashed = newPwph?await getUserHash(newPwph):oldPwphHashed;
 	return {result: await db.runCmd("UPDATE users SET id=?, name=?, org=?, pwph=?, totpsec=?, role = ?, approved = ?, domain = ? WHERE id=?", 
-		[id, name, org, pwphHashed, totpSecret, role, approved?1:0, domain, oldid]), oldid, id, name, org, pwph, 
+		[id, name, org, pwphHashed, totpSecret, role, approved?1:0, domain, oldid]), oldid, id, name, org, pwph: pwphHashed, 
 		totpSecret, role, approved, domain};
 }
 
