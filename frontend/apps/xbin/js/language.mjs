@@ -2,11 +2,11 @@
  * (C) 2015 TekMonks. All rights reserved.
  * License: See enclosed license.txt file.
  */
-import {session} from "/framework/js/session.mjs";
+import {i18n} from "/framework/js/i18n.mjs";
 import {router} from "/framework/js/router.mjs";
 
 function changeLanguage(lang) {
-	session.set($$.MONKSHU_CONSTANTS.LANG_ID, lang);
+	i18n.setSessionLang(lang);
 	router.reload(); 
 }
 
