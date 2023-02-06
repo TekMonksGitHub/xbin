@@ -28,7 +28,7 @@
         "ignoreAfterMaxHits": 10
     },
     "httpdHeaders": {
-        "Cache-Control": "no-cache"
+        "Cache-Control": "max-age=604800, must-revalidate, private"
     },
     "ssl": true,
     "sslKeyFile": "C:\\Users\\rvkapoor\\source\\etc\\dnsip_privkey.pem",
