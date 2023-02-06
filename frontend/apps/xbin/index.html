@@ -10,12 +10,34 @@ License: See enclosed license.txt file.
 	<meta name=viewport content="width=device-width, initial-scale=1.0, minimum-scale=0.5 maximum-scale=1.0">
 	<link href="./img/favicon.ico" rel="icon" type="image/x-icon">
 
-	<title></title>
+	<title>XBin</title>
 
 	<!-- Include the monkshu framework -->
 	<script type="text/javascript" src="/framework/js/$$.js"></script>
 
 	<!-- And off we go ... -->
 	<script type="text/javascript">$$.boot(new URL("./", window.location));</script>
+
+	<style>
+		html, body {
+			width: 100%;
+			height: 100%;
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
+			align-items: center;
+			margin: 0;
+		}
+
+		body > img {width: 30vw; height: 30vw;}
+
+		@media (orientation: portrait) {
+			body > img {width: 50vw; height: 50vw;}
+		}
+	</style>
 </head>
+
+<body>
+	<img src="./img/loading.svg">
+</body>
 </html>
