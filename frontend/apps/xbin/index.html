@@ -10,6 +10,9 @@ License: See enclosed license.txt file.
 	<meta name=viewport content="width=device-width, initial-scale=1.0, minimum-scale=0.5 maximum-scale=1.0">
 	<link href="./img/favicon.ico" rel="icon" type="image/x-icon">
 
+	<link rel="preload" as="image" href="./img/loading.svg">
+	<link rel="preload" as="image" href="./img/errorloading.svg">
+
 	<title>XBin</title>
 
 	<!-- Include the monkshu framework -->
@@ -29,15 +32,27 @@ License: See enclosed license.txt file.
 			margin: 0;
 		}
 
-		body > img {width: 30vw; height: 30vw;}
-
-		@media (orientation: portrait) {
-			body > img {width: 50vw; height: 50vw;}
-		}
+		body > img {width: 30vw; height: 30vw; visibility: hidden;}
+		@media (orientation: portrait) { body > img {width: 50vw; height: 50vw;} }
 	</style>
 </head>
 
 <body>
-	<img src="./img/loading.svg">
+	<img id="__org_monkshu_xbin_indexpage_spinner" src="./img/loading.svg">
+
+	<!-- Show the waiting spinner if waiting for more than default timeout and error if there are network issues -->
+	<script type="text/javascript">
+		const SPINNER_WAIT_TIMEOUT = 750;	// 750 miliseconds before spinner shows up
+		document.addEventListener("DOMContentLoaded", _=>setTimeout(_=> {
+			const imgElement = document.querySelector("img#__org_monkshu_xbin_indexpage_spinner");
+			if (imgElement) imgElement.style.visibility="visible"
+		}, SPINNER_WAIT_TIMEOUT));
+
+		const ERROR_SPINNER_WAIT_TIMEOUT = 10000;	// 10 seconds before error spinner shows up
+		document.addEventListener("DOMContentLoaded", _=>setTimeout(_=> {
+			const imgElement = document.querySelector("img#__org_monkshu_xbin_indexpage_spinner");
+			if (imgElement) {imgElement.src = "./img/errorloading.svg"; $$.setSlowNetwork(true);}
+		}, ERROR_SPINNER_WAIT_TIMEOUT));
+	</script>
 </body>
 </html>
