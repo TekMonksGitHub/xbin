@@ -95,6 +95,7 @@ export const i18n = {
 "ResetSuccess": "Reset was successful",
 "RegisterSuccess": "Welcome {{name}}! Registration successful.",
 "RegisterSuccessNeedsVerification": "Welcome {{name}}! Registration successful.<br><br>Please check your email to verify your account, as soon as possible, to prevent auto-deletion.",
+"LoginSuccessNeedsVerification": "Welcome {{name}}! <br><br>Please check your email to verify your account, as soon as possible, to prevent auto-deletion.",
 "UserID" : "Login",
 "DesiredUserID" : "Desired User ID",
 "Password" : "Password",

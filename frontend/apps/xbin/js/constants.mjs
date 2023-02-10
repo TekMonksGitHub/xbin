@@ -25,6 +25,8 @@ export const APP_CONSTANTS = {
 
     SESSION_NOTE_ID: "com_monkshu_ts",
 
+    APP_ABOUT_URL: "https://tekmonks.com/apps/tekmonks/index.html?.=aHR0cHM6Ly90ZWttb25rcy5jb20vYXBwcy90ZWttb25rcy9sYW5kaW5nLmh0bWw/cHJvZHVjdF9wYXRoPS4vcHJvZHVjdHMveGJpbi5tZCZtZW51X3BhdGg9Lm1lbnVzL2Vu",
+
     // Login constants
     MIN_PASS_LENGTH: 8,
     API_LOGIN: API_PATH+"/login",

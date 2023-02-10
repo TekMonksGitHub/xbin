@@ -60,7 +60,7 @@ span#desktopheader {
 	margin: 1em 2em 0 2em;
 }
 
-img#textlogo {height: 3em;}
+img#textlogo {height: 3em; cursor: pointer;}
 
 span#desktopheader > span#rightheader {
 	height: 100%;
@@ -167,7 +167,7 @@ file-manager#fm {height: 100%;}
 <body style="margin: 0%">
 <span id="desktopheader">
 	<span id="rightheader">
-	<img id="textlogo" src="./img/logomainpage.svg">
+	<img id="textlogo" src="./img/logomainpage.svg" onclick="window.open(APP_CONSTANTS.APP_ABOUT_URL, '_blank')">
 	<span id="greeting">
 	<span><img src="./img/person.svg"></span>
 	<span id="name">{{i18n.Hi}} {{#_org_monkshu_session}}username{{/_org_monkshu_session}}!</span>
@@ -178,10 +178,14 @@ file-manager#fm {height: 100%;}
 	<span id="refresh"><img src="./img/reload.svg" onclick="location.reload()"></span>
 	<span id="notifications"><img src="./img/bell.svg" onclick="monkshu_env.components['file-manager'].showHideNotifications('fm')"></span>
 	<span-with-menu id="gear" styleBody="url(./pages/menu.stylebody.css)"><img src="./img/settings.svg" style="height: 2em;width: 2em;vertical-align: middle;">
-		<menu-item onclick="monkshu_env.apps[APP_CONSTANTS.APP_NAME].main.changePassword(this)" label="{{i18n.ChangePassword}}"></menu-item>
-		<menu-item onclick="monkshu_env.apps[APP_CONSTANTS.APP_NAME].main.showOTPQRCode(this)" label="{{i18n.ChangePhone}}"></menu-item>
-		<menu-item onclick="monkshu_env.apps[APP_CONSTANTS.APP_NAME].main.changeProfile(this)" label="{{i18n.ChangeProfile}}"></menu-item>
-		{{#admin}}<menu-item onclick="monkshu_env.frameworklibs.router.navigate(APP_CONSTANTS.MANAGE_HTML)" label="{{i18n.ManageUsers}}"></menu-item>{{/admin}}
+		<menu-item onclick="monkshu_env.apps[APP_CONSTANTS.APP_NAME].main.changePassword(this)" 
+			label="{{i18n.ChangePassword}}" icon="./img/changepassword_menu.svg"></menu-item>
+		<menu-item onclick="monkshu_env.apps[APP_CONSTANTS.APP_NAME].main.showOTPQRCode(this)" 
+			label="{{i18n.ChangePhone}}" icon="./img/changephone_menu.svg"></menu-item>
+		<menu-item onclick="monkshu_env.apps[APP_CONSTANTS.APP_NAME].main.changeProfile(this)" 
+			label="{{i18n.ChangeProfile}}" icon="./img/changeprofile_menu.svg"></menu-item>
+		{{#admin}}<menu-item onclick="monkshu_env.frameworklibs.router.navigate(APP_CONSTANTS.MANAGE_HTML)" 
+			label="{{i18n.ManageUsers}}" icon="./img/manageusers_menu.svg"></menu-item>{{/admin}}
 	</span-with-menu>
 	<span id="signoff"><img src="./img/poweroff.svg" onclick="monkshu_env.apps[APP_CONSTANTS.APP_NAME].main.logoutClicked()"></span>
 	</span>
@@ -200,10 +204,14 @@ file-manager#fm {height: 100%;}
 	<img src="./img/mobilefooter_reload.svg" onclick="location.reload()">
 	<img src="./img/mobilefooter_bell.svg" onclick="monkshu_env.components['file-manager'].showHideNotifications('fm')">
 	<span-with-menu id="gearmobile" bottommenu="true" styleBody="url(./pages/menu.stylebody.css)"><img src="./img/mobilefooter_settings.svg">
-		<menu-item onclick="monkshu_env.apps[APP_CONSTANTS.APP_NAME].main.changePassword(this)" label="{{i18n.ChangePassword}}"></menu-item>
-		<menu-item onclick="monkshu_env.apps[APP_CONSTANTS.APP_NAME].main.showOTPQRCode(this)" label="{{i18n.ChangePhone}}"></menu-item>
-		<menu-item onclick="monkshu_env.apps[APP_CONSTANTS.APP_NAME].main.changeProfile(this)" label="{{i18n.ChangeProfile}}"></menu-item>
-		{{#admin}}<menu-item onclick="monkshu_env.frameworklibs.router.navigate(APP_CONSTANTS.MANAGE_HTML)" label="{{i18n.ManageUsers}}"></menu-item>{{/admin}}
+		<menu-item onclick="monkshu_env.apps[APP_CONSTANTS.APP_NAME].main.changePassword(this)" 
+			label="{{i18n.ChangePassword}}" icon="./img/changepassword_menu.svg"></menu-item>
+		<menu-item onclick="monkshu_env.apps[APP_CONSTANTS.APP_NAME].main.showOTPQRCode(this)" 
+			label="{{i18n.ChangePhone}}" icon="./img/changephone_menu.svg"></menu-item>
+		<menu-item onclick="monkshu_env.apps[APP_CONSTANTS.APP_NAME].main.changeProfile(this)" 
+			label="{{i18n.ChangeProfile}}" icon="./img/changeprofile_menu.svg"></menu-item>
+		{{#admin}}<menu-item onclick="monkshu_env.frameworklibs.router.navigate(APP_CONSTANTS.MANAGE_HTML)" 
+			label="{{i18n.ManageUsers}}" icon="./img/manageusers_menu.svg"></menu-item>{{/admin}}
 	</span-with-menu>
 	<img src="./img/mobilefooter_logout.svg" onclick="monkshu_env.apps[APP_CONSTANTS.APP_NAME].main.logoutClicked()">
 </span>
