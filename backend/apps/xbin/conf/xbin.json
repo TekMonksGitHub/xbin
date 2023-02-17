@@ -8,5 +8,6 @@
     "DEFAULT_QUOTA": 1073741824,
     "DISK_SECURED": true, 
     "SECURED_KEY":"2a5e639aa1826c25e049be58de42167af727c935862e92d372c75a7daabf092fb3a008d4dfbdcf7f0fbd",
-    "DONT_GZIP_EXTENSIONS": [".zip", ".gz", ".z", ".mp4", ".mov"]
+    "DONT_GZIP_EXTENSIONS": [".zip", ".gz", ".z", ".mp4", ".mov"],
+    "UPLOAD_STREAM_MAX_WAIT": 120000
 }
