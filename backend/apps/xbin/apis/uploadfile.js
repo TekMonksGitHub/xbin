@@ -29,10 +29,11 @@ exports.doService = async (jsonReq, _servObject, headers, _url) => {
 		const bufferToWrite = Buffer.from(matches[1], "base64");
 		if (!(await quotas.checkQuota(headers, bufferToWrite.length)).result) throw (`Quota is full write failed for path ${fullpath}.`);
         
-		if (jsonReq.startOfFile) try {
-			await fspromises.access(fullpath); await fspromises.unlink(fullpath);
-			await fspromises.access(temppath); await fspromises.unlink(temppath);
-		} catch (err) {}; 	// delete the old files if they exist
+		if (jsonReq.startOfFile) {	// delete the old files if they exist
+			try {await fspromises.access(fullpath); await fspromises.unlink(fullpath);} catch (err) {};
+			try {await fspromises.access(temppath); await fspromises.unlink(temppath);} catch (err) {};
+			try {deleteDiskFileMetadata(fullpath);} catch (err) {};
+		} 
 	
 		await _appendOrWrite(temppath, bufferToWrite, jsonReq.startOfFile, jsonReq.endOfFile);
 		if (jsonReq.endOfFile) await fspromises.rename(temppath, fullpath);
