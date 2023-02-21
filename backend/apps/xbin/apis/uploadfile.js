@@ -157,19 +157,37 @@ function _appendOrWrite(inpath, buffer, startOfFile, endOfFile) {
 
 		_existing_streams[path] = { addablestream: addablereadstream.getAddableReadstream(ADDABLE_STREAM_TIMEOUT), 
 			reject, resolve }; 
+		LOG.debug(`Created readable stream with ID ${_existing_streams[path].addablestream.getID()} for path ${path}.`);
 		let readableStream = _existing_streams[path].addablestream;
 		if (exports.isZippable(path)) readableStream = readableStream.pipe(zlib.createGzip());	// gzip to save disk space and download bandwidth for downloads
 		if (CONF.DISK_SECURED) readableStream = readableStream.pipe(crypt.getCipher(CONF.SECURED_KEY));
-		const fsWriteStream = fs.createWriteStream(path, {"flags":"w"});
-		readableStream.pipe(fsWriteStream); 
-		fsWriteStream.on("finish", _ => _deleteStreams(path)); 
-		fsWriteStream.on("error", error => {_existing_streams[path].reject(error); _deleteStreams(path)});
-		_existing_streams[path].addablestream.on("read_drained", _ => _existing_streams[path].resolve());
+		_existing_streams[path].writestream = fs.createWriteStream(path, {"flags":"w"}); 
+		_existing_streams[path].writestream.__org_xbin_writestream_id = Date.now();
+		_existing_streams[path].closeWriteStream = true;
+		readableStream.pipe(_existing_streams[path].writestream); 
+		_existing_streams[path].writestream.on("finish", _=>{	// deleteStreams if the finish itself is not emitted by _deleteStreams
+			if (_existing_streams[path].writestream.__org_xbin_writestream_id != 
+				_existing_streams[path].ignoreWriteStreamFinishForID) {
+					_existing_streams[path].closeWriteStream = false; _deleteStreams(path);
+				} 
+			}); 
+		_existing_streams[path].writestream.on("error", error => { 
+			LOG.error(`Error in th write stream for path ${path}, error is ${error}.`);
+			_existing_streams[path].reject(error); _deleteStreams(path) 
+		});
+		_existing_streams[path].addablestream.on("read_drained", _ => {
+			_existing_streams[path].resolve();
+			LOG.debug(`Resolved writing for path ${path} with buffer size of ${buffer.length} bytes for stream with ID ${_existing_streams[path].addablestream.getID()}.`);
+		});
 	}
 
 	const _deleteStreams = path => {
 		if (!_existing_streams[path]) return;
 		if (_existing_streams[path].addablereadstream) _existing_streams[path].addablestream.end(); 
+		if (_existing_streams[path].closeWriteStream) try {
+			_existing_streams[path].ignoreWriteStreamFinishForID = _existing_streams[path].writestream.__org_xbin_writestream_id;
+			_existing_streams[path].writestream.close(); 
+		} catch (err) {LOG.warn(`Error closing write stream with for path ${path}, error is ${err}.`);}
 		delete _existing_streams[path];
 	}
 
@@ -180,6 +198,7 @@ function _appendOrWrite(inpath, buffer, startOfFile, endOfFile) {
 
 		_existing_streams[inpath].resolve = resolve; _existing_streams[inpath].reject = reject;	// update these so events calls the right ones
 		_existing_streams[inpath].addablestream.addData(buffer); 
+		LOG.debug(`Added data for path ${inpath} with buffer size of ${buffer.length} bytes for stream with ID ${_existing_streams[inpath].addablestream.getID()}.`);
 		if (endOfFile) _existing_streams[inpath].addablestream.end(); 
 	});
 }
