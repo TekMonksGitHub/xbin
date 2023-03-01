@@ -71,6 +71,7 @@ export const i18n = {
 "Comments": "Comments",
 "Kind": "Kind",
 "NotApplicable": "Not applicable",
+"ErrorSameFiles": "Both files or paths are the same, ignoring",
 
 "logintagline": "XBin Enterprise Content Manager",
 "loginsubtag": "Secure, integrated, and easy to use. Cloud content manager.",

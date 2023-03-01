@@ -26,8 +26,9 @@ async function rmrf(path) {
 
 	const entries = await fspromises.readdir(path);
 	for (const entry of entries) {
-		const stats = await fspromises.stat(`${path}/${entry}`);
-		if (stats.isFile()) await unlinkFileAndRemoveFromDB(`${path}/${entry}`); else if (stats.isDirectory()) await rmrf(`${path}/${entry}`);
+		const stats = await uploadfile.getFileStats(`${path}/${entry}`);
+		if (stats.xbintype == API_CONSTANTS.XBIN_FILE) await unlinkFileAndRemoveFromDB(`${path}/${entry}`); 
+		else if (stats.xbintype == API_CONSTANTS.XBIN_FOLDER) await rmrf(`${path}/${entry}`);
 	}
 	await fspromises.rmdir(path); try {await uploadfile.deleteDiskFileMetadata(path);} catch (err) {};
 }

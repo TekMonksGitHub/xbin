@@ -390,6 +390,8 @@ function copy(_element) { selectedCopyPath = selectedPath; selectedCutCopyElemen
 async function paste(element) {
    const selectedPathToOperate = selectedCutPath?selectedCutPath:selectedCopyPath;
    const baseName = selectedPathToOperate.substring(selectedPathToOperate.lastIndexOf("/")+1);
+   const from = _normalizedPath(selectedCutPath||selectedCopyPath), to = _normalizedPath(`${currentlyActiveFolder}/${baseName}`);
+   if (from == to) {_showErrorDialog(null, await i18n.get("ErrorSameFiles")); return;}
    if (selectedCutPath) await _performRename(selectedCutPath, `${selectedPath}/${baseName}`, element);
    else if (selectedCopyPath) await _performCopy(selectedCopyPath, `${selectedPath}/${baseName}`, element);
    selectedCutPath = null; selectedCopyPath = null; selectedCutCopyElement = null;
@@ -416,6 +418,8 @@ function _showDownloadProgress(element, path, reqid) {
 
    interval = setInterval(updateProgress, DOWNLOADFILE_REFRESH_INTERVAL);
 }
+
+const _normalizedPath = path => path.replace(/\\/g, "/").trim().replace(/\/+/g,"/").trim();
 
 const _notificationFriendlyName = path => path.replace(/\/+/g, "/").trim().replace(/^\//g,"");
 
@@ -450,8 +454,9 @@ function renameFile(element) {
    dialog().showDialog(`${DIALOGS_PATH}/renamefile.html`, true, true, {oldName}, "dialog", ["renamepath"], async result => {
       const subpaths = selectedPath.split("/"); subpaths.splice(subpaths.length-1, 1, result.renamepath);
       const newPath = subpaths.join("/");
-
-      dialog().hideDialog("dialog"); _performRename(selectedPath, newPath, element); 
+      dialog().hideDialog("dialog"); 
+      if (_normalizedPath(selectedPath) == _normalizedPath(newPath)) {_showErrorDialog(null, await i18n.get("ErrorSameFiles")); return;}
+      _performRename(selectedPath, newPath, element); 
    });
 }
 
