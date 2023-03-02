@@ -19,8 +19,9 @@ exports.doService = async (jsonReq, _, headers) => {
 
     try {
         if (!(await uploadfile.isFileConsistentOnDisk(fullpath))) return CONSTANTS.FALSE_RESULT;
-        const stats = await uploadfile.getFileStats(fullpath); return {result: true, ...stats, 
-            suggestedNewName: path.basename(await _getIncrementedFileName(fullpath))};
+        const suggestedNewName= path.basename(await _getIncrementedFileName(fullpath)), 
+            suggestedRemotePath = _normalizeRemotePath(jsonReq.path).split("/").slice(0, -1).join("/")+"/"+suggestedNewName;
+        const stats = await uploadfile.getFileStats(fullpath); return {result: true, ...stats, suggestedNewName, suggestedRemotePath};
     } catch (err) {return CONSTANTS.FALSE_RESULT;}
 }
 
@@ -30,5 +31,7 @@ async function _getIncrementedFileName(fullpath) {
         try {await fspromises.access(`${fullpathNoExtension}_${intValue}${ext}`); intValue++; found = false;} catch (err) {found = true; break;} };
     return `${fullpathNoExtension}_${intValue}${ext}`;
 }
+
+const _normalizeRemotePath = path => path.replace(/\\+/g, "/").replace(/\/+/g, "/");
 
 const validateRequest = jsonReq => (jsonReq && jsonReq.path);

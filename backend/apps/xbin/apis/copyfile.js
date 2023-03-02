@@ -14,12 +14,14 @@ exports.doService = async (jsonReq, _, headers) => {
 
 	const fromPath = path.resolve(`${await cms.getCMSRoot(headers)}/${jsonReq.from}`); 
 	const toPath = path.resolve(`${await cms.getCMSRoot(headers)}/${jsonReq.to}`);
-	if (!await cms.isSecure(headers, fromPath)) {LOG.error(`Path security validation failure: ${jsonReq.from}`); return CONSTANTS.FALSE_RESULT;}
-	if (!await cms.isSecure(headers, toPath)) {LOG.error(`Path security validation failure: ${jsonReq.to}`); return CONSTANTS.FALSE_RESULT;}
+
+	const _logCopy = (message, level="info") => LOG[level](`${message} Copy from is ${fromPath} and to is ${toPath}.`)
+
+	if (!await cms.isSecure(headers, fromPath)) {_logCopy("Path security validation failure in from.", "error"); return CONSTANTS.FALSE_RESULT;}
+	if (!await cms.isSecure(headers, toPath)) {_logCopy("Path security validation failure in to.", "error"); return CONSTANTS.FALSE_RESULT;}
 	if (fromPath == toPath) {	// sanity check
-		LOG.warn(`Copy requested from and to the same file paths. Ignoring. From is ${fromPath} and to is the same.`);
-		return CONSTANTS.TRUE_RESULT;
-	}
+		_logCopy("Copy requested from and to the same file paths. Ignoring.", "warn"); return CONSTANTS.TRUE_RESULT; }
+	if (_copyRequestedToItsOwnSubdirectory(fromPath, toPath)) {_logCopy("Can't copy a directory to inside itself.", "error"); return CONSTANTS.FALSE_RESULT;}
 
 	try { 
 		const stats = await uploadfile.getFileStats(fromPath); 
@@ -27,8 +29,9 @@ exports.doService = async (jsonReq, _, headers) => {
 		
 		await utils.copyFileOrFolder(fromPath, toPath, async (_from, to, relativePath) => {
 			if (!uploadfile.isMetaDataFile(to)) return;
-			const newRemotePath = jsonReq.to+relativePath, originalFilePath = uploadfile.getFileForMetaDataFile(to);
-			await uploadfile.updateDiskFileMetadataRemotePaths(originalFilePath, newRemotePath);
+			const newRemotePath = uploadfile.normalizeRemotePath(jsonReq.to+"/"+relativePath), 
+				copiedFile = uploadfile.getFileForMetaDataFile(to);
+			await uploadfile.updateDiskFileMetadataRemotePaths(copiedFile, newRemotePath);
 		}, true);
 		uploadfile.copyDiskFileMetadata(fromPath, toPath, jsonReq.to);
 
@@ -37,6 +40,16 @@ exports.doService = async (jsonReq, _, headers) => {
 		LOG.error(`Error copying from: ${fromPath}, to: ${toPath}, error is: ${err}`); 
 		return CONSTANTS.FALSE_RESULT; 
 	}
+}
+
+function _copyRequestedToItsOwnSubdirectory(from, to) {
+	to = path.resolve(to).replace(/\\/g,"/").toLowerCase(); from = path.resolve(from).replace(/\\/g,"/").toLowerCase(); 
+	if (to==from) return true;	// a directory is its own subdirectory
+	const pathSplits = to.split("/"); for (const [i, _val] of pathSplits.entries()) {
+		const test = pathSplits.slice(0, i).join("/");
+		if (test==from) return true;
+	}
+	return false;
 }
 
 const validateRequest = jsonReq => (jsonReq && jsonReq.from && jsonReq.to);

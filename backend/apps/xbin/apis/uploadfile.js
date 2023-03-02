@@ -77,11 +77,11 @@ exports.updateFileStats = async function (fullpathOrRequestHeaders, remotepath, 
 				clusterMemory.files_stats[fullpath] = await fspromises.readFile(metaPath, "utf8"); 
 			} catch (err) {
 				let stats; try {stats = await fspromises.stat(fullpath);} catch (err) {stats = {}};
-				clusterMemory.files_stats[fullpath] = { ...stats, remotepath: _normalizeRemotePath(remotepath), size: 0, 
+				clusterMemory.files_stats[fullpath] = { ...stats, remotepath: exports.normalizeRemotePath(remotepath), size: 0, 
 					byteswritten: 0, xbintype: type||(stats.isFile()?API_CONSTANTS.XBIN_FILE:(stats.isDirectory()?API_CONSTANTS.XBIN_FOLDER:"UNKNOWN")), 
 					comment: commentin||"", disk_size: stats.size }; 
 			} 
-		} else clusterMemory.files_stats[fullpath] = { remotepath: _normalizeRemotePath(remotepath), size: 0, byteswritten: 0, 
+		} else clusterMemory.files_stats[fullpath] = { remotepath: exports.normalizeRemotePath(remotepath), size: 0, byteswritten: 0, 
 			xbintype: type||(stats.isFile()?API_CONSTANTS.XBIN_FILE:(stats.isDirectory()?API_CONSTANTS.XBIN_FOLDER:"UNKNOWN")), 
 			comment: commentin||"" }; 
 	}
@@ -148,7 +148,7 @@ exports.deleteDiskFileMetadata = async function(fullpath) {
 exports.isMetaDataFile = path => path.endsWith(API_CONSTANTS.STATS_EXTENSION);
 
 exports.getFileForMetaDataFile = path => {
-	if (exports.isMetaDataFile(path)) return path.substring(0, path.length-API_CONSTANTS.STATS_EXTENSION);
+	if (exports.isMetaDataFile(path)) return path.substring(0, path.length-API_CONSTANTS.STATS_EXTENSION.length);
 	else return null;
 }
 
@@ -164,7 +164,7 @@ exports.renameDiskFileMetadata = async function (oldpath, newpath, newRemotePath
 exports.updateDiskFileMetadataRemotePaths = async function (path, newRemotePath) {
 	const clusterMemory = CLUSTER_MEMORY.get(API_CONSTANTS.MEM_KEY_UPLOADFILE, {});
 	const statsNew = clusterMemory.files_stats?.[path]||await exports.getFileStats(path); 
-	statsNew.remotepath = _normalizeRemotePath(newRemotePath);
+	statsNew.remotepath = exports.normalizeRemotePath(newRemotePath);
 	await fspromises.writeFile(path+API_CONSTANTS.STATS_EXTENSION, JSON.stringify(statsNew), "utf8");
 	if (clusterMemory && clusterMemory.files_stats) {
 		clusterMemory.files_stats[path] == {...statsNew};
@@ -175,7 +175,7 @@ exports.updateDiskFileMetadataRemotePaths = async function (path, newRemotePath)
 exports.copyDiskFileMetadata = async function (oldpath, newpath, newRemotePath) {
 	const clusterMemory = CLUSTER_MEMORY.get(API_CONSTANTS.MEM_KEY_UPLOADFILE, {});
 	const statsNew = clusterMemory.files_stats?.[oldpath]||await exports.getFileStats(oldpath); 
-	statsNew.remotepath = _normalizeRemotePath(newRemotePath);
+	statsNew.remotepath = exports.normalizeRemotePath(newRemotePath);
 	await fspromises.writeFile(newpath+API_CONSTANTS.STATS_EXTENSION, JSON.stringify(statsNew), "utf8");
 	if (clusterMemory && clusterMemory.files_stats) {
 		clusterMemory.files_stats[newpath] == {...statsNew};
@@ -191,13 +191,13 @@ exports.isFileConsistentOnDisk = async fullpath => {
 	} catch (err) {return false;}
 }
 
+exports.normalizeRemotePath = path => path.replace(/\\+/g, "/").replace(/\/+/g, "/");
+
 async function _getSecureFullPath(headers, inpath) {
 	const fullpath = path.resolve(`${await cms.getCMSRoot(headers)}/${inpath}`);
 	if (!await cms.isSecure(headers, fullpath)) {LOG.error(`Path security validation failure: ${inpath}`); throw `Path security validation failure: ${inpath}`;}
 	return fullpath;
 }
-
-const _normalizeRemotePath = path => path.replace(/\\+/g, "/").replace(/\/+/g, "/");
 
 function _appendOrWrite(inpath, buffer, startOfFile, endOfFile) {
 	const _createStreams = (path, reject, resolve) => {

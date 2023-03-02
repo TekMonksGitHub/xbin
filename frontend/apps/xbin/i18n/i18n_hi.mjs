@@ -72,6 +72,7 @@ export const i18n = {
 "Kind": "Kind",
 "NotApplicable": "Not applicable",
 "ErrorSameFiles": "Both files or paths are the same, ignoring",
+"ErrorCopyDirToItself": "Can not copy or move a directory to inside itself, ignoring.",
 
 "logintagline": "XBin Enterprise Content Manager",
 "loginsubtag": "Secure, integrated, and easy to use. Cloud content manager.",

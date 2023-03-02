@@ -388,13 +388,30 @@ function cut(element) { selectedCutPath = selectedPath; selectedCutCopyElement =
 function copy(_element) { selectedCopyPath = selectedPath; selectedCutCopyElement = selectedElement.cloneNode(); }
 
 async function paste(element) {
+   const _copyRequestedToItsOwnSubdirectory = (from, to) => {const pathSplits = to.split("/");
+      for (const [i, _val] of pathSplits.entries()) if (pathSplits.slice(0, i).join("/")==from) return true; return false;}
+   const _nullOutSelectedCutCopyPathsAndElements = (reload=true) => { selectedCutPath = null; selectedCopyPath = null; 
+      selectedCutCopyElement = null; if (reload) file_manager.reload(file_manager.getHostElementID(element)); }
+
    const selectedPathToOperate = selectedCutPath?selectedCutPath:selectedCopyPath;
    const baseName = selectedPathToOperate.substring(selectedPathToOperate.lastIndexOf("/")+1);
-   const from = _normalizedPath(selectedCutPath||selectedCopyPath), to = _normalizedPath(`${currentlyActiveFolder}/${baseName}`);
-   if (from == to) {_showErrorDialog(null, await i18n.get("ErrorSameFiles")); return;}
-   if (selectedCutPath) await _performRename(selectedCutPath, `${selectedPath}/${baseName}`, element);
-   else if (selectedCopyPath) await _performCopy(selectedCopyPath, `${selectedPath}/${baseName}`, element);
-   selectedCutPath = null; selectedCopyPath = null; selectedCutCopyElement = null;
+   const from = _normalizedPath(selectedCutPath||selectedCopyPath); let to = _normalizedPath(`${currentlyActiveFolder}/${baseName}`);
+   const _showErrorAndReset = async (errorKey="ErrorSameFiles") => {_showErrorDialog(null, await i18n.get(errorKey)); _nullOutSelectedCutCopyPathsAndElements();}
+   if ((from == to) && (!selectedCutPath)) {
+      const checkFileExists = await apiman.rest(API_CHECKFILEEXISTS, "GET", {path: to}, true); if (checkFileExists.result) {
+         const cancelRenameRewrite = await dialog().showDialog(`${DIALOGS_PATH}/cancel_rename.html`, true, false, 
+            {fileexistswarning: await i18n.getRendered("FileExistsWarning", {name: to})}, "dialog", ["result"]);
+         switch (cancelRenameRewrite.result) {
+            case "cancel": {LOG.info(`User selected to skip existing file ${file.name}, skipping.`); return;}
+            case "rename": to = checkFileExists.suggestedRemotePath; break;
+            default: {_showErrorAndReset(); return;}
+         }
+      } else {_showErrorAndReset(); return;}
+   } else if (from == to) {_showErrorAndReset(); return;}
+   if (_copyRequestedToItsOwnSubdirectory(from, to)) {_showErrorAndReset("ErrorCopyDirToItself"); return;}
+   if (selectedCutPath) await _performRename(from, to, element);
+   else if (selectedCopyPath) await _performCopy(from, to, element);
+   _nullOutSelectedCutCopyPathsAndElements(false);
 }
 
 function _showDownloadProgress(element, path, reqid) {
