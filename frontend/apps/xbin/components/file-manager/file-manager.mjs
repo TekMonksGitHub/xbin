@@ -385,7 +385,8 @@ const showDownloadProgress = (path, element) => _showDownloadProgress(element, p
 function cut(element) { selectedCutPath = selectedPath; selectedCutCopyElement = selectedElement.cloneNode(); 
    file_manager.reload(file_manager.getHostElementID(element)); }
 
-function copy(_element) { selectedCopyPath = selectedPath; selectedCutCopyElement = selectedElement.cloneNode(); }
+function copy(element) { selectedCopyPath = selectedPath; selectedCutCopyElement = selectedElement.cloneNode(); 
+   file_manager.reload(file_manager.getHostElementID(element)); }
 
 async function paste(element) {
    const _copyRequestedToItsOwnSubdirectory = (from, to) => {const pathSplits = to.split("/");
@@ -397,17 +398,19 @@ async function paste(element) {
    const baseName = selectedPathToOperate.substring(selectedPathToOperate.lastIndexOf("/")+1);
    const from = _normalizedPath(selectedCutPath||selectedCopyPath); let to = _normalizedPath(`${currentlyActiveFolder}/${baseName}`);
    const _showErrorAndReset = async (errorKey="ErrorSameFiles") => {_showErrorDialog(null, await i18n.get(errorKey)); _nullOutSelectedCutCopyPathsAndElements();}
-   if ((from == to) && (!selectedCutPath)) {
-      const checkFileExists = await apiman.rest(API_CHECKFILEEXISTS, "GET", {path: to}, true); if (checkFileExists.result) {
-         const cancelRenameRewrite = await dialog().showDialog(`${DIALOGS_PATH}/cancel_rename.html`, true, false, 
-            {fileexistswarning: await i18n.getRendered("FileExistsWarning", {name: to})}, "dialog", ["result"]);
-         switch (cancelRenameRewrite.result) {
-            case "cancel": {LOG.info(`User selected to skip existing file ${file.name}, skipping.`); return;}
-            case "rename": to = checkFileExists.suggestedRemotePath; break;
-            default: {_showErrorAndReset(); return;}
-         }
-      } else {_showErrorAndReset(); return;}
-   } else if (from == to) {_showErrorAndReset(); return;}
+   const checkFileExists = await apiman.rest(API_CHECKFILEEXISTS, "GET", {path: to}, true); 
+
+   
+   if (checkFileExists.result) {
+      const cancelRenameRewrite = await dialog().showDialog(`${DIALOGS_PATH}/cancel_rename_overwrite.html`, true, 
+         false, {fileexistswarning: await i18n.getRendered("FileExistsWarning", {name: to})}, "dialog", ["result"]);
+      switch (cancelRenameRewrite.result) {
+         case "cancel": {LOG.info(`User selected to skip existing file ${to}, skipping.`); _nullOutSelectedCutCopyPathsAndElements(true); return;}
+         case "rename": to = checkFileExists.suggestedRemotePath; break;
+         case "overwrite": if (from==to) {_nullOutSelectedCutCopyPathsAndElements(true); return;} else break; // same files for copy/move, ignoring is equivalent to overwrite
+         default: {_showErrorAndReset(); return;} 
+      }
+   } 
    if (_copyRequestedToItsOwnSubdirectory(from, to)) {_showErrorAndReset("ErrorCopyDirToItself"); return;}
    if (selectedCutPath) await _performRename(from, to, element);
    else if (selectedCopyPath) await _performCopy(from, to, element);
