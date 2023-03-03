@@ -95,7 +95,7 @@ exports.deleteAllUnverifiedAndExpiredAccounts = async verificationExpiryInSecond
 	return {result: true, usersDropped};
 }
 
-exports.updateLoginStats = async (id, date, ip) => {
+exports.updateLoginStats = async (id, date, ip="unknown") => {
 	const rows = (await db.getQuery("SELECT * FROM users WHERE id = ? COLLATE NOCASE", [id]))[0];
 	const currentLoginsAndIPsJSON = JSON.parse(rows.loginsandips_json||"[]"); currentLoginsAndIPsJSON.unshift({date, ip});
 	const maxLoginsToRemember = CONF.max_logins_to_remember||100;

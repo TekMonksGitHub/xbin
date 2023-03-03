@@ -3,8 +3,13 @@ span#message {
     font: inherit;
     font-size: smaller;
     text-align: center;
-    padding: 0px 20px 0px 20px;
+    padding: 0px 2em 0px 2em;
     display: inline-block;
+}
+
+@media (hover: none) and (pointer: coarse) and (orientation: portrait) {
+    span#message {padding: 0px;}
+    div#dialog {width: 90%;}
 }
 </style>
 

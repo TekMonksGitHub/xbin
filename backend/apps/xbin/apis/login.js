@@ -43,8 +43,11 @@ exports.doService = async (jsonReq, servObject) => {
 
 	if (result.tokenflag) {
 		LOG.info(`User logged in: ${result.id}${CONF.verify_email_on_registeration?`, email verification status is ${result.verified}.`:"."}`); 
-		queueExecutor.add(_=>userid.updateLoginStats(jsonReq.id, Date.now(), utils.getClientIP(servObject.req)), 
-			undefined, true, CONF.login_update_delay||DEFAULT_QUEUE_DELAY);
+		const remoteIP = utils.getClientIP(servObject.req);	// api end closes the socket so when the queue task runs remote IP is lost.
+		queueExecutor.add(async _=>{	// update login stats don't care much if it fails
+			try { await userid.updateLoginStats(jsonReq.id, Date.now(), remoteIP), undefined, true, CONF.login_update_delay||DEFAULT_QUEUE_DELAY } 
+			catch(err) {LOG.error(`Error updating login stats for ID ${jsonReq.id}. Error is ${err}.`);}
+		});	
 	} else LOG.error(`Bad login or not approved for ID: ${jsonReq.id}.`);
 
 	if (result.result) return {result: result.result, name: result.name, id: result.id, org: result.org, 
