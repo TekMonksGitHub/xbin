@@ -84,6 +84,9 @@ class AddableReadstream extends Readable {
 
     /** @return The stream ID */
     getID = _ => this.#id;
+
+    /** @return The bytes added to the stream so far */
+    get length() {return this.#bytesAdded;}
 }
 
 /**

@@ -36,12 +36,12 @@ exports.doService = async (jsonReq, _servObject, headers, _url) => {
 			try {deleteDiskFileMetadata(fullpath);} catch (err) {};
 		} 
 	
-		await _appendOrWrite(temppath, bufferToWrite, jsonReq.startOfFile, jsonReq.endOfFile);
+		await _appendOrWrite(temppath, bufferToWrite, jsonReq.startOfFile, jsonReq.endOfFile, exports.isZippable(fullpath));
 		if (jsonReq.endOfFile) await fspromises.rename(temppath, fullpath);
 
 		await exports.updateFileStats(fullpath, jsonReq.path, bufferToWrite.length, jsonReq.endOfFile, API_CONSTANTS.XBIN_FILE);
 
-		LOG.debug(`Added ${bufferToWrite.length} bytes to the file at eventual path ${fullpath} using temp path ${temppath}.`);
+		LOG.debug(`Added new ${bufferToWrite.length} bytes to the file at eventual path ${fullpath} using temp path ${temppath}.`);
         
 		return CONSTANTS.TRUE_RESULT;
 	} catch (err) {
@@ -59,7 +59,7 @@ exports.writeUTF8File = async function (headers, inpath, data) {
 	try {additionalBytesToWrite = data.length - (await exports.getFileStats(fullpath)).size;} catch (err) {};	// file may not exist at all
 	if (!(await quotas.checkQuota(headers, additionalBytesToWrite)).result) throw `Quota is full write failed for ${fullpath}`;
 
-	await _appendOrWrite(fullpath, data, true, true);
+	await _appendOrWrite(fullpath, data, true, true, exports.isZippable(fullpath));
 
 	exports.updateFileStats(fullpath, inpath, data.length, true, API_CONSTANTS.XBIN_FILE);
 }
@@ -199,7 +199,7 @@ async function _getSecureFullPath(headers, inpath) {
 	return fullpath;
 }
 
-function _appendOrWrite(inpath, buffer, startOfFile, endOfFile) {
+function _appendOrWrite(inpath, buffer, startOfFile, endOfFile, isZippable) {
 	const _createStreams = (path, reject, resolve) => {
 		if (_existing_streams[path]) _deleteStreams(path);	// delete old streams if open
 
@@ -207,7 +207,7 @@ function _appendOrWrite(inpath, buffer, startOfFile, endOfFile) {
 			reject, resolve }; 
 		LOG.debug(`Created readable stream with ID ${_existing_streams[path].addablestream.getID()} for path ${path}.`);
 		let readableStream = _existing_streams[path].addablestream;
-		if (exports.isZippable(path)) readableStream = readableStream.pipe(zlib.createGzip());	// gzip to save disk space and download bandwidth for downloads
+		if (isZippable) readableStream = readableStream.pipe(zlib.createGzip());	// gzip to save disk space and download bandwidth for downloads
 		if (CONF.DISK_SECURED) readableStream = readableStream.pipe(crypt.getCipher(CONF.SECURED_KEY));
 		_existing_streams[path].writestream = fs.createWriteStream(path, {"flags":"w"}); 
 		_existing_streams[path].writestream.__org_xbin_writestream_id = Date.now();
@@ -246,7 +246,7 @@ function _appendOrWrite(inpath, buffer, startOfFile, endOfFile) {
 
 		_existing_streams[inpath].resolve = resolve; _existing_streams[inpath].reject = reject;	// update these so events calls the right ones
 		_existing_streams[inpath].addablestream.addData(buffer); 
-		LOG.debug(`Added data for path ${inpath} with buffer size of ${buffer.length} bytes for stream with ID ${_existing_streams[inpath].addablestream.getID()}.`);
+		LOG.debug(`Added data for path ${inpath} with buffer size of ${buffer.length} bytes for stream with ID ${_existing_streams[inpath].addablestream.getID()}, total bytes added are ${_existing_streams[inpath].addablestream.length}.`);
 		if (endOfFile) _existing_streams[inpath].addablestream.end(); 
 	});
 }

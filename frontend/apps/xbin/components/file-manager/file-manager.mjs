@@ -36,13 +36,15 @@ const API_DOWNLOADFILE_STATUS = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP
 const API_DOWNLOADFILE_DND = APP_CONSTANTS.FRONTEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/proxiedapis/downloaddnd";
 let PAGE_DOWNLOADFILE_SHARED = `${APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/downloadsharedfile"}`;
 
-const DIALOG_SCROLL_ELEMENT_ID = "notificationscrollpositioner", DIALOG_HOST_ELEMENT_ID = "notification", PROGRESS_TEMPLATE="progressdialog", DEFAULT_SHARE_EXPIRY = 5;
-const DOUBLE_CLICK_DELAY=400, DOWNLOADFILE_REFRESH_INTERVAL = 1000, UPLOAD_ICON = "⇧", DOWNLOAD_ICON = "⇩";
+const DIALOG_SCROLL_ELEMENT_ID = "notificationscrollpositioner", DIALOG_HOST_ELEMENT_ID = "notification", 
+   PROGRESS_TEMPLATE="progressdialog", DEFAULT_SHARE_EXPIRY = 5;
+const DOUBLE_CLICK_DELAY=400, DOWNLOADFILE_REFRESH_INTERVAL = 1000, UPLOAD_ICON = "⇧", DOWNLOAD_ICON = "⇩",
+   DOWNLOAD_FILE_OP = "DOWNLOAD_DIRECTION", UPLOAD_FILE_OP = "UPLOAD_DIRECTION";
 const dialog = _ => monkshu_env.components['dialog-box'];
 const isMobile = _ => $$.isMobile();
 
 const IO_CHUNK_SIZE = 10485760, INITIAL_UPLOAD_BUFFER_SIZE = 40960, MAX_UPLOAD_WAIT_TIME_SECONDS = 5, 
-   MAX_UPLOAD_BUFFER_SIZE = 10485760;   // 10M read buffer, 40K initial write buffer, wait max 5 seconds to upload each chunk
+   MAX_EDIT_SIZE = 4194304, MAX_UPLOAD_BUFFER_SIZE = 10485760;   // 10M read buffer, 40K initial write buffer, wait max 5 seconds to upload each chunk
 
 async function elementConnected(host) {
    menuOpen = false; user = host.getAttribute("user");
@@ -151,8 +153,10 @@ const uploadFiles = async (element, files) => {
    let uploadSize = 0; for (const file of files) uploadSize += file.size; if (!(await _checkQuotaAndReportError(uploadSize))) return;
    for (const file of files) {
       const normalizedName = _notificationFriendlyName(`${currentlyActiveFolder}/${file.name}`); 
-      if (Object.keys(filesAndPercents).includes(normalizedName) && (filesAndPercents[normalizedName].percent != 100) && 
-         (!_isFileCancelledOrErrored(normalizedName))) { LOG.info(`Skipped ${file.name}, already being uploaded.`); continue; }  // already being uploaded
+      if (Object.keys(filesAndPercents).includes(normalizedName) && 
+            (filesAndPercents[normalizedName].direction == UPLOAD_FILE_OP) && 
+            (filesAndPercents[normalizedName].percent != 100) && (!_isFileCancelledOrErrored(normalizedName))) { 
+         LOG.info(`Skipped ${file.name}, already being uploaded.`); continue; }  // already being uploaded
       
       const checkFileExists = await apiman.rest(API_CHECKFILEEXISTS, "GET", {path: normalizedName}, true); 
       if (checkFileExists.result) {
@@ -331,7 +335,7 @@ async function deleteFile(element) {
    if (resp.result) file_manager.reload(file_manager.getHostElementID(element)); else _showErrorDialog();
 }
 
-function editFile(element) {
+async function editFile(element) {
    if (selectedIsDirectory) {changeToPath(file_manager.getHostElement(element).id, selectedPath); return;}
 
    if (selectedElement.id == "upload") {upload(selectedElement); return;}
@@ -340,7 +344,9 @@ function editFile(element) {
 
    if (selectedElement.id == "paste") {paste(selectedElement); return;}
 
-   editFileLoadData();  // now it can only be a file 
+   if (!selectedElement.dataset.stats) _showErrorDialog();  // not a file, not sure 
+   else if (JSON.parse(selectedElement.dataset.stats).size < MAX_EDIT_SIZE) editFileLoadData();  // now it can only be a file 
+   else _showErrorDialog(null, await i18n.get("FileTooBigToEdit"));  // too big to edit inline - download and edit
 }
 
 async function editFileLoadData() {
@@ -454,7 +460,7 @@ async function _updateProgress(element, currentBlock, totalBlocks, fileName, ico
       filesAndPercents[normalizedName] = {name: normalizedName, percent, icon, 
          cancellable: (icon==UPLOAD_ICON) && (percent != 100) && (!hasError) && (!wasCancelled)?true:null,
          cancelled: wasCancelled?true:null, 
-         lastoperror: hasError?true:null}; 
+         lastoperror: hasError?true:null, direction: icon == DOWNLOAD_ICON ? DOWNLOAD_FILE_OP : UPLOAD_FILE_OP}; 
    }
    
    const templateData = {files:[]}; for (const file of Object.keys(filesAndPercents)) templateData.files.unshift({...filesAndPercents[file]});

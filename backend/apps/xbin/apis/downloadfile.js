@@ -51,14 +51,12 @@ exports.downloadFile = async (fileReq, servObject, headers, url) => {
 		if (CONF.DISK_SECURED && (!isFolder)) readStream = readStream.pipe(crypt.getDecipher(CONF.SECURED_KEY)); // decrypt the file before sending if it is encrypted
 		if (zippable && (!isFolder)) readStream = readStream.pipe(zlib.createGunzip());	
         const writable = readStream.pipe(servObject.res, {end:true});
-		const old_write = writable.write, old_end = writable.end; 
-		writable.write = function(chunk) {_updateWriteStatus(fileReq.reqid, undefined, chunk.length); return old_write.apply(writable, arguments);}
-		writable.end = function() {
+		readStream.on("data",chunk =>_updateWriteStatus(fileReq.reqid, undefined, chunk.length));
+		writable.on("close", _=>{
 			LOG.debug(`Finished sending download file for path ${fileReq.fullpath} successfully, reqid is ${fileReq.reqid}.`);
 			if (isFolder) fspromises.unlink(fullpath);	// delete temporarily created ZIP files
 			_updateWriteStatus(fileReq.reqid, undefined, undefined, false, true);
-			return old_end.apply(writable, arguments);
-		}
+		});
 		writable.on("error", error => _handleDownloadError(error));
 	} catch (err) { _handleDownloadError(err); _sendError(servObject); }
 }
@@ -124,7 +122,7 @@ function _updateWriteStatus(reqid, fileSize=0, bytesWrittenThisChunk, transferFa
 	if (bytesWrittenThisChunk) statusStorage[reqid].bytesSent += bytesWrittenThisChunk;
 	if (transferFailed) statusStorage[reqid].failed = true; if (transferFinishedSuccessfully) statusStorage[reqid].finishedSuccessfully = true;
 	CLUSTER_MEMORY.set(API_CONSTANTS.MEM_KEY_WRITE_STATUS, statusStorage);
-	if (!transferFailed) LOG.debug(`Update status for reqid ${reqid} - file size is ${fileSize} bytes, bytes written so far = ${statusStorage[reqid].bytesSent} bytes.`);
+	if (!transferFailed) LOG.debug(`Update status for reqid ${reqid} - file size is ${fileSize} bytes, bytes written so far = ${statusStorage[reqid].bytesSent} bytes, bytes this chunk are ${bytesWrittenThisChunk}.`);
 	else LOG.error(`Update status for reqid ${reqid} - transfer failed after writing ${statusStorage[reqid].bytesSent} bytes.`);
 }
 
