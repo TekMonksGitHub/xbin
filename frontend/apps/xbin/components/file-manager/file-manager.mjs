@@ -152,11 +152,12 @@ async function create(element) {
 const uploadFiles = async (element, files) => {
    let uploadSize = 0; for (const file of files) uploadSize += file.size; if (!(await _checkQuotaAndReportError(uploadSize))) return;
    for (const file of files) {
-      const normalizedName = _notificationFriendlyName(`${currentlyActiveFolder}/${file.name}`); 
-      if (Object.keys(filesAndPercents).includes(normalizedName) && 
-            (filesAndPercents[normalizedName].direction == UPLOAD_FILE_OP) && 
-            (filesAndPercents[normalizedName].percent != 100) && (!_isFileCancelledOrErrored(normalizedName))) { 
-         LOG.info(`Skipped ${file.name}, already being uploaded.`); continue; }  // already being uploaded
+      const normalizedName = _notificationFriendlyName(`${currentlyActiveFolder}/${file.name}`), 
+         filesAndPercentsObjectThisFile = _getFilesAndPercentsObjectForPath(normalizedName);
+      if (filesAndPercentsObjectThisFile && (filesAndPercentsObjectThisFile.direction == UPLOAD_FILE_OP) && 
+            (filesAndPercentsObjectThisFile.percent != 100) && (!_isFileCancelledOrErrored(normalizedName))) { 
+         LOG.info(`Skipped ${file.name}, already being uploaded.`); continue; 
+      }  // already being uploaded
       
       const checkFileExists = await apiman.rest(API_CHECKFILEEXISTS, "GET", {path: normalizedName}, true); 
       if (checkFileExists.result) {
@@ -181,12 +182,13 @@ const uploadFiles = async (element, files) => {
 async function _uploadAFile(element, file) {
    const totalChunks = file.size != 0 ? Math.ceil(file.size / IO_CHUNK_SIZE) : 1, lastChunkSize = file.size - (totalChunks-1)*IO_CHUNK_SIZE;
    const _getSavePath = (path, file) => `${path}/${file.renameto || file.name}`;
-   delete filesAndPercents[_notificationFriendlyName(_getSavePath(currentlyActiveFolder, file))];  // being reuploaded
-   const waitingReadersForThisFile = [];  
+   _clearFilesAndPercentsObjectForPath(_getSavePath(currentlyActiveFolder, file));  // being reuploaded
+   const waitingReadersForThisFile = []; 
 
+   let uploadStartTime;
    const queueReadFileChunk = (savePath, fileToRead, chunkNumber, resolve, reject) => {
       const _rejectReadPromises = error => {
-         LOG.error(`Error reading ${fileToRead.name}, error is: ${error}, aborting all readers for this file.`); 
+         LOG.error(`Error uploading ${fileToRead.name}, error is: ${error}, aborting all readers for this file.`); 
          while (waitingReadersForThisFile.length) (waitingReadersForThisFile.pop())(error);   // reject all waiting readers too
          reject(error);
       }
@@ -195,18 +197,24 @@ async function _uploadAFile(element, file) {
       reader.onload = async loadResult => {
          const dataToPost = file.size != 0 ? loadResult.target.result : new ArrayBuffer(0);  // handle 0 byte files
          LOG.info(`Read chunk number ${chunkNumber} from local file ${fileToRead.name}, size is: ${dataToPost.byteLength} bytes. Sending to the server.`); 
-         const resp = await _uploadChunkAtOptimumSpeed(dataToPost, filePath, chunkNumber, chunkNumber == totalChunks-1, file.size, element);   
+         if (chunkNumber == 0) uploadStartTime = Date.now();
+         const resp = await _uploadChunkAtOptimumSpeed(dataToPost, filePath, chunkNumber, chunkNumber == totalChunks-1, file.size, element);
+         const filesAndPercentsObjectThisFile = _getFilesAndPercentsObjectForPath(filePath);   
          if (!resp.result) {
             LOG.info(`Failed to write chunk number ${chunkNumber} from local file ${fileToRead.name}, to the server at path ${filePath}.`); 
-            if (!filesAndPercents[_notificationFriendlyName(filePath)]) filesAndPercents[_notificationFriendlyName(filePath)] = {}; 
             _updateProgress(element, chunkNumber, totalChunks, filePath, UPLOAD_ICON, true);
             apiman.rest(API_DELETEFILE, "GET", {path: filePath}, true); // delete remotely as it errored out
             _rejectReadPromises("Error writing to the server."); 
          } else {
             LOG.info(`Written chunk number ${chunkNumber} from local file ${fileToRead.name}, to the server at path ${filePath}.`); 
-            if (!filesAndPercents[filePath]?.cancelled && (waitingReadersForThisFile.length)) (waitingReadersForThisFile.pop())();  // issue next chunk read if queued reads
-            else if (filesAndPercents[filePath]?.cancelled) await apiman.rest(API_DELETEFILE, "GET", {path: filePath}, true); // has been cancelled, so delete remotely and also stop reading and transferring any more chunks
-            resolve();
+            if (chunkNumber == totalChunks-1) LOG.info(`Upload of file ${fileToRead.name} took ${((Date.now() - uploadStartTime)/1000).toFixed(2)} seconds.`);
+            if (filesAndPercentsObjectThisFile && filesAndPercentsObjectThisFile.cancelled) {
+               _rejectReadPromises(`User cancelled upload of ${fileToRead.name}`);
+               await apiman.rest(API_DELETEFILE, "GET", {path: filePath}, true); // has been cancelled, so delete remotely 
+            } else {
+               resolve();
+               if (waitingReadersForThisFile.length) (waitingReadersForThisFile.pop())();  // issue next chunk read if queued reads
+            }
          }
       }
       reader.onerror = _ => _rejectReadPromises(reader.error);
@@ -237,21 +245,21 @@ async function _uploadChunkAtOptimumSpeed(data, remotePath, chunkNumber, isLastC
       const bytesToSend = bytesWritten + currentWriteBufferSize > data.byteLength ? data.byteLength - bytesWritten : currentWriteBufferSize;
       const dataToSend = data.slice(bytesWritten, bytesWritten+bytesToSend), isLastSubChunk = isLastChunk && 
          (bytesWritten+bytesToSend == data.byteLength), isFirstSubChunk = chunkNumber == 0 && bytesWritten == 0;
-      const startTime = Date.now();
       LOG.info(`Starting upload of subchunk with length ${bytesToSend} of chunk ${chunkNumber}`);
+      const startTime = Date.now();
       lastResp = await apiman.rest(API_UPLOADFILE, "POST", {data: _bufferToBase64URL(dataToSend), path: remotePath, user, 
          startOfFile: isFirstSubChunk, endOfFile: isLastSubChunk}, true);
+      const timeTakenToPost = Date.now() - startTime;
       if (!lastResp.result) {
          LOG.error(`Upload of subchunk failed, sending back error, the response is ${JSON.stringify(lastResp)}.`);
          return lastResp;   // failed
       }
-      const timeTakenToPost = Date.now() - startTime;
       bytesWritten += bytesToSend;
       LOG.info(`Ended upload of subchunk #${subchunknumber} with length ${bytesToSend} of chunk ${chunkNumber}, time taken = ${timeTakenToPost/1000} seconds.`);
       const netSpeedBytesPerSecond = bytesToSend / (timeTakenToPost/1000);
       currentWriteBufferSize = Math.min(MAX_UPLOAD_BUFFER_SIZE, Math.round(netSpeedBytesPerSecond * MAX_UPLOAD_WAIT_TIME_SECONDS));  // max wait should not execeed this
       LOG.info(`Current upload speed in Mbps is ${netSpeedBytesPerSecond/(1024*1024)}, adjusted upload buffer size in MB is ${currentWriteBufferSize/(1024*1024)} or ${currentWriteBufferSize} bytes.`);
-      _updateProgress(element, (chunkNumber*IO_CHUNK_SIZE)+bytesWritten, totalSize, remotePath, UPLOAD_ICON);
+      _updateProgress(element, (chunkNumber*IO_CHUNK_SIZE)+bytesWritten, totalSize, remotePath, UPLOAD_ICON);  // except last chunk all chunks will be of IO_CHUNK_SIZE so this works
    }
    return lastResp;
 }
@@ -449,19 +457,23 @@ const _normalizedPath = path => path.replace(/\\/g, "/").trim().replace(/\/+/g,"
 
 const _notificationFriendlyName = path => path.replace(/\/+/g, "/").trim().replace(/^\//g,"");
 
+const _getFilesAndPercentsObjectForPath = path => filesAndPercents[_notificationFriendlyName(path)];
+
+const _clearFilesAndPercentsObjectForPath = path => delete filesAndPercents[_notificationFriendlyName(path)];
+
 const _isFileCancelledOrErrored = path => filesAndPercents[_notificationFriendlyName(path)]?.cancelled || 
    filesAndPercents[_notificationFriendlyName(path)]?.lastoperror;
 
-async function _updateProgress(element, currentBlock, totalBlocks, fileName, icon, hasError, wasCancelled, justRerender) {
+async function _updateProgress(element, currentBlock, totalBlocks, fileName, icon, hasError, wasCancelled, justRerender) {   
    if (!justRerender) {
+      const normalizedName = _notificationFriendlyName(fileName); 
       if (_isFileCancelledOrErrored(fileName)) return; // already cancelled or error
-      const normalizedName = _notificationFriendlyName(fileName);
       const percent = (hasError || wasCancelled) ? 0 : Math.floor(currentBlock/totalBlocks*100);
       filesAndPercents[normalizedName] = {name: normalizedName, percent, icon, 
          cancellable: (icon==UPLOAD_ICON) && (percent != 100) && (!hasError) && (!wasCancelled)?true:null,
          cancelled: wasCancelled?true:null, 
          lastoperror: hasError?true:null, direction: icon == DOWNLOAD_ICON ? DOWNLOAD_FILE_OP : UPLOAD_FILE_OP}; 
-   }
+   } else if (fileName && (!filesAndPercents[_notificationFriendlyName(fileName)])) filesAndPercents[_notificationFriendlyName(fileName)] = {};
    
    const templateData = {files:[]}; for (const file of Object.keys(filesAndPercents)) templateData.files.unshift({...filesAndPercents[file]});
    await _showNotification(element, PROGRESS_TEMPLATE, templateData);
