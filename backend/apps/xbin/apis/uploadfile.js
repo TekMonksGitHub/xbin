@@ -21,7 +21,9 @@ exports.doService = async (jsonReq, _servObject, headers, _url) => {
 	
 	LOG.debug("Got uploadfile request for path: " + jsonReq.path);
 
-	const fullpath = path.resolve(`${await cms.getCMSRoot(headers)}/${jsonReq.path}`), temppath = path.resolve(`${fullpath}${API_CONSTANTS.XBIN_TEMP_FILE_SUFFIX}`);
+	const transferID = jsonReq.transfer_id || Date.now(), 
+		fullpath = path.resolve(`${await cms.getCMSRoot(headers)}/${jsonReq.path}`), 
+		temppath = path.resolve(`${fullpath}${transferID}${API_CONSTANTS.XBIN_TEMP_FILE_SUFFIX}`);
 	if (!await cms.isSecure(headers, fullpath)) {LOG.error(`Path security validation failure: ${jsonReq.path}`); return CONSTANTS.FALSE_RESULT;}
 
 	try {
@@ -32,7 +34,6 @@ exports.doService = async (jsonReq, _servObject, headers, _url) => {
         
 		if (jsonReq.startOfFile) {	// delete the old files if they exist
 			try {await fspromises.access(fullpath); await fspromises.unlink(fullpath);} catch (err) {};
-			try {await fspromises.access(temppath); await fspromises.unlink(temppath);} catch (err) {};
 			try {deleteDiskFileMetadata(fullpath);} catch (err) {};
 		} 
 	
@@ -43,7 +44,7 @@ exports.doService = async (jsonReq, _servObject, headers, _url) => {
 
 		LOG.debug(`Added new ${bufferToWrite.length} bytes to the file at eventual path ${fullpath} using temp path ${temppath}.`);
         
-		return CONSTANTS.TRUE_RESULT;
+		return {result: true, transfer_id: transferID};
 	} catch (err) {
 		LOG.error(`Error writing to path: ${fullpath}, error is: ${err}`); 
 		try {await fspromises.unlink(fullpath); await exports.deleteDiskFileMetadata(fullpath)} catch(err) {};
@@ -215,27 +216,31 @@ function _appendOrWrite(inpath, buffer, startOfFile, endOfFile, isZippable) {
 		readableStream.pipe(_existing_streams[path].writestream); 
 		_existing_streams[path].writestream.on("finish", _=>{	// deleteStreams if the finish itself is not emitted by _deleteStreams
 			if (_existing_streams[path].writestream.__org_xbin_writestream_id != 
-				_existing_streams[path].ignoreWriteStreamFinishForID) {
-					_existing_streams[path].closeWriteStream = false; _deleteStreams(path);
-				} 
-			}); 
+					_existing_streams[path].ignoreWriteStreamFinishForID) {
+				LOG.warn(`Finish write not issued by deleteStreams, deleted the streams as well. Path is ${path}, addablestream ID is ${_existing_streams[path].addablestream.getID()}.`);
+				_existing_streams[path].closeWriteStream = false; _deleteStreams(path);
+			} else LOG.info(`Finish write issued by deleteStreams, path is ${path}, addablestream ID is ${_existing_streams[path].addablestream.getID()}.`);
+		}); 
 		_existing_streams[path].writestream.on("error", error => { 
-			LOG.error(`Error in th write stream for path ${path}, error is ${error}.`);
+			LOG.error(`Error in the write stream for path ${path}, error is ${error}, addablestream ID is ${_existing_streams[path].addablestream.getID()}.`);
 			_existing_streams[path].reject(error); _deleteStreams(path) 
 		});
 		_existing_streams[path].addablestream.on("read_drained", _ => {
-			_existing_streams[path].resolve();
-			LOG.debug(`Resolved writing for path ${path} with buffer size of ${buffer.length} bytes for stream with ID ${_existing_streams[path].addablestream.getID()}.`);
+			if (_existing_streams[path]) {
+				_existing_streams[path].resolve();
+				LOG.debug(`Resolved writing for path ${path} with buffer size of ${buffer.length} bytes for stream with ID ${_existing_streams[path].addablestream.getID()}.`);
+			} else LOG.warn(`Drained issued for an addablestream which doesn't exist anymore. The path is ${path}.`);
 		});
 	}
 
 	const _deleteStreams = path => {
 		if (!_existing_streams[path]) return;
+		LOG.info(`Deleteting streams for path ${path}. Addable stream ID is ${(_existing_streams[path].addablestream?.getID())||"unknown"}`);
 		if (_existing_streams[path].addablereadstream) _existing_streams[path].addablestream.end(); 
 		if (_existing_streams[path].closeWriteStream) try {
 			_existing_streams[path].ignoreWriteStreamFinishForID = _existing_streams[path].writestream.__org_xbin_writestream_id;
 			_existing_streams[path].writestream.close(); 
-		} catch (err) {LOG.warn(`Error closing write stream with for path ${path}, error is ${err}.`);}
+		} catch (err) {LOG.warn(`Error closing write stream with for path ${path}, error is ${err}. Addable stream ID is ${(_existing_streams[path].addablestream?.getID())||"unknown"}`);}
 		delete _existing_streams[path];
 	}
 
@@ -251,4 +256,5 @@ function _appendOrWrite(inpath, buffer, startOfFile, endOfFile, isZippable) {
 	});
 }
 
-const validateRequest = jsonReq => (jsonReq && jsonReq.path && jsonReq.data && (jsonReq.startOfFile !== undefined) && (jsonReq.endOfFile  !== undefined));
+const validateRequest = jsonReq => (jsonReq && jsonReq.path && jsonReq.data && 
+	(jsonReq.startOfFile !== undefined) && (jsonReq.endOfFile  !== undefined) && (jsonReq.startOfFile || jsonReq.transfer_id));

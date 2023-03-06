@@ -17,7 +17,7 @@ import {monkshu_component} from "/framework/js/monkshu_component.mjs";
 
 let user, mouseX, mouseY, menuOpen, timer, selectedPath, currentlyActiveFolder, selectedIsDirectory, selectedElement, 
    filesAndPercents = {}, selectedCutPath, selectedCopyPath, selectedCutCopyElement, shareDuration, showNotification, 
-   currentWriteBufferSize;
+   currentWriteBufferSize, uploadTransferIDs = {};
 
 const API_GETFILES = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/getfiles";
 const API_COPYFILE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/copyfile";
@@ -74,7 +74,7 @@ async function elementConnected(host) {
    const pathSplits = path.split("/"); for (const [i, pathElement] of pathSplits.entries()) if (pathElement.trim()) pathcrumbs.push(
       {action: `monkshu_env.components['file-manager'].changeToPath('${host.id}','${pathSplits.slice(0, i+1).join("/")}')`, name: pathElement});
 
-   const data = {operations: folder_ops, entries: resp.entries, 
+   const data = {operations: folder_ops, entries: resp.entries, hostID: host.id,
       COMPONENT_PATH: `${APP_CONSTANTS.COMPONENTS_PATH}/file-manager`, pathcrumbs: JSON.stringify(pathcrumbs)};
 
    if (host.getAttribute("styleBody")) data.styleBody = `<style>${host.getAttribute("styleBody")}</style>`;
@@ -85,8 +85,8 @@ async function elementConnected(host) {
    if (host.getAttribute("downloadpage")) PAGE_DOWNLOADFILE_SHARED = host.getAttribute("downloadpage");
 }
 
-async function elementRendered(element) {
-   const shadowRoot = file_manager.getShadowRootByHostId(element.getAttribute("id"));
+async function elementRendered(host) {
+   const hostID = host.getAttribute("id"), shadowRoot = file_manager.getShadowRootByHostId(hostID);
    shadowRoot.addEventListener("mousemove", e => {mouseX = e.clientX; mouseY = e.clientY;});
 
    const container = shadowRoot.querySelector("div#filelistingscontainer");
@@ -95,9 +95,9 @@ async function elementRendered(element) {
       if (!menuOpen) showMenu(container, true); else hideMenu(container); });
    if (!isMobile()) shadowRoot.addEventListener("click", e => { e.stopPropagation(); if (menuOpen) hideMenu(container); });
 
-   if (showNotification) _updateProgress(container, null, null, null, null, null, null, true);  // rerender progress
+   if (showNotification) _updateProgress(hostID, null, null, null, null, null, null, true);  // rerender progress
 
-   if (element.getAttribute("quotabarids")) _updateQuotaBars(element.getAttribute("quotabarids").split(","));
+   if (host.getAttribute("quotabarids")) _updateQuotaBars(host.getAttribute("quotabarids").split(","));
 }
 
 function handleClick(element, path, isDirectory, fromClickEvent, nomenu) {
@@ -183,7 +183,7 @@ async function _uploadAFile(element, file) {
    const totalChunks = file.size != 0 ? Math.ceil(file.size / IO_CHUNK_SIZE) : 1, lastChunkSize = file.size - (totalChunks-1)*IO_CHUNK_SIZE;
    const _getSavePath = (path, file) => `${path}/${file.renameto || file.name}`;
    _clearFilesAndPercentsObjectForPath(_getSavePath(currentlyActiveFolder, file));  // being reuploaded
-   const waitingReadersForThisFile = []; 
+   const waitingReadersForThisFile = [], hostID = file_manager.getHostElementID(element); 
 
    let uploadStartTime;
    const queueReadFileChunk = (savePath, fileToRead, chunkNumber, resolve, reject) => {
@@ -193,23 +193,30 @@ async function _uploadAFile(element, file) {
          reject(error);
       }
 
-      const reader = new FileReader(), filePath = _getSavePath(savePath, fileToRead); 
+      const reader = new FileReader(), filePath = _getSavePath(savePath, fileToRead), normalizedPath = _normalizedPath(filePath); 
       reader.onload = async loadResult => {
          const dataToPost = file.size != 0 ? loadResult.target.result : new ArrayBuffer(0);  // handle 0 byte files
          LOG.info(`Read chunk number ${chunkNumber} from local file ${fileToRead.name}, size is: ${dataToPost.byteLength} bytes. Sending to the server.`); 
-         if (chunkNumber == 0) uploadStartTime = Date.now();
-         const resp = await _uploadChunkAtOptimumSpeed(dataToPost, filePath, chunkNumber, chunkNumber == totalChunks-1, file.size, element);
          const filesAndPercentsObjectThisFile = _getFilesAndPercentsObjectForPath(filePath);   
+         if (chunkNumber == 0) {uploadStartTime = Date.now(); uploadTransferIDs[normalizedPath] = null;  /*new transfer*/}
+         const resp = await _uploadChunkAtOptimumSpeed(dataToPost, filePath, chunkNumber, chunkNumber == totalChunks-1, 
+            file.size, hostID, uploadTransferIDs[normalizedPath]);
          if (!resp.result) {
             LOG.info(`Failed to write chunk number ${chunkNumber} from local file ${fileToRead.name}, to the server at path ${filePath}.`); 
-            _updateProgress(element, chunkNumber, totalChunks, filePath, UPLOAD_ICON, true);
+            _updateProgress(hostID, chunkNumber, totalChunks, filePath, UPLOAD_ICON, true);
             apiman.rest(API_DELETEFILE, "GET", {path: filePath}, true); // delete remotely as it errored out
+            delete uploadTransferIDs[normalizedPath];
             _rejectReadPromises("Error writing to the server."); 
          } else {
-            LOG.info(`Written chunk number ${chunkNumber} from local file ${fileToRead.name}, to the server at path ${filePath}.`); 
-            if (chunkNumber == totalChunks-1) LOG.info(`Upload of file ${fileToRead.name} took ${((Date.now() - uploadStartTime)/1000).toFixed(2)} seconds.`);
+            uploadTransferIDs[normalizedPath] = resp.transfer_id; // continuing transfer
+            LOG.info(`Written chunk number ${chunkNumber} from local file ${fileToRead.name}, to the server at path ${filePath}, transfer ID is ${uploadTransferIDs[normalizedPath]}.`); 
+            if (chunkNumber == totalChunks-1) { // upload finished
+               delete uploadTransferIDs[normalizedPath];
+               LOG.info(`Upload of file ${fileToRead.name} took ${((Date.now() - uploadStartTime)/1000).toFixed(2)} seconds.`);
+            }
             if (filesAndPercentsObjectThisFile && filesAndPercentsObjectThisFile.cancelled) {
-               _rejectReadPromises(`User cancelled upload of ${fileToRead.name}`);
+               filesAndPercentsObjectThisFile.transfer_id
+               delete _rejectReadPromises(`User cancelled upload of ${fileToRead.name}`);
                await apiman.rest(API_DELETEFILE, "GET", {path: filePath}, true); // has been cancelled, so delete remotely 
             } else {
                resolve();
@@ -231,35 +238,35 @@ async function _uploadAFile(element, file) {
 
    let readPromises = []; 
    for (let i = 0; i < totalChunks; i++) readPromises.push(new Promise((resolve, reject) => queueReadFileChunk(currentlyActiveFolder, file, i, resolve, reject)));
-   const startReaders = _ => {_updateProgress(element, 0, totalChunks, _getSavePath(currentlyActiveFolder, file), UPLOAD_ICON); (waitingReadersForThisFile.pop())();}
+   const startReaders = _ => {_updateProgress(hostID, 0, totalChunks, _getSavePath(currentlyActiveFolder, file), UPLOAD_ICON); (waitingReadersForThisFile.pop())();}
    startReaders();   // kicks off the first read in the queue, which then fires others 
    return Promise.all(readPromises);
 }
 
-async function _uploadChunkAtOptimumSpeed(data, remotePath, chunkNumber, isLastChunk, totalSize, element) {  // adjusts upload buffers dynamically based on network speed
+async function _uploadChunkAtOptimumSpeed(data, remotePath, chunkNumber, isLastChunk, totalSize, hostID, transfer_id) {  // adjusts upload buffers dynamically based on network speed
    if (!currentWriteBufferSize) currentWriteBufferSize = INITIAL_UPLOAD_BUFFER_SIZE;
 
    const _bufferToBase64URL = buffer => "data:;base64,"+btoa(new Uint8Array(buffer).reduce((acc, i) => acc += String.fromCharCode.apply(null, [i]), ''));
 
-   let bytesWritten = 0, lastResp, subchunknumber = 0; while (bytesWritten < data.byteLength) {
+   let bytesWritten = 0, lastResp, subchunknumber = 0, transferID = transfer_id; while (bytesWritten < data.byteLength) {
       const bytesToSend = bytesWritten + currentWriteBufferSize > data.byteLength ? data.byteLength - bytesWritten : currentWriteBufferSize;
       const dataToSend = data.slice(bytesWritten, bytesWritten+bytesToSend), isLastSubChunk = isLastChunk && 
          (bytesWritten+bytesToSend == data.byteLength), isFirstSubChunk = chunkNumber == 0 && bytesWritten == 0;
-      LOG.info(`Starting upload of subchunk with length ${bytesToSend} of chunk ${chunkNumber}`);
+      LOG.info(`Starting upload of subchunk to path ${remotePath} with length ${bytesToSend} of chunk ${chunkNumber} with transfer ID: ${transferID}.`);
       const startTime = Date.now();
       lastResp = await apiman.rest(API_UPLOADFILE, "POST", {data: _bufferToBase64URL(dataToSend), path: remotePath, user, 
-         startOfFile: isFirstSubChunk, endOfFile: isLastSubChunk}, true);
+         startOfFile: isFirstSubChunk, endOfFile: isLastSubChunk, transfer_id: transferID}, true);
       const timeTakenToPost = Date.now() - startTime;
       if (!lastResp.result) {
-         LOG.error(`Upload of subchunk failed, sending back error, the response is ${JSON.stringify(lastResp)}.`);
+         LOG.error(`Upload of subchunk to path ${remotePath} failed, with transfer ID: ${transferID}, sending back error, the response is ${JSON.stringify(lastResp)}.`);
          return lastResp;   // failed
       }
-      bytesWritten += bytesToSend;
-      LOG.info(`Ended upload of subchunk #${subchunknumber} with length ${bytesToSend} of chunk ${chunkNumber}, time taken = ${timeTakenToPost/1000} seconds.`);
+      transferID = lastResp.transfer_id; bytesWritten += bytesToSend;
+      LOG.info(`Ended upload of subchunk #${subchunknumber} to path ${remotePath} transfer ID: ${transferID}, with length ${bytesToSend} of chunk ${chunkNumber}, time taken = ${timeTakenToPost/1000} seconds.`);
       const netSpeedBytesPerSecond = bytesToSend / (timeTakenToPost/1000);
       currentWriteBufferSize = Math.min(MAX_UPLOAD_BUFFER_SIZE, Math.round(netSpeedBytesPerSecond * MAX_UPLOAD_WAIT_TIME_SECONDS));  // max wait should not execeed this
-      LOG.info(`Current upload speed in Mbps is ${netSpeedBytesPerSecond/(1024*1024)}, adjusted upload buffer size in MB is ${currentWriteBufferSize/(1024*1024)} or ${currentWriteBufferSize} bytes.`);
-      _updateProgress(element, (chunkNumber*IO_CHUNK_SIZE)+bytesWritten, totalSize, remotePath, UPLOAD_ICON);  // except last chunk all chunks will be of IO_CHUNK_SIZE so this works
+      LOG.info(`Current upload speed, for path ${remotePath}, in Mbps is ${netSpeedBytesPerSecond/(1024*1024)}, adjusted upload buffer size in MB is ${currentWriteBufferSize/(1024*1024)} or ${currentWriteBufferSize} bytes.`);
+      _updateProgress(hostID, (chunkNumber*IO_CHUNK_SIZE)+bytesWritten, totalSize, remotePath, UPLOAD_ICON);  // except last chunk all chunks will be of IO_CHUNK_SIZE so this works
    }
    return lastResp;
 }
@@ -332,10 +339,10 @@ function menuEventDispatcher(name, element) {
 }
 
 function showHideNotifications(hostID) {
-   const shadowRoot = file_manager.getShadowRootByHostId(hostID), divFilemanager = shadowRoot.querySelector("div#filemanager"),
+   const shadowRoot = file_manager.getShadowRootByHostId(hostID),
       notificationsShowing = shadowRoot.querySelector(`#${DIALOG_HOST_ELEMENT_ID}`).classList.contains("visible");
-   if (!notificationsShowing) _updateProgress(divFilemanager, null, null, null, null, null, null, true);
-   else hideNotification(divFilemanager);
+   if (!notificationsShowing) _updateProgress(hostID, null, null, null, null, null, null, true);
+   else hideNotification(hostID);
 }
 
 async function deleteFile(element) {
@@ -441,7 +448,8 @@ function _showDownloadProgress(element, path, reqid) {
 
       const fileDownloadStatus = await apiman.rest(`${API_DOWNLOADFILE_STATUS}`, "GET", {reqid}, true, false);
       if (fileDownloadStatus && fileDownloadStatus.result) {
-         if (fileDownloadStatus.downloadStarted) _updateProgress(element, fileDownloadStatus.bytesSent, fileDownloadStatus.size, path, DOWNLOAD_ICON);
+         if (fileDownloadStatus.downloadStarted) _updateProgress(file_manager.getHostElementID(element), 
+            fileDownloadStatus.bytesSent, fileDownloadStatus.size, path, DOWNLOAD_ICON);
          if ((fileDownloadStatus.finishedSuccessfully) || (fileDownloadStatus.size == fileDownloadStatus.bytesSent)) markDoneAndClearInterval();
       }
       else if (!done) {
@@ -464,7 +472,8 @@ const _clearFilesAndPercentsObjectForPath = path => delete filesAndPercents[_not
 const _isFileCancelledOrErrored = path => filesAndPercents[_notificationFriendlyName(path)]?.cancelled || 
    filesAndPercents[_notificationFriendlyName(path)]?.lastoperror;
 
-async function _updateProgress(element, currentBlock, totalBlocks, fileName, icon, hasError, wasCancelled, justRerender) {   
+async function _updateProgress(hostID, currentBlock, totalBlocks, fileName, icon, hasError, wasCancelled, justRerender) {   
+   let reloadFlag = false;
    if (!justRerender) {
       const normalizedName = _notificationFriendlyName(fileName); 
       if (_isFileCancelledOrErrored(fileName)) return; // already cancelled or error
@@ -473,18 +482,13 @@ async function _updateProgress(element, currentBlock, totalBlocks, fileName, ico
          cancellable: (icon==UPLOAD_ICON) && (percent != 100) && (!hasError) && (!wasCancelled)?true:null,
          cancelled: wasCancelled?true:null, 
          lastoperror: hasError?true:null, direction: icon == DOWNLOAD_ICON ? DOWNLOAD_FILE_OP : UPLOAD_FILE_OP}; 
+      if (percent == 100) reloadFlag = true;
    } else if (fileName && (!filesAndPercents[_notificationFriendlyName(fileName)])) filesAndPercents[_notificationFriendlyName(fileName)] = {};
    
    const templateData = {files:[]}; for (const file of Object.keys(filesAndPercents)) templateData.files.unshift({...filesAndPercents[file]});
-   await _showNotification(element, PROGRESS_TEMPLATE, templateData);
-
-   if (!justRerender) _reloadIfAllFilesUpOrDownloaded(element, filesAndPercents);
-}
-
-function _reloadIfAllFilesUpOrDownloaded(element, filesAndPercents) {
-   for (const file of Object.keys(filesAndPercents)) if (filesAndPercents[file].percent != 100 && 
-      (!_isFileCancelledOrErrored(file))) return;
-   file_manager.reload(file_manager.getHostElementID(element)); 
+   
+   await _showNotification(hostID, PROGRESS_TEMPLATE, templateData);
+   if (!justRerender && reloadFlag) file_manager.reload(hostID);
 }
 
 function renameFile(element) {
@@ -516,18 +520,18 @@ async function getInfoOnFile(containedElement) {
 
 const _showErrorDialog = async (hideAction, message) => dialog().showMessage(message||await i18n.get("Error"), "dialog", hideAction||undefined);
 
-async function _showNotification(element, dialogTemplateID, templateData) {
+async function _showNotification(hostID, dialogTemplateID, templateData) {
    showNotification = true;
-   const shadowRoot = file_manager.getShadowRootByContainedElement(element);
+   const shadowRoot = file_manager.getShadowRootByHostId(hostID);
    const hostElement = shadowRoot.querySelector(`#${DIALOG_HOST_ELEMENT_ID}`), scrollElement = shadowRoot.querySelector(`#${DIALOG_SCROLL_ELEMENT_ID}`);
    _renderTemplateOnElement(dialogTemplateID, templateData, hostElement);
    if (!hostElement.classList.contains("visible")) hostElement.classList.add("visible"); 
    if (!scrollElement.classList.contains("visible")) scrollElement.classList.add("visible"); 
 }
 
-function hideNotification(element) {
+function hideNotification(hostID) {
    showNotification = false;
-   const shadowRoot = file_manager.getShadowRootByContainedElement(element);
+   const shadowRoot = file_manager.getShadowRootByHostId(hostID);
    const hostElement = shadowRoot.querySelector(`#${DIALOG_HOST_ELEMENT_ID}`), scrollElement = shadowRoot.querySelector(`#${DIALOG_SCROLL_ELEMENT_ID}`);
    while (hostElement && hostElement.firstChild) hostElement.removeChild(hostElement.firstChild);
    hostElement.classList.remove("visible"); scrollElement.classList.remove("visible"); 
@@ -543,7 +547,8 @@ async function _renderTemplateOnElement(templateID, data, element) {
    return true;
 }
 
-const cancelFile = (file, element) => _updateProgress(element, 0, 0, file, UPLOAD_ICON, false, true);  // cancels and updates the view
+const cancelFile = (file, element) => _updateProgress(file_manager.getHostElementID(element), 0, 0, file, UPLOAD_ICON, 
+   false, true);  // cancels and updates the view
 
 async function _performRename(oldPath, newPath, element) {
    const resp = await apiman.rest(API_RENAMEFILE, "GET", {old: oldPath, new: newPath}, true), hostID = file_manager.getHostElementID(element);
