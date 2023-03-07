@@ -349,8 +349,8 @@ span.button {
             monkshu_env.components["file-manager"].handleClick(this, "{{path}}", "{{#stats.home}}true{{/stats.home}}{{#stats.back}}true{{/stats.back}}", true, true);
             monkshu_env.components["file-manager"].menuEventDispatcher("editFile",this); }'
         onfocusin='event.preventDefault(); event.stopPropagation(); monkshu_env.components["file-manager"].handleClick(this, "{{path}}", "{{#stats.home}}true{{/stats.home}}{{#stats.back}}true{{/stats.back}}", false, true);'
-        onclick='event.preventDefault(); event.stopPropagation(); monkshu_env.components["file-manager"].handleClick(this, "{{path}}", "{{#stats.home}}true{{/stats.home}}{{#stats.back}}true{{/stats.back}}", true);' 
-        oncontextmenu='if (monkshu_env.components["file-manager"].isMobile()) return; event.preventDefault(); event.stopPropagation(); monkshu_env.components["file-manager"].handleClick(this, "{{path}}", "{{#stats.directory}}true{{/stats.directory}}{{#stats.home}}true{{/stats.home}}{{#stats.back}}true{{/stats.back}}");'
+        onclick='event.preventDefault(); event.stopPropagation(); monkshu_env.components["file-manager"].handleClick(this, "{{path}}", "{{#stats.home}}true{{/stats.home}}{{#stats.back}}true{{/stats.back}}", true, false, event);' 
+        oncontextmenu='if (monkshu_env.components["file-manager"].isMobile()) return; event.preventDefault(); event.stopPropagation(); monkshu_env.components["file-manager"].handleClick(this, "{{path}}", "{{#stats.directory}}true{{/stats.directory}}{{#stats.home}}true{{/stats.home}}{{#stats.back}}true{{/stats.back}}", false, false, event);'
         {{#stats.json}}data-stats='{{{.}}}'{{/stats.json}}
         title="{{name}}">
 
@@ -367,8 +367,8 @@ span.button {
                 monkshu_env.components["file-manager"].handleClick(this, "{{path}}", "{{#stats.directory}}true{{/stats.directory}}{{#stats.home}}true{{/stats.home}}{{#stats.back}}true{{/stats.back}}", true, true);
                 monkshu_env.components["file-manager"].menuEventDispatcher("editFile",this); }'
         onfocusin='event.preventDefault(); event.stopPropagation(); monkshu_env.components["file-manager"].handleClick(this, "{{path}}", "{{#stats.directory}}true{{/stats.directory}}{{#stats.file}}false{{/stats.file}}", false, true);'
-        onclick='event.preventDefault(); event.stopPropagation(); monkshu_env.components["file-manager"].handleClick(this, "{{path}}", "{{#stats.directory}}true{{/stats.directory}}{{#stats.file}}false{{/stats.file}}", true);' 
-        oncontextmenu='if (monkshu_env.components["file-manager"].isMobile()) return; event.preventDefault(); event.stopPropagation(); monkshu_env.components["file-manager"].handleClick(this, "{{path}}", "{{#stats.directory}}true{{/stats.directory}}{{#stats.file}}false{{/stats.file}}");'
+        onclick='event.preventDefault(); event.stopPropagation(); monkshu_env.components["file-manager"].handleClick(this, "{{path}}", "{{#stats.directory}}true{{/stats.directory}}{{#stats.file}}false{{/stats.file}}", true, false, event);' 
+        oncontextmenu='if (monkshu_env.components["file-manager"].isMobile()) return; event.preventDefault(); event.stopPropagation(); monkshu_env.components["file-manager"].handleClick(this, "{{path}}", "{{#stats.directory}}true{{/stats.directory}}{{#stats.file}}false{{/stats.file}}", false, false, event);'
         {{#stats.json}}data-stats='{{{.}}}'{{/stats.json}} 
         title="{{name}}">
         <img src="{{COMPONENT_PATH}}/img/{{#stats.directory}}folder{{cutimage}}{{/stats.directory}}{{#stats.file}}file{{cutimage}}{{/stats.file}}.svg"

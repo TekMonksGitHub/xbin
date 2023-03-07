@@ -100,7 +100,7 @@ async function elementRendered(host) {
    if (host.getAttribute("quotabarids")) _updateQuotaBars(host.getAttribute("quotabarids").split(","));
 }
 
-function handleClick(element, path, isDirectory, fromClickEvent, nomenu) {
+function handleClick(element, path, isDirectory, fromClickEvent, nomenu, clickEvent) {
    selectedPath = path?path.replace(/[\/]+/g,"/"):selectedPath; 
    selectedIsDirectory = (isDirectory!== undefined) ? util.parseBoolean(isDirectory) : selectedIsDirectory;
    selectedElement = element; const event = JSON.parse(element.dataset.stats||"{}");  // used below in eval
@@ -110,7 +110,7 @@ function handleClick(element, path, isDirectory, fromClickEvent, nomenu) {
    
    if (timer) {clearTimeout(timer); if (fromClickEvent) editFile(element); timer=null;}
    else timer = setTimeout(_=> { timer=null; _fileListingEntrySelected(element, event);
-      if ((fromClickEvent && isMobile())||!fromClickEvent) {if (!menuOpen) showMenu(element); else hideMenu(element); return;}
+      if ((fromClickEvent && isMobile())||!fromClickEvent) {if (!menuOpen) showMenu(element, false, clickEvent); else hideMenu(element); return;}
       if (fromClickEvent && menuOpen) hideMenu(element); // menu is open and user clicked anywhere, close it
    }, DOUBLE_CLICK_DELAY);
 }
@@ -248,30 +248,31 @@ async function _uploadChunkAtOptimumSpeed(data, remotePath, chunkNumber, isLastC
 
    const _bufferToBase64URL = buffer => "data:;base64,"+btoa(new Uint8Array(buffer).reduce((acc, i) => acc += String.fromCharCode.apply(null, [i]), ''));
 
-   let bytesWritten = 0, lastResp, subchunknumber = 0, transferID = transfer_id; while (bytesWritten < data.byteLength) {
+   let bytesWritten = 0, lastResp, subchunknumber = 0, transferID = transfer_id; while (bytesWritten < data.byteLength) {  // TODO: Send 4 streams here concurrently to increase speed, recombine on backend
       const bytesToSend = bytesWritten + currentWriteBufferSize > data.byteLength ? data.byteLength - bytesWritten : currentWriteBufferSize;
       const dataToSend = data.slice(bytesWritten, bytesWritten+bytesToSend), isLastSubChunk = isLastChunk && 
          (bytesWritten+bytesToSend == data.byteLength), isFirstSubChunk = chunkNumber == 0 && bytesWritten == 0;
-      LOG.info(`Starting upload of subchunk to path ${remotePath} with length ${bytesToSend} of chunk ${chunkNumber} with transfer ID: ${transferID}.`);
+      LOG.info(`Starting upload of subchunk ${subchunknumber} of chunk ${chunkNumber} to path ${remotePath} with length ${bytesToSend} with transfer ID ${transferID}.`);
       const startTime = Date.now();
       lastResp = await apiman.rest(API_UPLOADFILE, "POST", {data: _bufferToBase64URL(dataToSend), path: remotePath, user, 
          startOfFile: isFirstSubChunk, endOfFile: isLastSubChunk, transfer_id: transferID}, true);
       const timeTakenToPost = Date.now() - startTime;
       if (!lastResp.result) {
-         LOG.error(`Upload of subchunk to path ${remotePath} failed, with transfer ID: ${transferID}, sending back error, the response is ${JSON.stringify(lastResp)}.`);
+         LOG.error(`Upload of subchunk ${subchunknumber} of chunk ${chunkNumber} to path ${remotePath} failed, with transfer ID ${transferID}, sending back error, the response is ${JSON.stringify(lastResp)}.`);
          return lastResp;   // failed
       }
       transferID = lastResp.transfer_id; bytesWritten += bytesToSend;
-      LOG.info(`Ended upload of subchunk #${subchunknumber} to path ${remotePath} transfer ID: ${transferID}, with length ${bytesToSend} of chunk ${chunkNumber}, time taken = ${timeTakenToPost/1000} seconds.`);
+      LOG.info(`Ended upload of ${subchunknumber} of chunk ${chunkNumber} to path ${remotePath} transfer ID ${transferID}, with length ${bytesToSend}, time taken = ${timeTakenToPost/1000} seconds.`);
       const netSpeedBytesPerSecond = bytesToSend / (timeTakenToPost/1000);
       currentWriteBufferSize = Math.min(MAX_UPLOAD_BUFFER_SIZE, Math.round(netSpeedBytesPerSecond * MAX_UPLOAD_WAIT_TIME_SECONDS));  // max wait should not execeed this
       LOG.info(`Current upload speed, for path ${remotePath}, in Mbps is ${netSpeedBytesPerSecond/(1024*1024)}, adjusted upload buffer size in MB is ${currentWriteBufferSize/(1024*1024)} or ${currentWriteBufferSize} bytes.`);
       _updateProgress(hostID, (chunkNumber*IO_CHUNK_SIZE)+bytesWritten, totalSize, remotePath, UPLOAD_ICON);  // except last chunk all chunks will be of IO_CHUNK_SIZE so this works
+      subchunknumber++;
    }
    return lastResp;
 }
 
-function showMenu(element, documentMenuOnly) {
+function showMenu(element, documentMenuOnly, event) {
    let shadowRoot; try {shadowRoot = file_manager.getShadowRootByContainedElement(element);} catch(err) {return;} // element clicked not part of the component
 
    if (documentMenuOnly) {
@@ -321,9 +322,8 @@ function showMenu(element, documentMenuOnly) {
    }
 
    const contextMenu = shadowRoot.querySelector("div#contextmenu");
-   contextMenu.style.top = mouseY+"px"; contextMenu.style.left = mouseX+"px"; contextMenu.style.maxWidth = `calc(100vw - ${mouseX}px - 5px)`;
-   contextMenu.classList.add("visible");   
-   menuOpen = true;
+   contextMenu.style.top = (event?event.clientY:mouseY)+"px"; contextMenu.style.left = (event?event.clientX:mouseX)+"px"; 
+   contextMenu.style.maxWidth = `calc(100vw - ${mouseX}px - 5px)`; contextMenu.classList.add("visible"); menuOpen = true;
 }
 
 function hideMenu(element) {
