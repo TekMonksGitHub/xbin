@@ -17,7 +17,7 @@ import {monkshu_component} from "/framework/js/monkshu_component.mjs";
 
 let user, mouseX, mouseY, menuOpen, timer, selectedPath, currentlyActiveFolder, selectedIsDirectory, selectedElement, 
    filesAndPercents = {}, selectedCutPath, selectedCopyPath, selectedCutCopyElement, shareDuration, showNotification, 
-   currentWriteBufferSize, uploadTransferIDs = {};
+   currentWriteBufferSize, uploadTransferIDs = {}, MIMES;
 
 const API_GETFILES = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/getfiles";
 const API_COPYFILE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/copyfile";
@@ -47,27 +47,27 @@ const IO_CHUNK_SIZE = 10485760, INITIAL_UPLOAD_BUFFER_SIZE = 40960, MAX_UPLOAD_W
    MAX_EDIT_SIZE = 4194304, MAX_UPLOAD_BUFFER_SIZE = 10485760;   // 10M read buffer, 40K initial write buffer, wait max 5 seconds to upload each chunk
 
 async function elementConnected(host) {
-   menuOpen = false; user = host.getAttribute("user");
+   menuOpen = false; user = host.getAttribute("user"); MIMES = await $$.requireJSON(`${COMPONENT_PATH}/conf/mimes.json`);
 
    const path = host.getAttribute("path") || (file_manager.getSessionMemory(host.id))["__lastPath"] || "/"; 
    selectedPath = path.replace(/[\/]+/g,"/"); selectedIsDirectory = true; currentlyActiveFolder = selectedPath;
    const resp = await apiman.rest(API_GETFILES, "GET", {path}, true); if (!resp || !resp.result) return; 
    for (const entry of resp.entries) {
       if (entry.path.replace(/[\/]+/g,"/") == selectedCutPath) entry.cutimage = "_cutimage"; 
-      entry.stats.name = entry.name; entry.stats.json = JSON.stringify(entry.stats);
+      entry.stats.name = entry.name; entry.stats.json = JSON.stringify(entry.stats); entry.icon = _getIconForEntry(entry);
    }
    
    // if a file or folder has been selected, show the paste button
    const folder_ops = [];
-   if (selectedCopyPath || selectedCutPath) folder_ops.unshift({name: await i18n.get("Paste"), path, stats:{paste: true}});
+   if (selectedCopyPath || selectedCutPath) folder_ops.unshift({name: await i18n.get("Paste"), path, stats:{paste: true}, icon:`${COMPONENT_PATH}/img/paste.svg`});
 
-   folder_ops.unshift({name: await i18n.get("Create"), path, stats:{create: true}});
-   folder_ops.unshift({name: await i18n.get("Upload"), path, stats:{upload: true}});
+   folder_ops.unshift({name: await i18n.get("Create"), path, stats:{create: true}, icon:`${COMPONENT_PATH}/img/create.svg`});
+   folder_ops.unshift({name: await i18n.get("Upload"), path, stats:{upload: true}, icon:`${COMPONENT_PATH}/img/upload.svg`});
 
    if (!path.match(/^[\/]+$/g)) { // add in back and home buttons
       let parentPath = path.substring(0, path.lastIndexOf("/")); if (parentPath == "") parentPath = "/";
-      folder_ops.unshift({name: await i18n.get("Back"), path:parentPath, stats:{back: true}});
-      folder_ops.unshift({name: await i18n.get("Home"), path:"/", stats:{home: true}});
+      folder_ops.unshift({name: await i18n.get("Back"), path:parentPath, stats:{back: true}, icon:`${COMPONENT_PATH}/img/back.svg`});
+      folder_ops.unshift({name: await i18n.get("Home"), path:"/", stats:{home: true}, icon:`${COMPONENT_PATH}/img/home.svg`});
    }
 
    const pathcrumbs = [{action:`monkshu_env.components['file-manager'].changeToPath('${host.id}','/')`, name: await i18n.get("Home")}];
@@ -83,6 +83,17 @@ async function elementConnected(host) {
    file_manager.setData(host.id, data);
 
    if (host.getAttribute("downloadpage")) PAGE_DOWNLOADFILE_SHARED = host.getAttribute("downloadpage");
+}
+
+function _getIconForEntry(entry) {
+   if (entry.stats.directory) return `${COMPONENT_PATH}/${MIMES.icons.folder}`;
+
+   const extension = entry.name.lastIndexOf(".") != -1 ? entry.name.substring(entry.name.lastIndexOf(".")) : "";
+   if (!extension) return `${COMPONENT_PATH}/${MIMES.icons.generic}`;
+
+   let categoryFound = "generic";
+   for (const category of Object.keys(MIMES.categories)) if (MIMES.categories[category].includes(extension.toLowerCase())) {categoryFound = category; break;}
+   return `${COMPONENT_PATH}/${MIMES.icons[categoryFound]}`;
 }
 
 async function elementRendered(host) {

@@ -354,9 +354,7 @@ span.button {
         {{#stats.json}}data-stats='{{{.}}}'{{/stats.json}}
         title="{{name}}">
 
-        <img src="{{COMPONENT_PATH}}/img/{{#stats.directory}}folder{{cutimage}}{{/stats.directory}}{{#stats.file}}file{{cutimage}}{{/stats.file}}{{#stats.back}}back{{/stats.back}}{{#stats.home}}home{{/stats.home}}{{#stats.upload}}upload{{/stats.upload}}{{#stats.create}}create{{/stats.create}}{{#stats.paste}}paste{{/stats.paste}}.svg"
-            ondragstart="event.dataTransfer.setData('DownloadURL',`application/octet-stream:{{name}}:${monkshu_env.components['file-manager'].getDragAndDropDownloadURL('{{{path}}}', this)}`)"
-            ondragend="monkshu_env.components['file-manager'].showDownloadProgress('{{path}}', this)">
+        <img src="{{{icon}}}">
         <span>{{name}}</span>
     </div>
     {{/operations}}
@@ -371,8 +369,7 @@ span.button {
         oncontextmenu='if (monkshu_env.components["file-manager"].isMobile()) return; event.preventDefault(); event.stopPropagation(); monkshu_env.components["file-manager"].handleClick(this, "{{path}}", "{{#stats.directory}}true{{/stats.directory}}{{#stats.file}}false{{/stats.file}}", false, false, event);'
         {{#stats.json}}data-stats='{{{.}}}'{{/stats.json}} 
         title="{{name}}">
-        <img src="{{COMPONENT_PATH}}/img/{{#stats.directory}}folder{{cutimage}}{{/stats.directory}}{{#stats.file}}file{{cutimage}}{{/stats.file}}.svg"
-            ondragstart="event.dataTransfer.setData('DownloadURL',`application/octet-stream:{{name}}:${monkshu_env.components['file-manager'].getDragAndDropDownloadURL('{{{path}}}', this)}`)"
+        <img src="{{{icon}}}" ondragstart="event.dataTransfer.setData('DownloadURL',`application/octet-stream:{{name}}:${monkshu_env.components['file-manager'].getDragAndDropDownloadURL('{{{path}}}', this)}`)"
             ondragend="monkshu_env.components['file-manager'].showDownloadProgress('{{path}}', this)">
         <span>{{name}}</span>
     </div>

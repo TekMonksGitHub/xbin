@@ -1,0 +1,34 @@
+{
+    "categories": {
+        "doc": [".docx", ".doc", ".txt", ".rtf", ".gdoc", ".odt", ".pages"],
+        "audio": [".mp3", ".m4a", ".wav", ".aac", ".wma", ".ogg", ".flac"],
+        "video": [".mp4", ".mov", ".wmv", ".avi", ".flv", ".mkv"],
+        "spreadsheet": [".xls", ".xlsx", ".xlt", ".xltx", ".xlsm", ".ods"],
+        "presentation": [".ppt", ".pptx", ".odp", ".pptm", ".xlsm", ".ods"],
+        "pdf": [".pdf", ".ps", ".eps"],
+        "image": [".gif", ".svg", ".png", ".jpeg", ".jpg", ".bmp", ".tiff", ".psd", ".ai"],
+        "archive": [".gz", ".zip", ".rar", ".7z", ".tar"],
+        "code": [".c", ".cpp", ".js", ".mjs", ".py", ".hpp", ".h", ".java", ".pl", ".php", ".swift"],
+        "html": [".html", ".htm"],
+        "css": [".css"],
+        "executable": [".sh", ".bat", ".exe", ".ps1", ".apk", ".jar", ".dmg"],
+        "generic": []
+    },
+    "icons": {
+        "doc": "img/doc.svg",
+        "audio": "img/audio.svg",
+        "video": "img/video.svg",
+        "spreadsheet": "img/spreadsheet.svg",
+        "presentation": "img/presentation.svg",
+        "pdf": "img/pdf.svg",
+        "image": "img/image.svg",
+        "archive": "img/archive.svg",
+        "code": "img/code.svg",
+        "html": "img/html.svg",
+        "css": "img/css.svg",
+        "executable": "img/executable.svg",
+        "generic":"img/file.svg",
+        "folder": "img/folder.svg"
+    }
+    
+}
