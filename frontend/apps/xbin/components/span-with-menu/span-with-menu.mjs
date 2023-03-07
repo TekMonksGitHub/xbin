@@ -33,12 +33,13 @@ function showMenu(element) {
 
 function toggleMenu(element) {
 	const memory = span_with_menu.getMemoryByContainedElement(element);
-	if (memory.menuOpen) hideMenu(element, true); else showMenu(element);
+	if (memory.menuOpen) hideMenu(element); else showMenu(element);
 }
 
 function doAction(element, id) {
 	const dataThisElement = span_with_menu.getDataByContainedElement(element);
 	Function(dataThisElement.menuitems[id].onclick)();
+	hideMenu(element);
 }
 
 async function _render(host) {
