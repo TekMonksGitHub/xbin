@@ -51,7 +51,7 @@ button:hover {
     transition: all 0.3s ease;
 }
 
-span#error, span#errorInternal {
+span#errorExists, span#errorOTP, span#errorInternal, span#errorPasswordMismatch {
     color: #e40000;
     display: none;
 }
@@ -122,8 +122,10 @@ span#otp > button {display: none;}
 </script>
 
 <div id="container">
-<span id="error">{{i18n.RegisterError}}</span>
+<span id="errorOTP">{{i18n.RegisterErrorOTP}}</span>
+<span id="errorExists">{{i18n.RegisterErrorExists}}</span>
 <span id="errorInternal">{{i18n.InternalError}}</span>
+<span id="errorPasswordMismatch">{{i18n.RegisterErrorPasswordMismatch}}</span>
 <input type="text" id="name" placeholder="{{i18n.Name}}" value="{{name}}" required spellcheck="false"
     oninvalid="this.setCustomValidity('{{i18n.FillField}}')" oninput="setCustomValidity('')">
 <input type="email" id="id" placeholder="{{i18n.Email}}" value="{{id}}" required 

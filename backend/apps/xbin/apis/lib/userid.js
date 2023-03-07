@@ -15,7 +15,7 @@ const db = require(`${CONSTANTS.LIBDIR}/db.js`).getDBDriver("sqlite", DB_PATH, D
 
 exports.register = async (id, name, org, pwph, totpSecret, role, approved, verifyEmail=1, domain) => {
 	const existsID = await exports.existsID(id);
-	if (existsID.result) return({result:false}); 
+	if (existsID.result) return({result:false, reason: exports.ID_EXISTS}); 
 	const pwphHashed = await getUserHash(pwph);
 	const registerResult = await db.runCmd("INSERT INTO users (id, name, org, pwph, totpsec, role, approved, verified, domain) VALUES (?,?,?,?,?,?,?,?,?)", 
 		[id, name, org, pwphHashed, totpSecret, role, approved?1:0, verifyEmail?0:1, domain]);
@@ -108,3 +108,5 @@ exports.getAdminsFor = async id => {
 	const admins = await db.getQuery("SELECT * FROM users WHERE role = 'admin' AND org = (select org from users where id = ? COLLATE NOCASE) COLLATE NOCASE", [id]);
 	if (admins && admins.length) return admins; else return null;
 }
+
+exports.ID_EXISTS = "useridexists";

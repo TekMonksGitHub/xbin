@@ -40,7 +40,9 @@ async function registerOrUpdate(old_id, name, id, pass, org, totpSecret, totpCod
     const resp = await apiman.rest(old_id?APP_CONSTANTS.API_UPDATE:APP_CONSTANTS.API_REGISTER, "POST", req, old_id?true:false, true);
     if (!resp) {LOG.error(`${old_id?"Update":"Registration"} failed for ${id} due to internal error.`); return loginmanager.ID_INTERNAL_ERROR;}
     else if (!resp.result) {
-        LOG.error(`${old_id?"Update":"Registration"} failed for ${id} due to duplicate ID, or bad token.`); return loginmanager.ID_FAILED;
+        LOG.error(`${old_id?"Update":"Registration"} failed for ${id} due to ${resp.reason=="otp"?"bad OTP code":(resp.reason=="exists"?"ID exists":"internal error")}.`); 
+        return resp.reason=="exists"?loginmanager.ID_FAILED_EXISTS:(resp.reason=="otp"?loginmanager.ID_FAILED_OTP:
+            loginmanager.ID_INTERNAL_ERROR);
     }
     else if (resp.result && resp.tokenflag) {
         session.set(APP_CONSTANTS.USERID, id); 
@@ -107,4 +109,5 @@ const _stopAutoLogoutTimer = _ => { if (currTimeout) {clearTimeout(currTimeout);
 
 export const loginmanager = {signin, reset, registerOrUpdate, logout, changepassword, startAutoLogoutTimer, 
     addLogoutListener, getProfileData, checkResetSecurity, getSessionUser, interceptPageLoad, 
-    ID_OK: 1, ID_FAILED: 0, ID_NOT_YET_APPROVED: -1, ID_INTERNAL_ERROR: -2, ID_DB_ERROR: -3, ID_OK_NOT_YET_VERIFIED: 2}
+    ID_OK: 1, ID_FAILED: 0, ID_FAILED_EXISTS: -4, ID_FAILED_OTP: -5, ID_NOT_YET_APPROVED: -1, ID_INTERNAL_ERROR: -2, 
+    ID_DB_ERROR: -3, ID_OK_NOT_YET_VERIFIED: 2}

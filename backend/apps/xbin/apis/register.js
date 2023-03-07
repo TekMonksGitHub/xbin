@@ -24,7 +24,7 @@ exports.addUser = async (jsonReq, servObject, byAdmin=false) => {
 
 	if ((!byAdmin) && (!totp.verifyTOTP(jsonReq.totpSecret, jsonReq.totpCode))) {	// verify TOTP for non admin registrations
 		LOG.error(`Unable to register: ${jsonReq.name}, ID: ${jsonReq.id}, wrong totp code`);
-		return CONSTANTS.FALSE_RESULT;
+		return {...CONSTANTS.FALSE_RESULT, reason: "otp"};
 	}
 
 	await exports.updateOrgAndDomain(jsonReq);	// set domain and override org if needed
@@ -40,7 +40,8 @@ exports.addUser = async (jsonReq, servObject, byAdmin=false) => {
 
 	const result = await userid.register(jsonReq.id, jsonReq.name, jsonReq.org, jsonReq.pwph, jsonReq.totpSecret, role, 
 		approved, verifyEmail, jsonReq.domain);
-	if (!result.result) LOG.error(`Unable to register: ${jsonReq.name}, ID: ${jsonReq.id} DB error.`);
+	if (!result.result && result.reason != userid.ID_EXISTS) LOG.error(`Unable to register: ${jsonReq.name}, ID: ${jsonReq.id} DB error.`);
+	else LOG.error(`Unable to register: ${jsonReq.name}, ID: ${jsonReq.id} exists already.`);
 
 	if (result.result && verifyEmail) {
 		let mailVerificationResult = false; try{mailVerificationResult = await _emailAccountVerification(result.id, result.name, result.org, jsonReq.lang);} catch (err) {}
@@ -60,7 +61,8 @@ exports.addUser = async (jsonReq, servObject, byAdmin=false) => {
 	}
 	
 	return {result: result.result, name: result.name, id: result.id, org: result.org, role: result.role, 
-		needs_verification: APP_CONSTANTS.CONF.verify_email_on_registeration, tokenflag: result.approved?true:false};
+		needs_verification: APP_CONSTANTS.CONF.verify_email_on_registeration, tokenflag: result.approved?true:false,
+		reason:result.result?undefined:(result.reason==userid.ID_EXISTS?"exists":"internal")};
 }
 
 exports.updateOrgAndDomain = async jsonReq => {
