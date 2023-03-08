@@ -83,7 +83,7 @@ exports.REASONS = REASONS;
 
 async function _checkOrgAndDomainMatch(jsonReq) {
 	const rootDomain = _getRootDomain(jsonReq), domainsForOrg = await userid.getDomainsForOrg(jsonReq.org);
-	if (!domainsForOrg.length) return true;	// this organization currently has no domains registered
+	if ((!domainsForOrg) || (!domainsForOrg.length)) return true;	// this organization currently has no domains registered
 
 	if (domainsForOrg.includes[rootDomain]) return true;	// matches
 	for (const domainToCheck of domainsForOrg) if (domainToCheck.includes(rootDomain) || rootDomain.includes(domainToCheck)) return true;

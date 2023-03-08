@@ -36,11 +36,11 @@ async function signin(signInButton) {
 
 async function resetAccount(element) {
 	const shadowRoot = login_box.getShadowRootByContainedElement(element);
-	shadowRoot.getElementById("notifier").style.display = "none";
+	_hideErrors(shadowRoot);
 
 	const result = await loginmanager.reset(shadowRoot.getElementById("userid").value);
-	if ((!result) || (!result.result)) shadowRoot.getElementById("notifier3").style.display = "inline";
-	else shadowRoot.getElementById("notifier2").style.display = "inline";
+	if ((!result) || (!result.result)) shadowRoot.getElementById("notifier3").classList.add("visible");
+	else shadowRoot.getElementById("notifier2").classList.add("visible");
 }
 
 function _validateForm(shadowRoot) {
@@ -52,12 +52,12 @@ function _validateForm(shadowRoot) {
 }
 
 function _hideErrors(shadowRoot) {
-	shadowRoot.getElementById("errorMissingID").style.display = "none";
-	shadowRoot.getElementById("errorOTP").style.display = "none";
-	shadowRoot.getElementById("errorPassword").style.display = "none";
-	shadowRoot.getElementById("errorGeneric").style.display = "none";
-	shadowRoot.getElementById("notifier2").style.display = "none";
-	shadowRoot.getElementById("notifier3").style.display = "none";
+	shadowRoot.getElementById("errorMissingID").classList.remove("visible");
+	shadowRoot.getElementById("errorOTP").classList.remove("visible");
+	shadowRoot.getElementById("errorPassword").classList.remove("visible");
+	shadowRoot.getElementById("errorGeneric").classList.remove("visible");
+	shadowRoot.getElementById("notifier2").classList.remove("visible");
+	shadowRoot.getElementById("notifier3").classList.remove("visible");
 }
 
 async function _handleLoginResult(result, shadowRoot, routeOnSuccess, routeOnNotApproved, containedElement) {
@@ -75,12 +75,12 @@ async function _handleLoginResult(result, shadowRoot, routeOnSuccess, routeOnNot
 		case loginmanager.ID_OK_NOT_YET_VERIFIED: router.loadPage(routeOnSuccess, data); break;
 		case loginmanager.ID_OK_NOT_YET_APPROVED: router.loadPage(routeOnNotApproved, data); break;
 
-		case loginmanager.ID_FAILED_MISSING: shadowRoot.getElementById("errorMissingID").style.display = "inline"; break;
-		case loginmanager.ID_FAILED_OTP: shadowRoot.getElementById("errorOTP").style.display = "inline"; break;
-		case loginmanager.ID_FAILED_PASSWORD: shadowRoot.getElementById("errorPassword").style.display = "inline"; break;
+		case loginmanager.ID_FAILED_MISSING: shadowRoot.getElementById("errorMissingID").classList.add("visible"); break;
+		case loginmanager.ID_FAILED_OTP: shadowRoot.getElementById("errorOTP").classList.add("visible"); break;
+		case loginmanager.ID_FAILED_PASSWORD: shadowRoot.getElementById("errorPassword").classList.add("visible"); break;
 
-		case loginmanager.ID_INTERNAL_ERROR: shadowRoot.getElementById("errorGeneric").style.display = "inline"; break;
-		default: shadowRoot.getElementById("errorGeneric").style.display = "inline"; break;
+		case loginmanager.ID_INTERNAL_ERROR: shadowRoot.getElementById("errorGeneric").classList.add("visible"); break;
+		default: shadowRoot.getElementById("errorGeneric").classList.add("visible"); break;
 	}
 }
 
