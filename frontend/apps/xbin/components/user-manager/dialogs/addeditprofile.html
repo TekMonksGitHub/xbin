@@ -42,6 +42,7 @@ select {
     margin-bottom: 2.5em;
     color: #444444;
     -webkit-appearance: none;
+    appearance: none;
 }
 
 .tgl {display: none;}
@@ -114,11 +115,13 @@ select {
     <option value="{{value}}" {{#selected}}selected{{/selected}}>{{label}}</option>
     {{/roles}}
 </select>
+{{^doNotAllowApproval}}
 <span id="toggler">
     <span>{{i18n.Approve}}?</span>
     <input class="tgl tgl-ios" id="approved" type="checkbox" onclick='this.value=this.checked' {{#approved}}checked{{/approved}} value='{{#approved}}true{{/approved}}{{^approved}}false{{/approved}}'>
     <label class="tgl-btn" for="approved">
 </span>
+{{/doNotAllowApproval}}
 
 <script>
 function onOK(element) {monkshu_env.components["dialog-box"].submit(element);}

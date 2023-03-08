@@ -84,7 +84,8 @@ async function addUser(element) {
 async function editUser(name, id, role, approved, element) {
 	const roles = []; for (const thisrole of conf.roles) roles.push({label:await i18n.get(thisrole), value: thisrole, selected: thisrole==role?true:undefined});
 	monkshu_env.components['dialog-box'].showDialog(`${COMPONENT_PATH}/dialogs/addeditprofile.html`, true, true, 
-			{name, id, role, approved:approved==1?true:undefined, roles, CONF:conf}, "dialog", 
+			{name, id, role, approved:approved==1?true:undefined, roles, CONF:conf, 
+				doNotAllowApproval:id==session.get(conf.userid_session_variable)?true:undefined}, "dialog", 
 			["name", "id", "role", "approved", "old_id"], async ret => {
 		
 		if (ret.approved.toLowerCase() == "true") ret.approved = true; else ret.approved = false;
@@ -101,11 +102,14 @@ async function editUser(name, id, role, approved, element) {
 }
 
 async function _deleteUser(name, id, element) {
+	const host = user_manager.getHostElement(element), logoutcommand = host.getAttribute("logoutcommand"), backendURL = host.getAttribute("backendurl");
 	_execOnConfirm(mustache_instance.render(await i18n.get("ConfirmUserDelete"), {name, id}), async _ =>{
-		const backendURL = user_manager.getHostElement(element).getAttribute("backendurl");
 		const deleteResult = await apiman.rest(`${backendURL}/${API_DELETEUSER}`, "GET", {name, id}, true);
 		if (!deleteResult?.result) {const err = mustache_instance.render(await i18n.get("DeleteError"), {name, id}); LOG.error(err); _showError(err);}
-		else user_manager.reload(user_manager.getHostElementID(element));
+		else {
+			if (id==session.get(conf.userid_session_variable) && logoutcommand) eval(logoutcommand);	// user deleted themselves, logout!
+			else user_manager.reload(user_manager.getHostElementID(element));	// reload user list
+		}
 	});
 }
 

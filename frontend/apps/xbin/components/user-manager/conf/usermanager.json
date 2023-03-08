@@ -1,6 +1,7 @@
 {
     "roles":["user", "admin"],
     "userorg_session_variable": "userorg",
+    "userid_session_variable": "userid",
     "user_role": "user",
     "MOBILE_MEDIA_QUERY_START": "<style>@media only screen and (max-width: 959px) {",
     "MOBILE_MEDIA_QUERY_END": "}</style>",

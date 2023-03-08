@@ -5,25 +5,34 @@
  * (C) 2021 TekMonks. All rights reserved.
  * License: See enclosed license file.
  */
+import {util} from "/framework/js/util.mjs";
 import {monkshu_component} from "/framework/js/monkshu_component.mjs";
 
-async function elementConnected(element) {
+const COMPONENT_PATH = util.getModulePath(import.meta);
+
+async function elementConnected(host) {
 	const data = {
-		closed_image: element.getAttribute("hide_password_image")||`${APP_CONSTANTS.COMPONENTS_PATH}/password-box/img/closed.svg`,
-		open_image: element.getAttribute("show_password_image")||`${APP_CONSTANTS.COMPONENTS_PATH}/password-box/img/open.svg`,
-		customValidity: element.getAttribute("customValidity"),
-		placeholder: element.getAttribute("placeholder"),
-		minlength: element.getAttribute("minlength"),
-		required: element.getAttribute("required"),
-		pattern: element.getAttribute("pattern"),
-		onkeyup: element.getAttribute("onkeyup")
+		closed_image: host.getAttribute("hide_password_image")||`${COMPONENT_PATH}/img/closed.svg`,
+		open_image: host.getAttribute("show_password_image")||`${COMPONENT_PATH}/img/open.svg`,
+		customValidity: host.getAttribute("customValidity"),
+		placeholder: host.getAttribute("placeholder"),
+		minlength: host.getAttribute("minlength"),
+		required: host.getAttribute("required"),
+		pattern: host.getAttribute("pattern"),
+		onkeyup: host.getAttribute("onkeyup")
 	}
 
-	if (element.getAttribute("styleBody")) data.styleBody = `<style>${element.getAttribute("styleBody")}</style>`;
+	if (host.getAttribute("styleBody")) data.styleBody = `<style>${host.getAttribute("styleBody")}</style>`;
 	
-	if (element.id) {
-		if (!password_box.datas) password_box.datas = {}; password_box.datas[element.id] = data;
-	} else password_box.data = data;
+	password_box.setData(host.id, data);
+}
+
+function toggleEye(element) {
+	const shadowRoot = password_box.getShadowRootByContainedElement(element);
+	const eyeOpen = shadowRoot.querySelector("input#pwinput").type == "text" ? true : false;
+	const pwInputBox = shadowRoot.querySelector("input#pwinput"), pwImg = shadowRoot.querySelector("img#eye");
+	if (eyeOpen) { pwInputBox.type = "password"; pwImg.src = `${COMPONENT_PATH}/img/closed.svg`; } 
+	else { pwInputBox.type = "text"; pwImg.src = `${COMPONENT_PATH}/img/open.svg`; }
 }
 
 async function elementRendered(host) {
@@ -50,5 +59,5 @@ function _attachFormValidationControls(element) {
 	element.getValidationMessage = _=> inputElement.validationMessage;
 }
 
-export const password_box = {trueWebComponentMode: true, elementConnected, elementRendered, onKeyUp}
-monkshu_component.register("password-box", `${APP_CONSTANTS.COMPONENTS_PATH}/password-box/password-box.html`, password_box);
+export const password_box = {trueWebComponentMode: true, elementConnected, elementRendered, onKeyUp, toggleEye}
+monkshu_component.register("password-box", `${COMPONENT_PATH}/password-box.html`, password_box);

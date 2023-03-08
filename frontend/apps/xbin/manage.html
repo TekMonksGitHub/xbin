@@ -132,7 +132,8 @@ span#mobilefooter > img {
 
 <div id="maincontent">
 	<user-manager backendurl="{{APP_CONSTANTS.BACKEND}}/apps/{{APP_CONSTANTS.APP_NAME}}" 
-		org="{{#_org_monkshu_session}}{{APP_CONSTANTS.USERORG}}{{/_org_monkshu_session}}"></user-manager>
+		org="{{#_org_monkshu_session}}{{APP_CONSTANTS.USERORG}}{{/_org_monkshu_session}}"
+		logoutcommand="monkshu_env.apps[APP_CONSTANTS.APP_NAME].loginmanager.logout()"></user-manager>
 </div>
 
 <span id="mobilefooter">
