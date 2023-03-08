@@ -58,7 +58,7 @@ div.container {
     background-color: #ffffff;
 }
 
-span#notifier {
+span#errorPassword,  span#errorMissingID, span#errorOTP, span#errorGeneric {
     color: #e40000;
     padding: 0;
     margin: 0;
@@ -92,7 +92,11 @@ span#notifier>span:hover {
 {{{styleBody}}}
 
 <div id="container">
-<span id="notifier">{{i18n.BadLogin}}&nbsp;<span onclick="monkshu_env.components['login-box'].resetAccount(this)">{{i18n.LoginReset}}</span></span>
+<span id="errorPassword">{{i18n.BadLoginPassword}}&nbsp;<span onclick="monkshu_env.components['login-box'].resetAccount(this)">{{i18n.LoginReset}}</span></span>
+<span id="errorMissingID">{{i18n.BadLoginID}}</span>
+<span id="errorOTP">{{i18n.BadLoginOTP}}</span>
+<span id="errorGeneric">{{i18n.BadLoginInternal}}</span>
+
 <span id="notifier2">{{i18n.LoginWasReset}}</span>
 <span id="notifier3">{{i18n.LoginWasNotReset}}</span>
 <input type="text" id="userid" placeholder="{{i18n.UserID}}" 

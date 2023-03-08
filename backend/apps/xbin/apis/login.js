@@ -9,7 +9,8 @@ const userid = require(`${APP_CONSTANTS.LIB_DIR}/userid.js`);
 const jwttokenmanager = APIREGISTRY.getExtension("JWTTokenManager");
 const queueExecutor = require(`${CONSTANTS.LIBDIR}/queueExecutor.js`);
 
-const DEFAULT_QUEUE_DELAY = 500;
+const DEFAULT_QUEUE_DELAY = 500, REASONS = {BAD_PASSWORD: "badpw", BAD_ID: "badid", BAD_OTP: "badotp", 
+	BAD_APPROVAL: "notapproved", OK: "allok", UNKNOWN: "unknown"};
 
 exports.init = _ => {
 	jwttokenmanager.addListener((event, object) => {
@@ -27,6 +28,7 @@ exports.init = _ => {
 		}
 	});
 }
+
 exports.doService = async (jsonReq, servObject) => {
 	if (!validateRequest(jsonReq)) {LOG.error("Validation failure."); return CONSTANTS.FALSE_RESULT;}
 	
@@ -34,12 +36,16 @@ exports.doService = async (jsonReq, servObject) => {
 
 	const result = await userid.checkPWPH(jsonReq.id, jsonReq.pwph); 
 
+	result.tokenflag = false; 	// default assume login failed no JWT token will be generated
 	if (result.result && result.approved) {	// perform second factor
 		result.result = totp.verifyTOTP(result.totpsec, jsonReq.otp); 
-		if (!result.result) LOG.error(`Bad OTP given for: ${result.id}.`);
-		else result.tokenflag = true;
-	} else if (result.result && (!result.approved)) {LOG.info(`User not approved, ${result.id}.`); result.tokenflag = false;}
-	else LOG.error(`Bad PWPH, given for ID: ${jsonReq.id}.`);
+		if (!result.result) {LOG.error(`Bad OTP given for: ${result.id}.`); result.reason = REASONS.BAD_OTP;}
+		else {result.tokenflag = true; result.reason = REASONS.OK;}	// ID is OK, password is OK, OTP is OK, and user is approved
+	} else if (result.result && (!result.approved)) {LOG.info(`User not approved, ${result.id}.`); result.reason = REASONS.BAD_APPROVAL;}
+	else {
+		result.reason = result.reason == userid.NO_ID ? REASONS.BAD_ID : result.reason == userid.BAD_PASSWORD ? REASONS.BAD_PASSWORD : REASONS.UNKNOWN;
+		LOG.error(`${result.reason == REASONS.BAD_ID?"Bad id":result.reason == REASONS.BAD_PASSWORD?"Bad password":"Unknown reason for login failure"} for login request for ID: ${jsonReq.id}.`);
+	}
 
 	if (result.tokenflag) {
 		LOG.info(`User logged in: ${result.id}${CONF.verify_email_on_registeration?`, email verification status is ${result.verified}.`:"."}`); 
@@ -50,9 +56,7 @@ exports.doService = async (jsonReq, servObject) => {
 		});	
 	} else LOG.error(`Bad login or not approved for ID: ${jsonReq.id}.`);
 
-	if (result.result) return {result: result.result, name: result.name, id: result.id, org: result.org, 
-		role: result.role, tokenflag: result.tokenflag, verified: result.verified==1?true:false};
-	else return CONSTANTS.FALSE_RESULT;
+	return {...result, verified: result.verified==1?true:false};
 }
 
 exports.getID = headers => {
@@ -71,5 +75,7 @@ exports.getRole = headers => {
 }
 
 exports.isAdmin = headers => (exports.getRole(headers))?.toLowerCase() == "admin";
+
+exports.REASONS = REASONS;
 
 const validateRequest = jsonReq => (jsonReq && jsonReq.pwph && jsonReq.otp && jsonReq.id);

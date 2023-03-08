@@ -12,7 +12,8 @@ const userid = require(`${APP_CONSTANTS.LIB_DIR}/userid.js`);
 const queueExecutor = require(`${CONSTANTS.LIBDIR}/queueExecutor.js`);
 const emailTemplate = require(`${APP_CONSTANTS.CONF_DIR}/email.json`);
 
-const DEFAULT_QUEUE_DELAY = 500;
+const DEFAULT_QUEUE_DELAY = 500, REASONS = {ID_EXISTS: "exists", OTP_ERROR: "otp", INTERNAL_ERROR: "internal", 
+	SECURITY_ERROR: "securityerror"};
 
 exports.doService = async (jsonReq, servObject) => {
 	if (!validateRequest(jsonReq)) {LOG.error("Validation failure."); return CONSTANTS.FALSE_RESULT;}
@@ -24,10 +25,15 @@ exports.addUser = async (jsonReq, servObject, byAdmin=false) => {
 
 	if ((!byAdmin) && (!totp.verifyTOTP(jsonReq.totpSecret, jsonReq.totpCode))) {	// verify TOTP for non admin registrations
 		LOG.error(`Unable to register: ${jsonReq.name}, ID: ${jsonReq.id}, wrong totp code`);
-		return {...CONSTANTS.FALSE_RESULT, reason: "otp"};
+		return {...CONSTANTS.FALSE_RESULT, reason: REASONS.OTP_ERROR};
 	}
 
 	await exports.updateOrgAndDomain(jsonReq);	// set domain and override org if needed
+
+	if (!await _checkOrgAndDomainMatch(jsonReq)) {	// security check for org and domain match
+		LOG.error(`Unable to register: ${jsonReq.name}, ID: ${jsonReq.id}, security error, org and domain mismatch.`);
+		return {...CONSTANTS.FALSE_RESULT, reason: REASONS.SECURITY_ERROR};
+	}
 
 	const existingUsersForDomain = await userid.getUsersForDomain(_getRootDomain(jsonReq)), 
 		existingUsersForOrg = await userid.getUsersForOrg(jsonReq.org), 
@@ -53,16 +59,16 @@ exports.addUser = async (jsonReq, servObject, byAdmin=false) => {
 	}
 
 	if (result.result) {
-		LOG.info(`User registered: ${jsonReq.name}, ID: ${jsonReq.id}, approval status is: ${result.approved}`); 
+		LOG.info(`User registered: ${jsonReq.name}, ID: ${jsonReq.id}, approval status is: ${result.approved==1?true:false}`); 
 		if (result.approved && (!byAdmin)) queueExecutor.add(userid.updateLoginStats, [jsonReq.id, Date.now(), 
 			utils.getClientIP(servObject.req)], true, CONF.login_update_delay||DEFAULT_QUEUE_DELAY);
 		if (!result.approved) queueExecutor.add(_emailAdminNewRegistration, [result.id, result.name, result.org, jsonReq.lang], 
 			true, DEFAULT_QUEUE_DELAY);
 	}
 	
-	return {result: result.result, name: result.name, id: result.id, org: result.org, role: result.role, 
-		needs_verification: APP_CONSTANTS.CONF.verify_email_on_registeration, tokenflag: result.approved?true:false,
-		reason:result.result?undefined:(result.reason==userid.ID_EXISTS?"exists":"internal")};
+	return {...result, needs_verification: verifyEmail, tokenflag: (result.result && (result.approved == 1))?true:false, 
+		reason:result.result?undefined:(result.reason==userid.ID_EXISTS?REASONS.ID_EXISTS:REASONS.INTERNAL_ERROR),
+		approved: result.approved==1?true:false};
 }
 
 exports.updateOrgAndDomain = async jsonReq => {
@@ -73,8 +79,19 @@ exports.updateOrgAndDomain = async jsonReq => {
 	jsonReq.domain = rootDomain;
 }
 
+exports.REASONS = REASONS;
+
+async function _checkOrgAndDomainMatch(jsonReq) {
+	const rootDomain = _getRootDomain(jsonReq), domainsForOrg = await userid.getDomainsForOrg(jsonReq.org);
+	if (!domainsForOrg.length) return true;	// this organization currently has no domains registered
+
+	if (domainsForOrg.includes[rootDomain]) return true;	// matches
+	for (const domainToCheck of domainsForOrg) if (domainToCheck.includes(rootDomain) || rootDomain.includes(domainToCheck)) return true;
+	return false;	// the email doesn't match any known domains for this org and is not a subset or superset of them either
+}
+
 function _getRootDomain(jsonReq) {
-	const domain = jsonReq.id.indexOf("@") != -1 ? jsonReq.id.substring(jsonReq.id.indexOf("@")+1) : "undefined"
+	const domain = jsonReq.id.indexOf("@") != -1 ? jsonReq.id.substring(jsonReq.id.indexOf("@")+1).toLowerCase() : "undefined"
 	return domain;
 }
 

@@ -85,11 +85,13 @@ async function registerOrUpdate(element) {
 
 	switch (registerResult) {
 		case loginmanager.ID_OK: router.loadPage(routeOnSuccess, dataOnSuccess); break;
+		case loginmanager.ID_OK_NOT_YET_APPROVED: router.loadPage(routeOnNotApproved, dataOnSuccess); break;
+
 		case loginmanager.ID_FAILED_OTP: shadowRoot.querySelector("span#errorOTP").style.display = "inline"; break;
 		case loginmanager.ID_FAILED_EXISTS: shadowRoot.querySelector("span#errorExists").style.display = "inline"; break;
-		case loginmanager.ID_NOT_YET_APPROVED: router.loadPage(routeOnNotApproved, dataOnSuccess); break;
 		case loginmanager.ID_INTERNAL_ERROR: shadowRoot.querySelector("span#errorInternal").style.display = "inline"; break;
-		default: shadowRoot.querySelector("span#error").style.display = "inline"; break;
+		case loginmanager.ID_SECURITY_ERROR: shadowRoot.querySelector("span#errorSecurity").style.display = "inline"; break;
+		default: shadowRoot.querySelector("span#errorInternal").style.display = "inline"; break;
 	}
 }
 
@@ -151,6 +153,7 @@ function _resetUI(shadowRoot) {
 	shadowRoot.querySelector("span#errorOTP").style.display = "none";
 	shadowRoot.querySelector("span#errorExists").style.display = "none";
 	shadowRoot.querySelector("span#errorPasswordMismatch").style.display = "none";
+	shadowRoot.querySelector("span#errorSecurity").style.display = "none";
 	shadowRoot.querySelector("span#errorInternal").style.display = "none";
 }
 

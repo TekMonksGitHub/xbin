@@ -16,7 +16,7 @@ async function signin(id, pass, otp) {
     logoutListeners = [];   // reset listeners on sign in
         
     const resp = await apiman.rest(APP_CONSTANTS.API_LOGIN, "POST", {pwph, otp, id}, false, true);
-    if (resp && resp.result && resp.tokenflag) {
+    if (resp && resp.tokenflag) {   // login successful, JWT has been generated
         session.set(APP_CONSTANTS.USERID, resp.id); 
         session.set(APP_CONSTANTS.USERNAME, resp.name);
         session.set(APP_CONSTANTS.USERORG, resp.org);
@@ -25,10 +25,17 @@ async function signin(id, pass, otp) {
         securityguard.setCurrentRole(resp.role);
         LOG.info(`Login succeeded for ${id}.`);
         return resp.verified?loginmanager.ID_OK:loginmanager.ID_OK_NOT_YET_VERIFIED;
-    } else if (resp && resp.result && (!resp.tokenflag)){
-        LOG.warn(`Login OK but not approved yet for ${id}.`); return loginmanager.ID_NOT_YET_APPROVED;
+    } else if (resp.reason == "notapproved") {  // failed due to not approved   
+        LOG.warn(`Login OK but not approved yet for ${id}.`); return loginmanager.ID_OK_NOT_YET_APPROVED;
+    } else if (resp.reason == "badpw") { // failed due to bad password
+        LOG.warn(`Bad password for ${id}.`); return loginmanager.ID_FAILED_PASSWORD;
+    } else if (resp.reason == "badid") {    // failed due to bad ID
+        LOG.warn(`Bad ID given for ${id}.`); return loginmanager.ID_FAILED_MISSING;
+    } else if (resp.reason == "badotp") {   // failed due to bad OTP
+        LOG.warn(`Bad OTP given for ${id}.`); return loginmanager.ID_FAILED_OTP;
+    } else {    // failed due to some internal error
+        LOG.warn(`Unknown reason for login failure for ${id}.`); return loginmanager.ID_INTERNAL_ERROR;
     }
-    else {LOG.error(`Login failed for ${id}.`); return loginmanager.ID_FAILED;}
 }
 
 const reset = id => apiman.rest(APP_CONSTANTS.API_RESET, "GET", {id, lang: i18n.getSessionLang()});
@@ -39,12 +46,11 @@ async function registerOrUpdate(old_id, name, id, pass, org, totpSecret, totpCod
     const req = {old_id, name, id, pwph, org, totpSecret, totpCode, role, approved, lang: i18n.getSessionLang()}; 
     const resp = await apiman.rest(old_id?APP_CONSTANTS.API_UPDATE:APP_CONSTANTS.API_REGISTER, "POST", req, old_id?true:false, true);
     if (!resp) {LOG.error(`${old_id?"Update":"Registration"} failed for ${id} due to internal error.`); return loginmanager.ID_INTERNAL_ERROR;}
-    else if (!resp.result) {
+    else if (!resp.result) {    // registration failed, reasons can be bad OTP, ID exists or some internal error
         LOG.error(`${old_id?"Update":"Registration"} failed for ${id} due to ${resp.reason=="otp"?"bad OTP code":(resp.reason=="exists"?"ID exists":"internal error")}.`); 
         return resp.reason=="exists"?loginmanager.ID_FAILED_EXISTS:(resp.reason=="otp"?loginmanager.ID_FAILED_OTP:
-            loginmanager.ID_INTERNAL_ERROR);
-    }
-    else if (resp.result && resp.tokenflag) {
+        resp.reason=="securityerror"?loginmanager.ID_SECURITY_ERROR:loginmanager.ID_INTERNAL_ERROR);
+    } else if (resp.result && resp.tokenflag) { // registration succeeded and JWT token is generated, so login can proceed
         session.set(APP_CONSTANTS.USERID, id); 
         session.set(APP_CONSTANTS.USERNAME, name);
         session.set(APP_CONSTANTS.USERORG, org);
@@ -52,8 +58,9 @@ async function registerOrUpdate(old_id, name, id, pass, org, totpSecret, totpCod
         session.set("__org_telemeet_cuser_pass", pass);
         securityguard.setCurrentRole(resp.role);
         return loginmanager.ID_OK;
-    } else if (resp.result && (!resp.tokenflag)) {
-        LOG.warn(`${old_id?"Update":"Registration"} done but not approved yet for ${id}.`); return loginmanager.ID_NOT_YET_APPROVED;
+    } else if (resp.result && (!resp.approved)) {   // registration succeeded but no token, so approval is probably pending
+        LOG.warn(`${old_id?"Update":"Registration"} done but not approved yet for ${id}.`); 
+        return loginmanager.ID_OK_NOT_YET_APPROVED;
     } 
 }
 
@@ -109,5 +116,6 @@ const _stopAutoLogoutTimer = _ => { if (currTimeout) {clearTimeout(currTimeout);
 
 export const loginmanager = {signin, reset, registerOrUpdate, logout, changepassword, startAutoLogoutTimer, 
     addLogoutListener, getProfileData, checkResetSecurity, getSessionUser, interceptPageLoad, 
-    ID_OK: 1, ID_FAILED: 0, ID_FAILED_EXISTS: -4, ID_FAILED_OTP: -5, ID_NOT_YET_APPROVED: -1, ID_INTERNAL_ERROR: -2, 
-    ID_DB_ERROR: -3, ID_OK_NOT_YET_VERIFIED: 2}
+    ID_OK: 1, ID_FAILED_EXISTS: -4, ID_FAILED_OTP: -5, ID_OK_NOT_YET_APPROVED: -1, 
+    ID_INTERNAL_ERROR: -2, ID_DB_ERROR: -3, ID_OK_NOT_YET_VERIFIED: 2, ID_FAILED_PASSWORD: -6, ID_FAILED_MISSING: -7,
+    ID_SECURITY_ERROR: -8}

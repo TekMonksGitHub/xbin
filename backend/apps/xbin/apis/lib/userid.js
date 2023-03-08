@@ -43,9 +43,9 @@ exports.update = async (oldid, id, name, org, oldPwphHashed, newPwph, totpSecret
 }
 
 exports.checkPWPH = async (id, pwph) => {
-	const idEntry = await exports.existsID(id); if (!idEntry.result) return {result: false}; else delete idEntry.result;
+	const idEntry = await exports.existsID(id); if (!idEntry.result) return {result: false, reason: exports.NO_ID}; 
 	const pwphCompareResult = await (util.promisify(bcryptjs.compare))(pwph, idEntry.pwph);
-	return {result: pwphCompareResult, ...idEntry}; 
+	return {...idEntry, result: pwphCompareResult, reason: exports.BAD_PASSWORD}; 
 }
 
 exports.existsID = exports.getTOTPSec = async id => {
@@ -69,8 +69,13 @@ exports.getUsersForDomain = async domain => {
 }
 
 exports.getOrgForDomain = async domain => {
-	const users = await db.getQuery("SELECT org FROM users WHERE domain = ? COLLATE NOCASE", [domain]);
-	if (users && users.length) return users[0].org; else return null;
+	const orgs = await db.getQuery("SELECT org FROM users WHERE domain = ? COLLATE NOCASE", [domain]);
+	if (orgs && orgs.length) return orgs[0].org; else return null;
+}
+
+exports.getDomainsForOrg = async org => {
+	const domains = await db.getQuery("SELECT domain FROM users WHERE org = ? COLLATE NOCASE", [org]);
+	if (domains && domains.length) return _flattenArray(domains, "domain"); else return null;
 }
 
 exports.getOrgsMatching = async org => {
@@ -109,4 +114,8 @@ exports.getAdminsFor = async id => {
 	if (admins && admins.length) return admins; else return null;
 }
 
-exports.ID_EXISTS = "useridexists";
+function _flattenArray(results, columnName) { 
+	const retArray = []; for (const result of results) retArray.push(result[columnName]); return retArray;
+}
+
+exports.ID_EXISTS = "useridexists"; exports.NO_ID = "noid"; exports.BAD_PASSWORD = "badpassword";

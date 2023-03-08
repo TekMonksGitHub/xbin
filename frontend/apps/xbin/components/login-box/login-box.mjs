@@ -52,7 +52,10 @@ function _validateForm(shadowRoot) {
 }
 
 function _hideErrors(shadowRoot) {
-	shadowRoot.getElementById("notifier").style.display = "none";
+	shadowRoot.getElementById("errorMissingID").style.display = "none";
+	shadowRoot.getElementById("errorOTP").style.display = "none";
+	shadowRoot.getElementById("errorPassword").style.display = "none";
+	shadowRoot.getElementById("errorGeneric").style.display = "none";
 	shadowRoot.getElementById("notifier2").style.display = "none";
 	shadowRoot.getElementById("notifier3").style.display = "none";
 }
@@ -70,9 +73,14 @@ async function _handleLoginResult(result, shadowRoot, routeOnSuccess, routeOnNot
 	switch (result) {
 		case loginmanager.ID_OK: router.loadPage(routeOnSuccess, data); break;
 		case loginmanager.ID_OK_NOT_YET_VERIFIED: router.loadPage(routeOnSuccess, data); break;
-		case loginmanager.ID_FAILED: shadowRoot.getElementById("notifier").style.display = "inline"; break;
-		case loginmanager.ID_NOT_YET_APPROVED: router.loadPage(routeOnNotApproved, data); break;
-		default: shadowRoot.getElementById("notifier").style.display = "inline"; break;
+		case loginmanager.ID_OK_NOT_YET_APPROVED: router.loadPage(routeOnNotApproved, data); break;
+
+		case loginmanager.ID_FAILED_MISSING: shadowRoot.getElementById("errorMissingID").style.display = "inline"; break;
+		case loginmanager.ID_FAILED_OTP: shadowRoot.getElementById("errorOTP").style.display = "inline"; break;
+		case loginmanager.ID_FAILED_PASSWORD: shadowRoot.getElementById("errorPassword").style.display = "inline"; break;
+
+		case loginmanager.ID_INTERNAL_ERROR: shadowRoot.getElementById("errorGeneric").style.display = "inline"; break;
+		default: shadowRoot.getElementById("errorGeneric").style.display = "inline"; break;
 	}
 }
 
