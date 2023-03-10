@@ -15,7 +15,7 @@ const template = require(`${APP_CONSTANTS.CONF_DIR}/email.json`);
 exports.doService = async (jsonReq, servObject, headers) => {
     if (!validateRequest(jsonReq)) {LOG.error("Validation failure."); return CONSTANTS.FALSE_RESULT;}
     
-    LOG.debug("Got add user request for ID: " + jsonReq.id);
+    LOG.debug(`Got add user request for ID: ${jsonReq.id}, by admin with ID: ${login.getID(headers)}`);
 
     const result = await register.addUser({pwph: '', id: jsonReq.id, name: jsonReq.name, org: jsonReq.org,
         totpSecret: totp.getSecret(), lang: jsonReq.lang, role: jsonReq.role, verifyEmail : 0,

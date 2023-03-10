@@ -30,7 +30,7 @@ async function elementConnected(host) {
 	API_GETMATCHINGORGS = `${host.getAttribute("apiPath")}/getorgsmatching`;
 
 	conf = await $$.requireJSON(`${COMPONENT_PATH}/conf/config.json`);
-	const data = {};
+	const data = {COMPONENT_PATH};
 
 	if (host.getAttribute("styleBody")) data.styleBody = `<style>${host.getAttribute("styleBody")}</style>`;
 
@@ -78,7 +78,9 @@ async function registerOrUpdate(element) {
 	const routeOnSuccess = register_box.getHostElement(element).getAttribute("routeOnSuccess");
 	const routeOnNotApproved = register_box.getHostElement(element).getAttribute("routeOnNotApproved");
 
+	_showWait(shadowRoot);
 	const registerResult = await loginmanager.registerOrUpdate(id_old, name, id, pass, org, totpCode?memory.totpKey:null, totpCode);
+	_hideWait(shadowRoot);
 
 	const dataOnSuccess = JSON.parse(await router.expandPageData(register_box.getHostElement(element).getAttribute("dataOnSuccess")||"{}",
 		undefined, {name, id, org, role: securityguard.getCurrentRole(), needs_verification: session.get(APP_CONSTANTS.USER_NEEDS_VERIFICATION)}));
@@ -91,6 +93,7 @@ async function registerOrUpdate(element) {
 		case loginmanager.ID_FAILED_EXISTS: shadowRoot.querySelector("span#errorExists").style.display = "inline"; break;
 		case loginmanager.ID_INTERNAL_ERROR: shadowRoot.querySelector("span#errorInternal").style.display = "inline"; break;
 		case loginmanager.ID_SECURITY_ERROR: shadowRoot.querySelector("span#errorSecurity").style.display = "inline"; break;
+		case loginmanager.ID_DOMAIN_ERROR: shadowRoot.querySelector("span#errorDomain").style.display = "inline"; break;
 		default: shadowRoot.querySelector("span#errorInternal").style.display = "inline"; break;
 	}
 }
@@ -155,7 +158,12 @@ function _resetUI(shadowRoot) {
 	shadowRoot.querySelector("span#errorPasswordMismatch").style.display = "none";
 	shadowRoot.querySelector("span#errorSecurity").style.display = "none";
 	shadowRoot.querySelector("span#errorInternal").style.display = "none";
+	shadowRoot.querySelector("span#errorDomain").style.display = "none";
+	shadowRoot.querySelector("span#spinner").style.display = "none";
 }
+
+const _showWait = shadowRoot => shadowRoot.querySelector("span#spinner").style.display = "inline"
+const _hideWait = shadowRoot => shadowRoot.querySelector("span#spinner").style.display = "none";
 
 const trueWebComponentMode = true;	// making this false renders the component without using Shadow DOM
 export const register_box = {registerOrUpdate, trueWebComponentMode, elementConnected, initialRender, openAuthenticator, updateOrgDataList}

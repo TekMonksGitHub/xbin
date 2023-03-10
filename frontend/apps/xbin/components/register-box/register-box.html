@@ -51,10 +51,13 @@ button:hover {
     transition: all 0.3s ease;
 }
 
-span#errorExists, span#errorOTP, span#errorInternal, span#errorPasswordMismatch , span#errorSecurity {
+span#errorExists, span#errorOTP, span#errorInternal, span#errorPasswordMismatch , span#errorSecurity, span#errorDomain {
     color: #e40000;
     display: none;
 }
+
+span#spinner {display: none;}
+img#spinner {height: 2em; width: 2em;}
 
 span#otp, span#password {
     display: flex;
@@ -126,7 +129,10 @@ span#otp > button {display: none;}
 <span id="errorExists">{{i18n.RegisterErrorExists}}</span>
 <span id="errorSecurity">{{i18n.RegisterErrorSecurity}}</span>
 <span id="errorInternal">{{i18n.RegisterErrorInternal}}</span>
+<span id="errorDomain">{{i18n.RegisterErrorDomain}}</span>
 <span id="errorPasswordMismatch">{{i18n.RegisterErrorPasswordMismatch}}</span>
+<span id="spinner"><img id="spinner" src="{{{COMPONENT_PATH}}}/img/spinner.svg"></span>
+
 <input type="text" id="name" placeholder="{{i18n.Name}}" value="{{name}}" required spellcheck="false"
     oninvalid="this.setCustomValidity('{{i18n.FillField}}')" oninput="setCustomValidity('')">
 <input type="email" id="id" placeholder="{{i18n.Email}}" value="{{id}}" required 

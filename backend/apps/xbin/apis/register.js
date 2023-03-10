@@ -13,7 +13,7 @@ const queueExecutor = require(`${CONSTANTS.LIBDIR}/queueExecutor.js`);
 const emailTemplate = require(`${APP_CONSTANTS.CONF_DIR}/email.json`);
 
 const DEFAULT_QUEUE_DELAY = 500, REASONS = {ID_EXISTS: "exists", OTP_ERROR: "otp", INTERNAL_ERROR: "internal", 
-	SECURITY_ERROR: "securityerror"};
+	SECURITY_ERROR: "securityerror", DOMAIN_ERROR: "domainerror"};
 
 exports.doService = async (jsonReq, servObject) => {
 	if (!validateRequest(jsonReq)) {LOG.error("Validation failure."); return CONSTANTS.FALSE_RESULT;}
@@ -23,6 +23,11 @@ exports.doService = async (jsonReq, servObject) => {
 exports.addUser = async (jsonReq, servObject, byAdmin=false) => {	
 	LOG.debug("Got register request for ID: " + jsonReq.id);
 
+	if (!(await exports.allowDomain(jsonReq))) {	// domain is not allowed
+		LOG.error(`Unable to register: ${jsonReq.name}, ID: ${jsonReq.id}, domain is not allowed.`);
+		return {...CONSTANTS.FALSE_RESULT, reason: REASONS.DOMAIN_ERROR};
+	}
+
 	if ((!byAdmin) && (!totp.verifyTOTP(jsonReq.totpSecret, jsonReq.totpCode))) {	// verify TOTP for non admin registrations
 		LOG.error(`Unable to register: ${jsonReq.name}, ID: ${jsonReq.id}, wrong totp code`);
 		return {...CONSTANTS.FALSE_RESULT, reason: REASONS.OTP_ERROR};
@@ -30,12 +35,12 @@ exports.addUser = async (jsonReq, servObject, byAdmin=false) => {
 
 	await exports.updateOrgAndDomain(jsonReq);	// set domain and override org if needed
 
-	if (!await _checkOrgAndDomainMatch(jsonReq)) {	// security check for org and domain match
+	if (!await exports.checkOrgAndDomainMatch(jsonReq)) {	// security check for org and domain match
 		LOG.error(`Unable to register: ${jsonReq.name}, ID: ${jsonReq.id}, security error, org and domain mismatch.`);
 		return {...CONSTANTS.FALSE_RESULT, reason: REASONS.SECURITY_ERROR};
 	}
 
-	const existingUsersForDomain = await userid.getUsersForDomain(_getRootDomain(jsonReq)), 
+	const existingUsersForDomain = await userid.getUsersForDomain(exports.getRootDomain(jsonReq)), 
 		existingUsersForOrg = await userid.getUsersForOrg(jsonReq.org), 
 		notFirstUserForThisDomain = existingUsersForDomain && existingUsersForDomain.result && existingUsersForDomain.users.length,
 		notFirstUserForThisOrg = existingUsersForOrg && existingUsersForOrg.result && existingUsersForOrg.users.length,
@@ -72,28 +77,35 @@ exports.addUser = async (jsonReq, servObject, byAdmin=false) => {
 }
 
 exports.updateOrgAndDomain = async jsonReq => {
-	const rootDomain = _getRootDomain(jsonReq);
+	const rootDomain = exports.getRootDomain(jsonReq);
 	const existingUsersForDomain = await userid.getUsersForDomain(rootDomain);
 	if (existingUsersForDomain && existingUsersForDomain.result && existingUsersForDomain.users.length) 
 		jsonReq.org = (await userid.getOrgForDomain(rootDomain))||jsonReq.org;	// if this domain already exists, override the org to the existing organization
 	jsonReq.domain = rootDomain;
 }
 
-exports.REASONS = REASONS;
+exports.getRootDomain = function(jsonReq, idProperty="id") {
+	const domain = jsonReq[idProperty].indexOf("@") != -1 ? 
+		jsonReq[idProperty].substring(jsonReq[idProperty].indexOf("@")+1).toLowerCase() : "undefined"
+	return domain;
+}
 
-async function _checkOrgAndDomainMatch(jsonReq) {
-	const rootDomain = _getRootDomain(jsonReq), domainsForOrg = await userid.getDomainsForOrg(jsonReq.org);
-	if ((!domainsForOrg) || (!domainsForOrg.length)) return true;	// this organization currently has no domains registered
+exports.allowDomain = async function(jsonReq, idProperty) {
+	const domain = exports.getRootDomain(jsonReq, idProperty);
+	return await userid.allowDomain(domain);
+}
+
+exports.checkOrgAndDomainMatch = async function (jsonReq, idProperty, mustHaveDomains) {
+	const rootDomain = exports.getRootDomain(jsonReq, idProperty), domainsForOrg = await userid.getDomainsForOrg(jsonReq.org);
+	// if this organization currently has no domains registered then return true unless caller insists we must have domains
+	if ((!domainsForOrg) || (!domainsForOrg.length)) if (mustHaveDomains) return false; else return true;
 
 	if (domainsForOrg.includes[rootDomain]) return true;	// matches
 	for (const domainToCheck of domainsForOrg) if (domainToCheck.includes(rootDomain) || rootDomain.includes(domainToCheck)) return true;
 	return false;	// the email doesn't match any known domains for this org and is not a subset or superset of them either
 }
 
-function _getRootDomain(jsonReq) {
-	const domain = jsonReq.id.indexOf("@") != -1 ? jsonReq.id.substring(jsonReq.id.indexOf("@")+1).toLowerCase() : "undefined"
-	return domain;
-}
+exports.REASONS = REASONS;
 
 async function _emailAccountVerification(id, name, org, lang) {
 	const cryptID = crypt.encrypt(id), cryptTime = crypt.encrypt(utils.getUnixEpoch().toString()), 

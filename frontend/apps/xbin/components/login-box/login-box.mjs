@@ -15,7 +15,7 @@ async function elementConnected(host) {
 	let data = {};
 
 	if (host.getAttribute("styleBody")) data.styleBody = `<style>${host.getAttribute("styleBody")}</style>`;
-	data.minlength = host.getAttribute("minlength");
+	data.minlength = host.getAttribute("minlength"); data.COMPONENT_PATH = COMPONENT_PATH;
 
 	login_box.setData(host.id, data);
 }
@@ -30,7 +30,7 @@ async function signin(signInButton) {
 	const routeOnSuccess = login_box.getHostElement(signInButton).getAttribute("routeOnSuccess");
 	const routeOnNotApproved = login_box.getHostElement(signInButton).getAttribute("routeOnNotApproved");
 
-	const loginResult = await loginmanager.signin(userid, pass, otp);
+	_showWait(shadowRoot); const loginResult = await loginmanager.signin(userid, pass, otp); _hideWait(shadowRoot);
 	_handleLoginResult(loginResult, shadowRoot, routeOnSuccess, routeOnNotApproved, signInButton);
 }
 
@@ -38,7 +38,7 @@ async function resetAccount(element) {
 	const shadowRoot = login_box.getShadowRootByContainedElement(element);
 	_hideErrors(shadowRoot);
 
-	const result = await loginmanager.reset(shadowRoot.getElementById("userid").value);
+	_showWait(shadowRoot); const result = await loginmanager.reset(shadowRoot.getElementById("userid").value); _hideWait(shadowRoot);
 	if ((!result) || (!result.result)) shadowRoot.getElementById("notifier3").classList.add("visible");
 	else shadowRoot.getElementById("notifier2").classList.add("visible");
 }
@@ -52,12 +52,14 @@ function _validateForm(shadowRoot) {
 }
 
 function _hideErrors(shadowRoot) {
-	shadowRoot.getElementById("errorMissingID").classList.remove("visible");
-	shadowRoot.getElementById("errorOTP").classList.remove("visible");
-	shadowRoot.getElementById("errorPassword").classList.remove("visible");
-	shadowRoot.getElementById("errorGeneric").classList.remove("visible");
-	shadowRoot.getElementById("notifier2").classList.remove("visible");
-	shadowRoot.getElementById("notifier3").classList.remove("visible");
+	shadowRoot.querySelector("span#errorMissingID").classList.remove("visible");
+	shadowRoot.querySelector("span#errorOTP").classList.remove("visible");
+	shadowRoot.querySelector("span#errorPassword").classList.remove("visible");
+	shadowRoot.querySelector("span#errorGeneric").classList.remove("visible");
+	shadowRoot.querySelector("span#errorDomain").classList.remove("visible");
+	shadowRoot.querySelector("span#notifier2").classList.remove("visible");
+	shadowRoot.querySelector("span#notifier3").classList.remove("visible");
+	shadowRoot.querySelector("span#spinner").classList.remove("visible");
 }
 
 async function _handleLoginResult(result, shadowRoot, routeOnSuccess, routeOnNotApproved, containedElement) {
@@ -75,14 +77,18 @@ async function _handleLoginResult(result, shadowRoot, routeOnSuccess, routeOnNot
 		case loginmanager.ID_OK_NOT_YET_VERIFIED: router.loadPage(routeOnSuccess, data); break;
 		case loginmanager.ID_OK_NOT_YET_APPROVED: router.loadPage(routeOnNotApproved, data); break;
 
-		case loginmanager.ID_FAILED_MISSING: shadowRoot.getElementById("errorMissingID").classList.add("visible"); break;
-		case loginmanager.ID_FAILED_OTP: shadowRoot.getElementById("errorOTP").classList.add("visible"); break;
-		case loginmanager.ID_FAILED_PASSWORD: shadowRoot.getElementById("errorPassword").classList.add("visible"); break;
+		case loginmanager.ID_FAILED_MISSING: shadowRoot.querySelector("span#errorMissingID").classList.add("visible"); break;
+		case loginmanager.ID_FAILED_OTP: shadowRoot.querySelector("span#errorOTP").classList.add("visible"); break;
+		case loginmanager.ID_FAILED_PASSWORD: shadowRoot.querySelector("span#errorPassword").classList.add("visible"); break;
+		case loginmanager.ID_DOMAIN_ERROR: shadowRoot.querySelector("span#errorDomain").classList.add("visible"); break;
 
-		case loginmanager.ID_INTERNAL_ERROR: shadowRoot.getElementById("errorGeneric").classList.add("visible"); break;
-		default: shadowRoot.getElementById("errorGeneric").classList.add("visible"); break;
+		case loginmanager.ID_INTERNAL_ERROR: shadowRoot.querySelector("span#errorGeneric").classList.add("visible"); break;
+		default: shadowRoot.querySelector("span#errorGeneric").classList.add("visible"); break;
 	}
 }
+
+const _showWait = shadowRoot => shadowRoot.querySelector("span#spinner").classList.add("visible");
+const _hideWait = shadowRoot => shadowRoot.querySelector("span#spinner").classList.remove("visible");
 
 const trueWebComponentMode = true;	// making this false renders the component without using Shadow DOM
 export const login_box = {signin, resetAccount, trueWebComponentMode, elementConnected}

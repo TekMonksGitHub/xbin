@@ -58,14 +58,15 @@ div.container {
     background-color: #ffffff;
 }
 
-span#errorPassword,  span#errorMissingID, span#errorOTP, span#errorGeneric {
+span#errorPassword,  span#errorMissingID, span#errorOTP, span#errorGeneric, span#errorDomain {
     color: #e40000;
     padding: 0;
     margin: 0;
     display: none;
 }
 
-span#errorPassword.visible, span#errorMissingID.visible, span#errorOTP.visible, span#errorGeneric.visible {display: flex; flex-direction: column;}
+span#errorPassword.visible, span#errorMissingID.visible, span#errorOTP.visible, span#errorGeneric.visible, 
+    span#errorDomain.visible {display: flex; flex-direction: column;}
 
 span#notifier2 {
     color: #003de4;
@@ -87,6 +88,10 @@ span#resetaccount:hover {
     text-decoration: underline;
     cursor: default;
 }
+
+span#spinner {display: none;}
+span#spinner.visible {display: inline;}
+img#spinner {height: 2em; width: 2em;}
 </style>
 
 <script type="module">
@@ -98,8 +103,10 @@ span#resetaccount:hover {
 <div id="container">
 <span id="errorPassword">{{i18n.BadLoginPassword}}&nbsp;<span id="resetaccount" onclick="monkshu_env.components['login-box'].resetAccount(this)">{{i18n.LoginReset}}</span></span>
 <span id="errorMissingID">{{i18n.BadLoginID}}</span>
+<span id="errorDomain">{{i18n.BadLoginDomain}}</span>
 <span id="errorOTP">{{i18n.BadLoginOTP}}&nbsp;<span id="resetaccount" onclick="monkshu_env.components['login-box'].resetAccount(this)">{{i18n.LoginReset}}</span></span>
 <span id="errorGeneric">{{i18n.BadLoginInternal}}</span>
+<span id="spinner"><img id="spinner" src="{{{COMPONENT_PATH}}}/img/spinner.svg"></span>
 
 <span id="notifier2">{{i18n.LoginWasReset}}</span>
 <span id="notifier3">{{i18n.LoginWasNotReset}}</span>

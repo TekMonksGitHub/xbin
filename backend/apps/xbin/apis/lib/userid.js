@@ -11,6 +11,7 @@ const serverutils = require(`${CONSTANTS.LIBDIR}/utils.js`);
 const DB_PATH = path.resolve(`${APP_CONSTANTS.DB_DIR}/app.db`);
 const DB_CREATION_SQLS = require(`${APP_CONSTANTS.DB_DIR}/dbschema.json`);
 const getUserHash = async text => await (util.promisify(bcryptjs.hash))(text, 12);
+const ID_BLACK_WHITE_LISTS = require(`${APP_CONSTANTS.CONF_DIR}/idblackwhitelists.json`)
 const db = require(`${CONSTANTS.LIBDIR}/db.js`).getDBDriver("sqlite", DB_PATH, DB_CREATION_SQLS);
 
 exports.register = async (id, name, org, pwph, totpSecret, role, approved, verifyEmail=1, domain) => {
@@ -112,6 +113,12 @@ exports.updateLoginStats = async (id, date, ip="unknown") => {
 exports.getAdminsFor = async id => {
 	const admins = await db.getQuery("SELECT * FROM users WHERE role = 'admin' AND org = (select org from users where id = ? COLLATE NOCASE) COLLATE NOCASE", [id]);
 	if (admins && admins.length) return admins; else return null;
+}
+
+exports.allowDomain = async domain => {
+	if (CONF.id_whitelist_mode) return ID_BLACK_WHITE_LISTS.whitelist.includes(domain.toLowerCase());	// whitelist only mode activated
+	if (CONF.id_blacklist_mode) return (!ID_BLACK_WHITE_LISTS.blacklist.includes(domain.toLowerCase()));	// blacklist check
+	return true;	// white or black lists are not being used so allow everything
 }
 
 function _flattenArray(results, columnName) { 

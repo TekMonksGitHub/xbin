@@ -48,8 +48,21 @@ async function changeProfile(_element) {
     dialog().showDialog(`${APP_CONSTANTS.DIALOGS_PATH}/resetprofile.html`, true, true, sessionUser, "dialog", 
             ["name", "id", "org"], async result => {
         
-        if (await loginmanager.registerOrUpdate(sessionUser.id, result.name, result.id, null, result.org)) dialog().hideDialog("dialog");
-        else dialog().error("dialog", await i18n.get("PROFILECHANGEFAILED"));
+        const updateResult = await loginmanager.registerOrUpdate(sessionUser.id, result.name, result.id, null, result.org);
+        if (updateResult == loginmanager.ID_OK) dialog().hideDialog("dialog");
+        else {
+            let errorKey = "Internal"; switch (updateResult)
+            {
+                case loginmanager.ID_FAILED_EXISTS: errorKey = "Exists"; break;
+                case loginmanager.ID_FAILED_OTP: errorKey = "OTP"; break;
+                case loginmanager.ID_INTERNAL_ERROR: errorKey = "Internal"; break;
+                case loginmanager.ID_DB_ERROR: errorKey = "Internal"; break;
+                case loginmanager.ID_SECURITY_ERROR: errorKey = "SecurityError"; break;
+                case loginmanager.ID_DOMAIN_ERROR: errorKey = "DomainError"; break;
+                default: errorKey = "Internal"; break;
+            }
+            dialog().error("dialog", await i18n.get(`ProfileChangedFailed${errorKey}`));
+        }
     });
 }
 

@@ -92,7 +92,10 @@ async function editUser(name, id, role, approved, element) {
 		const backendURL = user_manager.getHostElement(element).getAttribute("backendurl");
 		const editResult = await apiman.rest(`${backendURL}/${API_EDITUSER}`, "POST", ret, true);
 		if (!editResult?.result) {
-			const err = mustache_instance.render(await i18n.get("EditError"), {name, id}); 
+			const errorKey = editResult ? editResult.reason == "exists" ? "Exists" : editResult.reason == "otp" ?
+				"OTP" : editResult.reason == "internal" ? "Internal" : editResult.reason == "securityerror" ? "SecurityError" :
+				editResult.reason == "domainerror" ? "DomainError" : "Internal" : "Internal";
+			const err = mustache_instance.render(await i18n.get(`EditError${errorKey}`), {name, id}); 
 			LOG.error(err); monkshu_env.components['dialog-box'].error("dialog", err);
 		} else {
 			monkshu_env.components['dialog-box'].hideDialog("dialog");
