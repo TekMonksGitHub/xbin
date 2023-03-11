@@ -37,6 +37,7 @@ exports.doService = async (jsonReq, _, headers) => {
 
 	const successfulListeners = [], rollback = async _ => {	
 		for (idChangeListener of successfulListeners) await idChangeListener(jsonReq.new_id, jsonReq.old_id, jsonReq.org);}
+	let userDomain = register.getRootDomain(jsonReq, "old_id");
 	if (jsonReq.old_id.toLowerCase() != jsonReq.new_id.toLowerCase()) {	// domain check, account takeover check and tell ID change listeners the user is changing their ID
 		const checkExists = await userid.existsID(jsonReq.new_id); if (checkExists && checkExists.result) {	// account takeover check
 			LOG.error(`${jsonReq.name}, ID: ${jsonReq.old_id} tried to update their ID/email to another registered user, blocked.`);
@@ -54,15 +55,17 @@ exports.doService = async (jsonReq, _, headers) => {
 			LOG.error(`Unable to update: ${jsonReq.name}, ID: ${jsonReq.old_id}, an ID change listener vetoed.`); 
 			return {...CONSTANTS.FALSE_RESULT, reason: register.REASONS.INTERNAL_ERROR}; 
 		} else successfulListeners.push(idChangeListener);
+
+		userDomain = register.getRootDomain(jsonReq, "new_id");	// domain may have potentially changed too
 	}
 
 	const result = await userid.update(jsonReq.old_id, jsonReq.new_id, jsonReq.name||idEntry.name, 
 		jsonReq.org||idEntry.org, idEntry.pwph, jsonReq.pwph, jsonReq.totpSecret||idEntry.totpsec, 
-		jsonReq.role||idEntry.role, (jsonReq.approved==true||jsonReq.approved==1)?1:0, jsonReq.domain||idEntry.domain);
+		jsonReq.role||idEntry.role, (jsonReq.approved==true||jsonReq.approved==1)?1:0, userDomain);
 
 	if (result.result) {	// update done successfully
 		LOG.info(`User updated and logged in: ${jsonReq.name}, old ID: ${jsonReq.old_id}, new ID: ${jsonReq.new_id}`); 
-		return {...CONSTANTS.TRUE_RESULT, ...result, tokenflag: result.approved, reason: undefined};
+		return {...CONSTANTS.TRUE_RESULT, ...result, tokenflag: result.approved==1?true:false, reason: undefined};
 	}
 	else {	// DB or internal error
 		LOG.error(`Unable to update: ${jsonReq.name}, ID: ${jsonReq.old_id}, DB error`);

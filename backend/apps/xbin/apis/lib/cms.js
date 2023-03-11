@@ -3,12 +3,14 @@
  */
 const fs = require("fs");
 const fspromises = fs.promises;
+const utils = require(`${CONSTANTS.LIBDIR}/utils.js`);
 const login = require(`${API_CONSTANTS.API_DIR}/login.js`);
 const updateuser = require(`${API_CONSTANTS.API_DIR}/updateuser.js`);
 
 exports.init = _ => updateuser.addIDChangeListener(async (oldID, newID, org) => {
 	const oldPath = _getPathForIDAndOrg(oldID, org), newPath = _getPathForIDAndOrg(newID, org);
 	try {
+		if (!await utils.rmrf(newPath)) throw `Can't access or delete path ${newPath}`;	// remove existing newPath folder, if it exists, as this ID is taking it over
 		await fspromises.rename(oldPath, newPath); 
 		LOG.info(`Renamed home folder for ID ${oldID} who is changing their ID to new ID ${newID} from ${oldPath} to ${newPath}.`); return true;
 	} catch (err) {
