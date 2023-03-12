@@ -6,14 +6,15 @@ const mustache = require('mustache');
 const utils = require(`${CONSTANTS.LIBDIR}/utils.js`);
 const crypt = require(`${CONSTANTS.LIBDIR}/crypt.js`);
 const totp = require(`${APP_CONSTANTS.LIB_DIR}/totp.js`);
-const CONF = require(`${API_CONSTANTS.CONF_DIR}/app.json`);
+const CONF = require(`${APP_CONSTANTS.CONF_DIR}/app.json`);
 const mailer = require(`${APP_CONSTANTS.LIB_DIR}/mailer.js`);
 const userid = require(`${APP_CONSTANTS.LIB_DIR}/userid.js`);
 const queueExecutor = require(`${CONSTANTS.LIBDIR}/queueExecutor.js`);
 const emailTemplate = require(`${APP_CONSTANTS.CONF_DIR}/email.json`);
 
-const DEFAULT_QUEUE_DELAY = 500, REASONS = {ID_EXISTS: "exists", OTP_ERROR: "otp", INTERNAL_ERROR: "internal", 
-	SECURITY_ERROR: "securityerror", DOMAIN_ERROR: "domainerror"};
+const DEFAULT_QUEUE_DELAY = 500, newUserListeners = [], REASONS = {ID_EXISTS: "exists", OTP_ERROR: "otp", 
+	INTERNAL_ERROR: "internal", SECURITY_ERROR: "securityerror", DOMAIN_ERROR: "domainerror", 
+	ID_DOESNT_EXIST: "iddoesntexist"};
 
 exports.doService = async (jsonReq, servObject) => {
 	if (!validateRequest(jsonReq)) {LOG.error("Validation failure."); return CONSTANTS.FALSE_RESULT;}
@@ -51,15 +52,21 @@ exports.addUser = async (jsonReq, servObject, byAdmin=false) => {
 
 	const result = await userid.register(jsonReq.id, jsonReq.name, jsonReq.org, jsonReq.pwph, jsonReq.totpSecret, role, 
 		approved, verifyEmail, jsonReq.domain);
-	if (!result.result && result.reason != userid.ID_EXISTS) LOG.error(`Unable to register: ${jsonReq.name}, ID: ${jsonReq.id} DB error.`);
-	else LOG.error(`Unable to register: ${jsonReq.name}, ID: ${jsonReq.id} exists already.`);
+	if ((!result) || ((!result.result) && result.reason != userid.ID_EXISTS)) LOG.error(`Unable to register: ${jsonReq.name}, ID: ${jsonReq.id} DB error.`);
+	else if (!result.result) LOG.error(`Unable to register: ${jsonReq.name}, ID: ${jsonReq.id} exists already.`);
 
-	if (result.result && verifyEmail) {
+	if (result.result) for (const newUserListener of newUserListeners) if (!(await newUserListener(jsonReq.id, jsonReq.org))) {	// inform listeners and watch for a veto
+		LOG.error(`Listener veto for id ${id}, for org ${org}. Dropping the ID.`);
+		try {userid.delete(id)} catch(_) {};	// try to drop the account
+		return {...CONSTANTS.FALSE_RESULT, reason: REASONS.INTERNAL_ERROR};
+	}
+
+	if (result.result && verifyEmail) {	// send verification email
 		let mailVerificationResult = false; try{mailVerificationResult = await _emailAccountVerification(result.id, result.name, result.org, jsonReq.lang);} catch (err) {}
 		if (!mailVerificationResult) {
-			try {userid.delete(id)} catch(_) {};	// try to drop the account
 			LOG.info(`Unable to register: ${jsonReq.name}, ID: ${jsonReq.id} verification email error.`); 
-			result.result = false;	// email verification is needed, and failed
+			try {userid.delete(id)} catch(_) {};	// try to drop the account
+			return {...CONSTANTS.FALSE_RESULT, reason: REASONS.INTERNAL_ERROR};
 		}
 	}
 
@@ -104,6 +111,8 @@ exports.checkOrgAndDomainMatch = async function (jsonReq, idProperty, mustHaveDo
 	for (const domainToCheck of domainsForOrg) if (domainToCheck.includes(rootDomain) || rootDomain.includes(domainToCheck)) return true;
 	return false;	// the email doesn't match any known domains for this org and is not a subset or superset of them either
 }
+
+exports.addNewUserListener = listener => newUserListeners.push(listener);
 
 exports.REASONS = REASONS;
 

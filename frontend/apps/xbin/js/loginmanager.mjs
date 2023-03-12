@@ -46,8 +46,8 @@ const reset = id => apiman.rest(APP_CONSTANTS.API_RESET, "GET", {id, lang: i18n.
 async function registerOrUpdate(old_id, name, id, pass, org, totpSecret, totpCode, role, approved) {
     const pwph = `${id} ${pass||session.get("__org_telemeet_cuser_pass")}`;
 
-    const req = {old_id, name, id: old_id?session.get(APP_CONSTANTS.USERID):id, pwph, org, totpSecret, totpCode, 
-        role, approved, lang: i18n.getSessionLang(), new_id: old_id?id:undefined}; 
+    const req = {old_id, name, id: (old_id && session.get(APP_CONSTANTS.USERID))?session.get(APP_CONSTANTS.USERID):id, 
+        pwph, org, totpSecret, totpCode, role, approved, lang: i18n.getSessionLang(), new_id: old_id?id:undefined}; 
     const resp = await apiman.rest(old_id?APP_CONSTANTS.API_UPDATE:APP_CONSTANTS.API_REGISTER, "POST", req, old_id?true:false, true);
     if (!resp) {LOG.error(`${old_id?"Update":"Registration"} failed for ${id} due to internal error. Null response.`); return loginmanager.ID_INTERNAL_ERROR;}
     else if (!resp.result) {    // registration failed, reasons can be bad OTP, ID exists or some internal error

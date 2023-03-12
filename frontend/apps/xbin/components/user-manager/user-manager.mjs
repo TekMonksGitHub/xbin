@@ -62,18 +62,23 @@ async function userMenuClicked(event, element, name, id, _org, role, approved) {
 async function addUser(element) {
 	const roles = []; for (const thisrole of conf.roles) roles.push({label:await i18n.get(thisrole), value: thisrole, selected: thisrole==conf.user_role?true:undefined});
 	monkshu_env.components['dialog-box'].showDialog(`${COMPONENT_PATH}/dialogs/addeditprofile.html`, true, true, 
-			{approved: true, roles, CONF:conf}, "dialog", ["name", "id", "role", "approved"], async ret => {
+			{approved: true, roles, CONF:conf}, "dialog", ["name", "new_id", "role", "approved"], async ret => {
 		
 		if (ret.approved.toLowerCase() == "true") ret.approved = true; else ret.approved = false;
-		ret.org = session.get(conf.userorg_session_variable); ret.lang = i18n.getSessionLang();
+		ret.org = session.get(conf.userorg_session_variable); ret.lang = i18n.getSessionLang(); 
 		const backendURL = user_manager.getHostElement(element).getAttribute("backendurl");
-		const addResult = await apiman.rest(`${backendURL}/${API_ADDUSER}`, "POST", ret, true);
 
+		const addResult = await _callBackendAPIShowingSpinner(`${backendURL}/${API_ADDUSER}`, ret);
 		if (!addResult?.result) {	// account creation failed
-			const err = mustache_instance.render(await i18n.get("AddError"), {name: ret.name, id: ret.id}); 
-			LOG.error(err); monkshu_env.components['dialog-box'].hideDialog("dialog"); _showMessage("dialog", err);
+			const errorKey = addResult ? addResult.reason == "exists" ? "Exists" : addResult.reason == "otp" ?
+				"OTP" : addResult.reason == "internal" ? "Internal" : addResult.reason == "securityerror" ? "SecurityError" :
+				addResult.reason == "domainerror" ? "DomainError" : addResult.reason == "iddoesntexist" ? "IDNotExistForUpdateError" : 
+				"Internal" : "Internal";
+			const err = mustache_instance.render(await i18n.get(`AddError${errorKey}`), {name: ret.name, id: ret.id}); 
+			LOG.error(err); monkshu_env.components['dialog-box'].hideDialog("dialog"); _showError(err);
 		} else if (!addResult.emailresult) {	// account created but login email send failed
-			const err = mustache_instance.render(await i18n.get("AddEmailError"), {name: ret.name, id: ret.id, loginurl: addResult.loginurl}); 
+			const err = mustache_instance.render(await i18n.get("AddErrorEmailError"), {name: ret.name, id: ret.id, 
+				loginurl: addResult.loginurl}); 
 			LOG.error(err); monkshu_env.components['dialog-box'].hideDialog("dialog"); _showError(err);
 		} else monkshu_env.components['dialog-box'].hideDialog("dialog");
 
@@ -81,21 +86,22 @@ async function addUser(element) {
 	});
 }
 
-async function editUser(name, id, role, approved, element) {
+async function editUser(name, old_id, role, approved, element) {
 	const roles = []; for (const thisrole of conf.roles) roles.push({label:await i18n.get(thisrole), value: thisrole, selected: thisrole==role?true:undefined});
 	monkshu_env.components['dialog-box'].showDialog(`${COMPONENT_PATH}/dialogs/addeditprofile.html`, true, true, 
-			{name, id, role, approved:approved==1?true:undefined, roles, CONF:conf, 
-				doNotAllowApproval:id==session.get(conf.userid_session_variable)?true:undefined}, "dialog", 
-			["name", "id", "role", "approved", "old_id"], async ret => {
+			{name, old_id, role, approved:approved==1?true:undefined, roles, CONF:conf, 
+				doNotAllowApproval:old_id==session.get(conf.userid_session_variable)?true:undefined, COMPONENT_PATH}, "dialog", 
+			["name", "new_id", "role", "approved", "old_id"], async ret => {
 		
-		if (ret.approved.toLowerCase() == "true") ret.approved = true; else ret.approved = false;
+		const req = {...ret, approved: ret.approved.toLowerCase() == "true" ? true:false, id: session.get(conf.userid_session_variable)}; 
 		const backendURL = user_manager.getHostElement(element).getAttribute("backendurl");
-		const editResult = await apiman.rest(`${backendURL}/${API_EDITUSER}`, "POST", ret, true);
+		const editResult = await _callBackendAPIShowingSpinner(`${backendURL}/${API_EDITUSER}`, req);
 		if (!editResult?.result) {
 			const errorKey = editResult ? editResult.reason == "exists" ? "Exists" : editResult.reason == "otp" ?
 				"OTP" : editResult.reason == "internal" ? "Internal" : editResult.reason == "securityerror" ? "SecurityError" :
-				editResult.reason == "domainerror" ? "DomainError" : "Internal" : "Internal";
-			const err = mustache_instance.render(await i18n.get(`EditError${errorKey}`), {name, id}); 
+				editResult.reason == "domainerror" ? "DomainError" : editResult.reason == "iddoesntexist" ? "IDNotExistForUpdateError" : 
+				"Internal" : "Internal";
+			const err = mustache_instance.render(await i18n.get(`EditError${errorKey}`), {name, old_id}); 
 			LOG.error(err); monkshu_env.components['dialog-box'].error("dialog", err);
 		} else {
 			monkshu_env.components['dialog-box'].hideDialog("dialog");
@@ -145,6 +151,14 @@ function _createData(host, users) {
 	data.CONF = conf;
 
 	return data;
+}
+
+const _callBackendAPIShowingSpinner = async (url, req, method="POST", sendToken=true) => {
+	const dialogShadowRoot = monkshu_env.components['dialog-box'].getShadowRootByHostId("dialog");
+	dialogShadowRoot.querySelector("span#spinner").classList.add("visible");
+	const result = await apiman.rest(url, method, req, sendToken);
+	dialogShadowRoot.querySelector("span#spinner").classList.remove("visible");
+	return result;
 }
 
 const _showError = async error => { await monkshu_env.components['dialog-box'].showDialog(`${COMPONENT_PATH}/dialogs/error.html`, 

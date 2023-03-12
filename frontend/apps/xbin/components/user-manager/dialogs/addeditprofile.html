@@ -91,6 +91,15 @@ select {
 .tgl-ios:checked + .tgl-btn {background: #41cf70;}
 .tgl-ios:checked + .tgl-btn:active {box-shadow: none;}
 .tgl-ios:checked + .tgl-btn:active:after {margin-left: -.8em;}
+
+span#spinner {
+    display: block;
+    text-align: center;
+    margin-top: 1em;
+    visibility: hidden;
+}
+span#spinner.visible {visibility: visible;}
+img#spinner {height: 2em; width: 2em;}
 </style>
 {{{CONF.MOBILE_MEDIA_QUERY_START}}}
     div#dialog {width: 98%; height: 98%; box-sizing: border-box; padding: 2em;}
@@ -107,9 +116,9 @@ select {
 
 <input type="text" id="name" placeholder="{{i18n.Name}}" value="{{name}}" required 
     oninvalid="this.setCustomValidity('{{i18n.FillField}}')" oninput="setCustomValidity('')">
-<input type="text" id="id" placeholder="{{i18n.Email}}" value="{{id}}" required 
+<input type="text" id="new_id" placeholder="{{i18n.Email}}" value="{{old_id}}" required 
     oninvalid="this.setCustomValidity('{{i18n.FillField}}')" oninput="setCustomValidity('')">
-<input type="hidden" id="old_id" value="{{id}}">
+<input type="hidden" id="old_id" value="{{old_id}}">
 <select id="role" value="{{role}}" required>
     {{#roles}}
     <option value="{{value}}" {{#selected}}selected{{/selected}}>{{label}}</option>
@@ -122,6 +131,8 @@ select {
     <label class="tgl-btn" for="approved">
 </span>
 {{/doNotAllowApproval}}
+
+<span id="spinner"><img id="spinner" src="{{{COMPONENT_PATH}}}/img/spinner.svg"></span>
 
 <script>
 function onOK(element) {monkshu_env.components["dialog-box"].submit(element);}

@@ -12,3 +12,4 @@ exports.CONF_DIR = `${APP_ROOT}/conf`;
 exports.LIB_DIR = path.resolve(__dirname);
 exports.API_DIR = path.resolve(`${__dirname}/../`);
 exports.DB_DIR = `${APP_ROOT}/db`;
+exports.ROLES = {ADMIN: "admin", USER: "user"};

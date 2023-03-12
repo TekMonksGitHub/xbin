@@ -157,6 +157,7 @@ export const i18n = {
 "EditErrorOTP": "Failed due wrong one time code. Please retry.",
 "EditErrorSecurityError": "Failed due security error, please contact your support team.",
 "EditErrorDomainError": "Failed due the domain for the new ID being not allowed. Please contact your support team.",
+"EditErrorIDNotExistForUpdateError": "Failed due to bad ID for update. Please contact your support team.",
 "AddError": "Failed due to a backend error, please contact your support team.",
 "GenericBackendError": "Failed due to a backend error, please contact your support team.",
 "AddEmailError": "Account created, initial login email failed. Please ask the user {{name}} with email {{id}} to login using this URL <br> {{loginurl}}",

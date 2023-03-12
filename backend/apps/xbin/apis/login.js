@@ -4,9 +4,9 @@
  */
 const utils = require(`${CONSTANTS.LIBDIR}/utils.js`);
 const totp = require(`${APP_CONSTANTS.LIB_DIR}/totp.js`);
-const CONF = require(`${API_CONSTANTS.CONF_DIR}/app.json`);
+const CONF = require(`${APP_CONSTANTS.CONF_DIR}/app.json`);
 const userid = require(`${APP_CONSTANTS.LIB_DIR}/userid.js`);
-const register = require(`${API_CONSTANTS.API_DIR}/register.js`);
+const register = require(`${APP_CONSTANTS.API_DIR}/register.js`);
 const jwttokenmanager = APIREGISTRY.getExtension("JWTTokenManager");
 const queueExecutor = require(`${CONSTANTS.LIBDIR}/queueExecutor.js`);
 
@@ -80,7 +80,7 @@ exports.getRole = headers => {
 	return logins[headers["authorization"].toLowerCase()]?logins[headers["authorization"].toLowerCase()].role:null;
 }
 
-exports.isAdmin = headers => (exports.getRole(headers))?.toLowerCase() == "admin";
+exports.isAdmin = headers => (exports.getRole(headers))?.toLowerCase() == APP_CONSTANTS.ROLES.ADMIN.toLowerCase();
 
 exports.REASONS = REASONS;
 
