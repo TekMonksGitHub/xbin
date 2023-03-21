@@ -1,0 +1,95 @@
+<!--
+/** 
+* Floating Window hosting component.
+* (C) 2020 TekMonks. All rights reserved.
+* License: See enclosed LICENSE file.
+*/
+-->
+<style>
+body, html {
+    margin: 0; 
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+div#container::-webkit-scrollbar {
+    width: 0.5em !important;
+    height: 0.5em !important;
+    scroll-behavior: smooth !important;
+}
+
+div#container::-webkit-scrollbar-track {
+    -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3) !important;
+    box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3) !important;
+    margin: 20px;
+    border-radius: 10px !important;
+}
+
+div#container::-webkit-scrollbar-thumb {
+    background-color: darkgrey !important;
+    border-radius: 10px !important;
+    background-clip: padding-box;
+}
+
+div#container {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    background-color: white;
+    height: 100%;
+    width: 100%;
+}
+
+input {
+    color: #444444;
+    outline: none;
+    border: 0px;
+    flex-grow: 1;
+    max-width: calc(100% - 2em);
+}
+
+span#adder {
+    margin-bottom: 0.5em; 
+    border-radius: 0.5em;
+    border-bottom: 1px solid darkgray;
+}
+span.item {
+    border: 1px solid darkgray;
+    border-bottom: 0;
+    border-radius: 0;
+    display: flex;
+    padding: 0.25em;
+    flex-direction: row;
+}
+span.item img {height: 1.5em; width: 1.5em;}
+div#container span:last-child {
+    border-bottom: 1px solid darkgray;
+    border-radius: 0 0 0.5em 0.5em;
+}
+div#container span:first-child {
+    border-radius: 0.5em 0.5em 0em 0em;
+}
+div#container span:first-child:last-child {border-radius: 0.5em;}
+</style>
+
+{{{styleBody}}}
+
+<span id="adder" class="item">
+    <input id="adder" placeholder="{{placeholder}}">
+    <img src="{{{COMPONENT_PATH}}}/img/add.svg" onclick="monkshu_env.components['editable-list'].addItem(
+        this.parentNode.querySelector('input#adder'))">
+</span>
+<div id="container">
+    {{#items}}
+    <span class="item">
+        <input id="node{{id}}" 
+            {{#ondblclick}}ondblclick='function() { return eval("{{{ondblclick}}}"); }.call(event)'{{/ondblclick}} 
+            type="text" value="{{{label}}}">
+        <img src="{{{COMPONENT_PATH}}}/img/delete.svg" onclick="monkshu_env.components['editable-list'].removeItem(
+            this.parentNode.querySelector('input#node{{id}}'), '{{id}}')">
+    </span>
+    {{/items}}
+</div>

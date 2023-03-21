@@ -24,7 +24,7 @@ exports.doService = async (jsonReq, servObject) => {
 exports.addUser = async (jsonReq, servObject, byAdmin=false) => {	
 	LOG.debug("Got register request for ID: " + jsonReq.id);
 
-	if (!(await exports.allowDomain(jsonReq))) {	// domain is not allowed
+	if (!(await exports.shouldAllowDomain(jsonReq, "id"))) {	// domain is not allowed
 		LOG.error(`Unable to register: ${jsonReq.name}, ID: ${jsonReq.id}, domain is not allowed.`);
 		return {...CONSTANTS.FALSE_RESULT, reason: REASONS.DOMAIN_ERROR};
 	}
@@ -97,9 +97,9 @@ exports.getRootDomain = function(jsonReq, idProperty="id") {
 	return domain;
 }
 
-exports.allowDomain = async function(jsonReq, idProperty) {
+exports.shouldAllowDomain = async function(jsonReq, idProperty) {
 	const domain = exports.getRootDomain(jsonReq, idProperty);
-	return await userid.allowDomain(domain);
+	return await userid.shouldAllowDomain(domain);
 }
 
 exports.checkOrgAndDomainMatch = async function (jsonReq, idProperty, mustHaveDomains) {

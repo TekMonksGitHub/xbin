@@ -1,0 +1,96 @@
+<style>
+@import url('https://fonts.googleapis.com/css?family=Raleway:100,100i,200,200i,300,300i,400,400i,500,500i,600,600i,700,700i,800,800i,900,900i&amp;display=swap');
+
+body, html {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+div#dialog {
+    box-sizing: border-box;
+    width: 50em;
+    height: 90vh;
+}
+
+div#dialogcontent {
+    height: calc(100% - 6em);
+    margin: 0;
+}
+
+div#buttonbar {
+    position: absolute;
+    bottom: 3em;
+    width: calc(100% - 6em);
+}
+
+input {
+    width: 100%;
+    border-style: none;
+    outline: none;
+    text-align: left;
+    background-color: transparent;
+    transition: background-color 5000s ease-in-out 0s;
+    border-bottom: 1px solid darkgray;
+    font-family: inherit;
+    font-size: smaller;
+    display: block;
+    color: #444444;
+    margin-bottom: 2.5em;
+    border-radius: 0;
+}
+
+input.error {color: red;}
+
+span#spinner {
+    display: block;
+    text-align: center;
+    margin-top: 1em;
+    visibility: hidden;
+}
+span#spinner.visible {visibility: visible;}
+img#spinner {height: 2em; width: 2em;}
+
+div#editListsContainer {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+div#editListsContainer editable-list {width: 40%}
+</style>
+{{{CONF.MOBILE_MEDIA_QUERY_START}}}
+    div#dialog {width: 98%; height: calc(98% - 4em); box-sizing: border-box; padding: 2em; top: calc(50% - 2em);}
+    body {width: 100%; min-width: 0; height: 100%;}
+    span#close {display:none;}
+    div#buttonbar {position: absolute; width: calc(100% - 4em); bottom: 2em; justify-content: space-between;}
+{{{CONF.MOBILE_MEDIA_QUERY_END}}}
+{{{CONF.MOBILE_MEDIA_QUERY_LANDSCAPE_START}}}
+    div#dialog {height: calc(96% - 4em);}
+{{{CONF.MOBILE_MEDIA_QUERY_LANDSCAPE_END}}}
+{{{CONF.MOBILE_MEDIA_QUERY_PORTRAIT_START}}}
+    div#dialog {width: 96%;}
+{{{CONF.MOBILE_MEDIA_QUERY_PORTRAIT_END}}}
+
+<input type="text" id="orgname" placeholder="{{i18n.OrgName}}" value="{{orgname}}" required 
+    oninvalid="this.setCustomValidity('{{i18n.FillField}}')" oninput="setCustomValidity('')">
+<input type="text" id="orgaddress" placeholder="{{i18n.OrgAddress}}" value="{{orgaddress}}" required 
+    oninvalid="this.setCustomValidity('{{i18n.FillField}}')" oninput="setCustomValidity('')">
+<input type="text" id="orgcontactname" placeholder="{{i18n.OrgContactName}}" value="{{orgcontactname}}" required 
+    oninvalid="this.setCustomValidity('{{i18n.FillField}}')" oninput="setCustomValidity('')">
+<input type="email" id="orgcontactemail" placeholder="{{i18n.OrgContactEmail}}" value="{{orgcontactemail}}" required 
+    oninvalid="this.setCustomValidity('{{i18n.FillField}}')" oninput="setCustomValidity('')">
+<input type="url" id="orgdomain" placeholder="{{i18n.OrgMainDomain}}" value="{{orgdomain}}" required 
+    oninvalid="this.setCustomValidity('{{i18n.FillField}}')" oninput="setCustomValidity('')">
+<span id="spinner"><img id="spinner" src="{{{COMPONENT_PATH}}}/img/spinner.svg"></span>
+
+<div id="editListsContainer">
+    <editable-list id="orgnames" placeholder="{{i18n.AlternateName}}">{{orgnames}}</editable-list>
+    <editable-list id="orgdomains" placeholder="{{i18n.AlternateDomain}}">{{orgdomains}}</editable-list>
+</div>
+
+<script>
+function onOK(element) {monkshu_env.components["dialog-box"].submit(element);}
+</script>

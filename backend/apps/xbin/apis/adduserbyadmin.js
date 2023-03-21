@@ -21,7 +21,7 @@ exports.doService = async (jsonReq, servObject, headers) => {
         totpSecret: totp.getSecret(), lang: jsonReq.lang, role: jsonReq.role, verifyEmail : 0,
         approved: (jsonReq.approved==true||jsonReq.approved==1)?1:0}, servObject, true);
 
-    if (result.result) {
+    if (result?.result) {
         LOG.info(`User registered ${jsonReq.name}, ID: ${jsonReq.new_id}, by admin with ID: ${login.getID(headers)}, emailing them initial login instructions.`); 
 
         const cryptID = crypt.encrypt(jsonReq.new_id), cryptTime = crypt.encrypt(Date.now().toString()), 
@@ -36,8 +36,8 @@ exports.doService = async (jsonReq, servObject, headers) => {
         
         return {...CONSTANTS.TRUE_RESULT, emailresult: emailResult, loginurl: action_url, reason: result.reason};
     } else {
-        LOG.error(`Unable to register: ${jsonReq.name}, ID: ${jsonReq.new_id} due to reason: ${result.reason}.`);
-        return {...CONSTANTS.FALSE_RESULT, reason: result.reason};
+        LOG.error(`Unable to register: ${jsonReq.name}, ID: ${jsonReq.new_id} due to reason: ${result?.reason}.`);
+        return {...CONSTANTS.FALSE_RESULT, reason: result?.reason};
     }
 }
  

@@ -45,6 +45,7 @@ export const APP_CONSTANTS = {
     TIMEOUT: 600000,
     USERNAME: "username",
     USERORG: "userorg",
+    USERORGDOMAIN: "userorgdomain",
     USER_NEEDS_VERIFICATION: "userneedsverification",
 
     USER_ROLE: "user",

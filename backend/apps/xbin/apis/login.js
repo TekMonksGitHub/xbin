@@ -35,7 +35,7 @@ exports.doService = async (jsonReq, servObject) => {
 	
 	LOG.debug(`Got login request for ID ${jsonReq.id}`);
 
-	if (!(await register.allowDomain(jsonReq))) {	// domain is not allowed, don't check anything else
+	if (!(await register.shouldAllowDomain(jsonReq, "id"))) {	// domain is not allowed, don't check anything else
 		LOG.error(`Unable to login: ${jsonReq.name}, ID: ${jsonReq.id}, domain is not allowed.`);
 		return {...CONSTANTS.FALSE_RESULT, reason: REASONS.DOMAIN_ERROR};
 	}
