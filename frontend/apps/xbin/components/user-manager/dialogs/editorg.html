@@ -1,11 +1,30 @@
 <style>
-@import url('https://fonts.googleapis.com/css?family=Raleway:100,100i,200,200i,300,300i,400,400i,500,500i,600,600i,700,700i,800,800i,900,900i&amp;display=swap');
+::-webkit-scrollbar {
+    width: 0.5em !important;
+    height: 0.5em !important;
+    scroll-behavior: smooth !important;
+}
+
+::-webkit-scrollbar-track {
+    -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3) !important;
+    box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3) !important;
+    margin: 4em;
+    border-radius: 10px !important;
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: darkgrey !important;
+    border-radius: 10px !important;
+    background-clip: padding-box;
+}
 
 body, html {
     width: 100%;
     display: flex;
     flex-direction: column;
     height: 100%;
+    padding-right: 0.2em;
+    box-sizing: border-box;
 }
 
 div#dialog {
@@ -17,6 +36,7 @@ div#dialog {
 div#dialogcontent {
     height: calc(100% - 6em);
     margin: 0;
+    overflow-y: auto;
 }
 
 div#buttonbar {
@@ -72,6 +92,11 @@ div#editListsContainer editable-list {width: 40%}
 {{{CONF.MOBILE_MEDIA_QUERY_LANDSCAPE_END}}}
 {{{CONF.MOBILE_MEDIA_QUERY_PORTRAIT_START}}}
     div#dialog {width: 96%;}
+    div#editListsContainer editable-list {
+        width: 100%;
+        margin-bottom: 2em;
+    }
+    div#editListsContainer { flex-direction: column; }
 {{{CONF.MOBILE_MEDIA_QUERY_PORTRAIT_END}}}
 
 <input type="text" id="orgname" placeholder="{{i18n.OrgName}}" value="{{orgname}}" required 
@@ -84,12 +109,13 @@ div#editListsContainer editable-list {width: 40%}
     oninvalid="this.setCustomValidity('{{i18n.FillField}}')" oninput="setCustomValidity('')">
 <input type="url" id="orgdomain" placeholder="{{i18n.OrgMainDomain}}" value="{{orgdomain}}" required 
     oninvalid="this.setCustomValidity('{{i18n.FillField}}')" oninput="setCustomValidity('')">
-<span id="spinner"><img id="spinner" src="{{{COMPONENT_PATH}}}/img/spinner.svg"></span>
 
 <div id="editListsContainer">
     <editable-list id="orgnames" placeholder="{{i18n.AlternateName}}">{{orgnames}}</editable-list>
     <editable-list id="orgdomains" placeholder="{{i18n.AlternateDomain}}">{{orgdomains}}</editable-list>
 </div>
+
+<span id="spinner"><img id="spinner" src="{{{COMPONENT_PATH}}}/img/spinner.svg"></span>
 
 <script>
 function onOK(element) {monkshu_env.components["dialog-box"].submit(element);}

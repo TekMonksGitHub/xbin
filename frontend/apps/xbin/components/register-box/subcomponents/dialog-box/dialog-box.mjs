@@ -9,6 +9,7 @@ import {router} from "/framework/js/router.mjs";
 import {monkshu_component} from "/framework/js/monkshu_component.mjs";
 
 const COMPONENT_PATH = util.getModulePath(import.meta);
+let showHideInterceptor;
 
 /**
  * Shows a new dialog
@@ -22,6 +23,7 @@ const COMPONENT_PATH = util.getModulePath(import.meta);
  * @param {function} callbackCancel The callback function if cancel is clicked, can be null
  */
 async function showDialog(templatePath, showOK, showCancel, data, hostID, retValIDs, callback, callbackCancel) {
+    if (showHideInterceptor) showHideInterceptor.showDialogCalled(hostID);
     const templateHTML = await router.loadHTML(templatePath, data, false);
     if (callback || callbackCancel) _showDialogInternal(templateHTML, showOK, showCancel, hostID, retValIDs, callback, callbackCancel);
     else return new Promise(resolve => _showDialogInternal(templateHTML, showOK, showCancel, hostID, retValIDs, result => resolve(result)));
@@ -34,6 +36,7 @@ async function showDialog(templatePath, showOK, showCancel, data, hostID, retVal
 function hideDialog(element) {
     const shadowRoot = element instanceof Element ? dialog_box.getShadowRootByContainedElement(element): 
         dialog_box.getShadowRootByHostId(element);
+    if (showHideInterceptor) showHideInterceptor.hideDialogCalled(shadowRoot.host.id);
     const hostElement = shadowRoot.querySelector("div#dialogcontent"); 
     while (hostElement && hostElement.firstChild) hostElement.removeChild(hostElement.firstChild);  // deletes everything
     const modalCurtain = shadowRoot.querySelector("div#modalcurtain");
@@ -97,6 +100,8 @@ function cancel(element) {
     if (memory.callbackCancel) memory.callbackCancel();
 }
 
+const setShowHideInterceptor = interceptor => showHideInterceptor = interceptor;
+
 function _showDialogInternal(templateHTML, showOK, showCancel, hostID, retValIDs, callback, callbackCancel) {
     const shadowRoot = dialog_box.getShadowRootByHostId(hostID); _resetUI(shadowRoot);
     const templateRoot = new DOMParser().parseFromString(templateHTML, "text/html").documentElement;
@@ -123,5 +128,6 @@ function _resetUI(shadowRoot) {
 }
 
 const trueWebComponentMode = true;	// making this false renders the component without using Shadow DOM
-export const dialog_box = {showDialog, trueWebComponentMode, hideDialog, cancel, error, showMessage, hideError, submit}
+export const dialog_box = {showDialog, trueWebComponentMode, hideDialog, cancel, error, showMessage, hideError, submit,
+    setShowHideInterceptor}
 monkshu_component.register("dialog-box", `${COMPONENT_PATH}/dialog-box.html`, dialog_box);
