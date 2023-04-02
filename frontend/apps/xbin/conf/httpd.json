@@ -1,22 +1,10 @@
 {
     "extensions": [
-        "proxy",
-        "redirect"
+        "proxy"
     ],
     "proxies": [
         {
             "^http(.*)://([^:/]+)[:]?.*?/apps/xbin/proxiedapis/(.*)$": "http{{{$1}}}://{{{$2}}}:9090/apps/xbin/proxiedapis/{{{$3}}}"
-        }
-    ],
-    "redirects": [
-        {
-            "^http(.*)://([^/]+?)/index.html$": "http{{{$1}}}://{{{$2}}}/apps/xbin/index.html"
-        },
-        {
-            "^http(.*)://([^/]+?)/$": "http{{{$1}}}://{{{$2}}}/apps/xbin/index.html"
-        },
-        {
-            "^http(.*)://([^/]+?)$": "http{{{$1}}}://{{{$2}}}/apps/xbin/index.html"
         }
     ],
     "diskCache": {
@@ -29,10 +17,5 @@
     },
     "httpdHeaders": {
         "Cache-Control": "max-age=604800, must-revalidate, private"
-    },
-    "ssl": true,
-    "sslKeyFile": "C:\\Users\\rvkapoor\\source\\etc\\dnsip_privkey.pem",
-    "sslCertFile": "C:\\Users\\rvkapoor\\source\\etc\\dnsip_fullchain.pem",
-    "port": 443,
-    "host": "{{{hostname}}}"
+    }
 }

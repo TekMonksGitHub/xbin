@@ -29,36 +29,27 @@ exports.handleRawRequest = async function(jsonObj, servObject, headers, url) {
 }
 
 exports.downloadFile = async (fileReq, servObject, headers, url) => {
-	LOG.debug(`Got downloadfile request for path ${fileReq.fullpath}, starting download, reqid is ${fileReq.reqid}.`);
+	LOG.debug("Got downloadfile request for path: " + fileReq.fullpath);
 
-	const _handleDownloadError = err => { LOG.error(`Error sending download file for path ${fileReq.fullpath} due to ${err} reqid is ${fileReq.reqid}.`); 
-		_updateWriteStatus(fileReq.reqid, undefined, 0, true); }
 	try {
-		let fullpath = fileReq.fullpath, stats = await uploadfile.getFileStats(fullpath), isFolder = false;
-		if (stats.xbintype == API_CONSTANTS.XBIN_FOLDER) { isFolder = true; fullpath = await _zipDirectory(fullpath); 
-			stats = await fspromises.stat(fullpath); }
+		let fullpath = fileReq.fullpath; let stats = await fs.promises.stat(fullpath);
+		if (stats.isDirectory()) {fullpath = await _zipDirectory(fullpath); stats = await fs.promises.stat(fullpath);}
 
-		const zippable = isFolder?false:uploadfile.isZippable(fullpath);
 		let respHeaders = {}; APIREGISTRY.injectResponseHeaders(url, {}, headers, respHeaders, servObject);
-		respHeaders["content-disposition"] = "attachment;filename=" + path.basename(isFolder?`${fileReq.fullpath}.zip`:fullpath);
+		respHeaders["content-disposition"] = "attachment;filename=" + path.basename(fullpath);
 		respHeaders["content-length"] = stats.size;   
-		respHeaders["content-type"] = "application/octet-stream";
+		respHeaders["content-type"] = "application/octet-stream";	// try and add auto GZIP here to save bandwidth
 		servObject.server.statusOK(respHeaders, servObject, true);
 
 		_updateWriteStatus(decodeURIComponent(fileReq.reqid), stats.size, null);
-		let readStream = fs.createReadStream(fullpath, {highWaterMark: CONF.DOWNLOAD_READ_BUFFER_SIZE||DEFAULT_READ_BUFFER_SIZE, 
-			flags:"r", autoClose:true});
-		if (CONF.DISK_SECURED && (!isFolder)) readStream = readStream.pipe(crypt.getDecipher(CONF.SECURED_KEY)); // decrypt the file before sending if it is encrypted
-		if (zippable && (!isFolder)) readStream = readStream.pipe(zlib.createGunzip());	
-        const writable = readStream.pipe(servObject.res, {end:true});
-		readStream.on("data",chunk =>_updateWriteStatus(fileReq.reqid, undefined, chunk.length));
-		writable.on("close", _=>{
-			LOG.debug(`Finished sending download file for path ${fileReq.fullpath} successfully, reqid is ${fileReq.reqid}.`);
-			if (isFolder) fspromises.unlink(fullpath);	// delete temporarily created ZIP files
-			_updateWriteStatus(fileReq.reqid, undefined, undefined, false, true);
-		});
-		writable.on("error", error => _handleDownloadError(error));
-	} catch (err) { _handleDownloadError(err); _sendError(servObject); }
+        const writable = fs.createReadStream(fullpath, {highWaterMark: CONF.DOWNLOAD_READ_BUFFER_SIZE||10485760, 
+			flags:"r", autoClose:true}).pipe(servObject.res, {end:true});
+		const old_write = writable.write; writable.write = function(chunk) {_updateWriteStatus(fileReq.reqid, null, chunk.length); return old_write.apply(writable, arguments);}
+	} catch (err) {
+		LOG.error(`Error in downloadfile: ${err}`);
+		_sendError(servObject);
+		_updateWriteStatus(fileReq.reqid, -1, 0, true);
+	}
 }
 
 exports.readUTF8File = async function (headers, inpath) {
@@ -66,9 +57,18 @@ exports.readUTF8File = async function (headers, inpath) {
 	if (!await cms.isSecure(headers, fullpath)) throw `Path security validation failure: ${fullpath}`;
 	const zippable = uploadfile.isZippable(fullpath);
 
-	let dataRead = await fspromises.readFile(fullpath); 
-	if (CONF.DISK_SECURED) dataRead = await _readEncryptedUTF8Data(dataRead, zippable);
-	else dataRead = dataRead.toString("utf8");
+	let dataRead = await fspromises.readFile(fullpath);
+	try{
+		if (CONF.DISK_SECURED) dataRead = await _readEncryptedUTF8Data(dataRead, zippable);
+		else dataRead = dataRead.toString("utf8");
+	}catch(err){
+		LOG.debug("VIEWING EXISTING DATA. ERROR:" + err)
+	}
+	
+	if(Buffer.isBuffer(dataRead)){
+		Buffer.toString(dataRead)
+	}
+	
 	return dataRead;
 }
 
@@ -90,40 +90,21 @@ function _sendError(servObject, unauthorized) {
 	}
 }
 
-async function _zipDirectory(pathIn) {	// unencrypt, ungzip etc before packing to send
-    return new Promise(async (resolve, reject) => {
+async function _zipDirectory(path) {
+    return new Promise((resolve, reject) => {
         const tempFilePath = utils.getTempFile("zip"); const out = fs.createWriteStream(tempFilePath);
-        const archive = archiver("zip", { zlib: { level: 9 }}); 
-        out.on("close", _=>resolve(tempFilePath)); out.on("error", err=>reject(err)); archive.pipe(out);
-		
-		archive.on("error", err=>reject(err)); archive.on("warning", err => {if (err.code=="ENOENT") LOG.warn(`ZIP warning for ${pathIn} at temp file ${tempFilePath}, warning is ${err}`); else reject(err);});
-		archive.on("progress", event => LOG.info(`ZIP progress of ${pathIn} at temp file ${tempFilePath}, the entries written are ${event.entries.total} and entries processed are ${event.entries.processed} and the bytes written are ${event.fs.totalBytes} and processed are ${event.fs.processed}.`));
-		
-		try {
-			const _ignoreFile = fullpathOrFilename => API_CONSTANTS.XBIN_IGNORE_PATH_SUFFIXES.includes(path.extname(fullpathOrFilename));
-			await utils.walkFolder(pathIn, (fullPath, stats, relativePath) =>  {
-				if (stats.isDirectory()) {archive.append(null, {name: relativePath+"/"}); return;}
-				if ((!stats.isFile()) || _ignoreFile(fullPath)) return;	// nothing to do, only real files beyond this
-				
-				const zippable = uploadfile.isZippable(fullPath); 
-				let readstreamEntry = fs.createReadStream(fullPath); 
-				if (CONF.DISK_SECURED) readstreamEntry = readstreamEntry.pipe(crypt.getDecipher(CONF.SECURED_KEY));
-				if (zippable) readstreamEntry = readstreamEntry.pipe(zlib.createGunzip());	
-				archive.append(readstreamEntry, {name: relativePath});
-			}, false, _=>archive.finalize());
-		} catch (err) {reject(err);}
+        const archive = archiver("zip", { zlib: { level: 9 }});
+        out.on("close", _=>resolve(tempFilePath)); archive.on("error", err=>reject(err));
+        archive.directory(path, false).pipe(out, {end:true}); archive.finalize();
     });
 }
 
-function _updateWriteStatus(reqid, fileSize=0, bytesWrittenThisChunk, transferFailed, transferFinishedSuccessfully) {
-	const statusStorage = CLUSTER_MEMORY.get(API_CONSTANTS.MEM_KEY_WRITE_STATUS) || {};
-	if (!(statusStorage[reqid])) statusStorage[reqid] = {size: fileSize, bytesSent: 0, failed: false, finishedSuccessfully: false};
-	
-	if (bytesWrittenThisChunk) statusStorage[reqid].bytesSent += bytesWrittenThisChunk;
-	if (transferFailed) statusStorage[reqid].failed = true; if (transferFinishedSuccessfully) statusStorage[reqid].finishedSuccessfully = true;
-	CLUSTER_MEMORY.set(API_CONSTANTS.MEM_KEY_WRITE_STATUS, statusStorage);
-	if (!transferFailed) LOG.debug(`Update status for reqid ${reqid} - file size is ${fileSize} bytes, bytes written so far = ${statusStorage[reqid].bytesSent} bytes, bytes this chunk are ${bytesWrittenThisChunk}.`);
-	else LOG.error(`Update status for reqid ${reqid} - transfer failed after writing ${statusStorage[reqid].bytesSent} bytes.`);
+function _updateWriteStatus(reqid, fileSize, bytesWrittenThisChunk, transferFailed) {
+	const statusStorage = CLUSTER_MEMORY.get("__org_xbin_file_writer_req_statuses") || {};
+	if (!statusStorage[reqid] && fileSize) statusStorage[reqid] = {size: fileSize, bytesSent: 0, failed: false};
+	if (statusStorage[reqid] && bytesWrittenThisChunk) statusStorage[reqid].bytesSent += bytesWrittenThisChunk;
+	if (transferFailed) statusStorage[reqid].failed = true;
+	CLUSTER_MEMORY.set("__org_xbin_file_writer_req_statuses", statusStorage);
 }
 
 const validateRequest = jsonReq => (jsonReq && jsonReq.path && jsonReq.securid && jsonReq.reqid);

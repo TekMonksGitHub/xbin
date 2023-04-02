@@ -13,6 +13,6 @@
     "ipblacklistRefresh": 5000,
     "ipwhitelistRefresh": 5000,
     "ssl": true,
-    "sslKeyFile":"C:/Users/rvkapoor/source/etc/192.168.1.8_privkey.pem",
-	"sslCertFile":"C:/Users/rvkapoor/source/etc/192.168.1.8_fullchain.pem"
+    "sslKeyFile":"C:/CERTS/new/privkey.pem",
+    "sslCertFile":"C:/CERTS/new/fullchain.pem"
 }

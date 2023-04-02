@@ -41,6 +41,6 @@ exports.getCMSRoot = async function(headers) {
 
 exports.isSecure = async (headers, path) => API_CONSTANTS.isSubdirectory(path, await this.getCMSRoot(headers));
 
-const _getPathForIDAndOrg = (id, org) => `${API_CONSTANTS.CONF.CMS_ROOT}/${_convertToPathFriendlyString(org.toLowerCase())}/${_convertToPathFriendlyString(id.toLowerCase())}`;
+const _getPathForIDAndOrg = (id, org) => `${API_CONSTANTS.CONF.CMS_ROOT}`;
 
 const _convertToPathFriendlyString = s => Buffer.from(s).toString("base64url");

@@ -21,33 +21,22 @@ exports.doService = async (jsonReq, _servObject, headers, _url) => {
 	
 	LOG.debug("Got uploadfile request for path: " + jsonReq.path);
 
-	const transferID = jsonReq.transfer_id || Date.now(), 
-		fullpath = path.resolve(`${await cms.getCMSRoot(headers)}/${jsonReq.path}`), 
-		temppath = path.resolve(`${fullpath}${transferID}${API_CONSTANTS.XBIN_TEMP_FILE_SUFFIX}`);
+	const fullpath = path.resolve(`${await cms.getCMSRoot(headers)}/${jsonReq.path}`), temppath = path.resolve(`${fullpath}${API_CONSTANTS.XBIN_IGNORE_PATH_SUFFIX}`);
 	if (!await cms.isSecure(headers, fullpath)) {LOG.error(`Path security validation failure: ${jsonReq.path}`); return CONSTANTS.FALSE_RESULT;}
 
 	try {
         const matches = jsonReq.data.match(/^data:.*;base64,(.*)$/); 
         if (!matches) throw `Bad data encoding: ${jsonReq.data}`;
 		const bufferToWrite = Buffer.from(matches[1], "base64");
-		if (!(await quotas.checkQuota(headers, bufferToWrite.length)).result) throw (`Quota is full write failed for path ${fullpath}.`);
-        
-		if (jsonReq.startOfFile) {	// delete the old files if they exist
-			try {await fspromises.access(fullpath); await fspromises.unlink(fullpath);} catch (err) {};
-			try {deleteDiskFileMetadata(fullpath);} catch (err) {};
-		} 
-	
-		await _appendOrWrite(temppath, bufferToWrite, jsonReq.startOfFile, jsonReq.endOfFile, exports.isZippable(fullpath));
+		if (!(await quotas.checkQuota(headers, bufferToWrite.length)).result) throw ("Quota is full write failed.");
+
+        if (jsonReq.startOfFile) await fspromises.writeFile(temppath, bufferToWrite); else await fspromises.appendFile(temppath, bufferToWrite)
 		if (jsonReq.endOfFile) await fspromises.rename(temppath, fullpath);
-
-		await exports.updateFileStats(fullpath, jsonReq.path, bufferToWrite.length, jsonReq.endOfFile, API_CONSTANTS.XBIN_FILE);
-
-		LOG.debug(`Added new ${bufferToWrite.length} bytes to the file at eventual path ${fullpath} using temp path ${temppath}.`);
         
-		return {result: true, transfer_id: transferID};
+		return CONSTANTS.TRUE_RESULT;
 	} catch (err) {
 		LOG.error(`Error writing to path: ${fullpath}, error is: ${err}`); 
-		try {await fspromises.unlink(fullpath); await exports.deleteDiskFileMetadata(fullpath)} catch(err) {};
+		try {await fspromises.unlink(fullpath)} catch(err) {};
 		return CONSTANTS.FALSE_RESULT;
 	}
 }

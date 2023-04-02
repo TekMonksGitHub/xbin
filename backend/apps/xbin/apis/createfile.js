@@ -3,6 +3,7 @@
  */
 const path = require("path");
 const cms = require(`${API_CONSTANTS.LIB_DIR}/cms.js`);
+const fspromises = require("fs").promises;
 const uploadfile = require(`${API_CONSTANTS.API_DIR}/uploadfile.js`);
 
 exports.doService = async (jsonReq, _, headers) => {
@@ -15,7 +16,7 @@ exports.doService = async (jsonReq, _, headers) => {
 		if (!await cms.isSecure(headers, fullpath)) {LOG.error(`Path security validation failure: ${jsonReq.path}`); return CONSTANTS.FALSE_RESULT;}
 
 		if (jsonReq.isDirectory && jsonReq.isDirectory != "false") await uploadfile.createFolder(headers, jsonReq.path);
-		else await uploadfile.writeUTF8File(headers, jsonReq.path, Buffer.from('', 'utf8'));
+		else await fspromises.appendFile(fullpath, '');
 
         return CONSTANTS.TRUE_RESULT;
 	} catch (err) {LOG.error(`Error creating  path: ${fullpath}, error is: ${err}`); return CONSTANTS.FALSE_RESULT;}

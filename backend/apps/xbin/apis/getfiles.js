@@ -4,6 +4,8 @@
  */
 const path = require("path");
 const fspromises = require("fs").promises;
+const fs = require("fs");
+const { writeUTF8File } = require("./uploadfile");
 const cms = require(`${API_CONSTANTS.LIB_DIR}/cms.js`);
 const uploadfile = require(`${API_CONSTANTS.API_DIR}/uploadfile.js`);
 
@@ -22,8 +24,16 @@ exports.doService = async (jsonReq, _, headers) => {
 		const entries = await fspromises.readdir(fullpath);
 		for (const entry of entries) {	
 			const entryPath = path.resolve(`${fullpath}/${entry}`); if (_ignoreFile(entryPath)) continue;	// ignore our own working files
-			if (!(await uploadfile.isFileConsistentOnDisk(entryPath))) {
-				LOG.error(`Error reading file entry ${fullpath}/${entry}. Skipping from listing. Error is inconsistent file.`); continue; }
+			
+			if (!(await uploadfile.isFileConsistentOnDisk(entryPath))) { // if there is no ignore stats, then add it
+				if(fs.statSync(entryPath).isDirectory()){
+					await uploadfile.updateFileStats(entryPath, entry, undefined, true, API_CONSTANTS.XBIN_FOLDER)
+				}else{
+					const existingFileStats = fs.statSync(entryPath);
+					await uploadfile.updateFileStats(entryPath, entry, existingFileStats.size, true, API_CONSTANTS.XBIN_FILE);
+				}
+			}
+			
 			let stats; try {stats = await uploadfile.getFileStats(entryPath);} catch (err) {
 				LOG.error(`Error reading file entry ${fullpath}/${entry}. Skipping from listing. Error is ${err}`); continue; }
 			stats.xbintype == API_CONSTANTS.XBIN_FILE?stats.file=true:null; 
