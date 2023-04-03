@@ -1,7 +1,5 @@
 <style>
-@import url('https://fonts.googleapis.com/css?family=Raleway:100,100i,200,200i,300,300i,400,400i,500,500i,600,600i,700,700i,800,800i,900,900i&amp;display=swap');
-
-div#dialog {width: 350px;}
+div#dialog {width: 25em;}
 body {width: 100%;}
 
 input {
@@ -116,7 +114,7 @@ img#spinner {height: 2em; width: 2em;}
 
 <input type="text" id="name" placeholder="{{i18n.Name}}" value="{{name}}" required 
     oninvalid="this.setCustomValidity('{{i18n.FillField}}')" oninput="setCustomValidity('')">
-<input type="text" id="new_id" placeholder="{{i18n.Email}}" value="{{old_id}}" required 
+<input type="email" id="new_id" placeholder="{{i18n.Email}}" value="{{old_id}}" required 
     oninvalid="this.setCustomValidity('{{i18n.FillField}}')" oninput="setCustomValidity('')">
 <input type="hidden" id="old_id" value="{{old_id}}">
 <select id="role" value="{{role}}" required>

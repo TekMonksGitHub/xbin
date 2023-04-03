@@ -148,8 +148,10 @@ const _getTOTPURL = async (key, host) => {
 
 async function _checkAndFillAccountProfile(data, email, time) {
 	const profileData = await loginmanager.getProfileData(email, time);
-	if (!profileData || !profileData.id) router.doIndexNavigation();	// bad profile or hack attempt
-	else Object.assign(data, profileData);
+	if (!profileData || !profileData.id) {
+		LOG.error(`Bad profile data provided - the provided email was ${email} and time was ${time}. Rerouting to the main page.`)
+		router.doIndexNavigation();	// bad profile or hack attempt
+	} else Object.assign(data, profileData);
 }
 
 function _resetUI(shadowRoot) {
@@ -159,11 +161,11 @@ function _resetUI(shadowRoot) {
 	shadowRoot.querySelector("span#errorSecurity").style.display = "none";
 	shadowRoot.querySelector("span#errorInternal").style.display = "none";
 	shadowRoot.querySelector("span#errorDomain").style.display = "none";
-	shadowRoot.querySelector("span#spinner").style.display = "none";
+	_hideWait(shadowRoot);
 }
 
-const _showWait = shadowRoot => shadowRoot.querySelector("span#spinner").style.display = "inline"
-const _hideWait = shadowRoot => shadowRoot.querySelector("span#spinner").style.display = "none";
+const _showWait = shadowRoot => shadowRoot.querySelector("span#spinner").classList.add("visible");
+const _hideWait = shadowRoot => shadowRoot.querySelector("span#spinner").classList.remove("visible")
 
 const trueWebComponentMode = true;	// making this false renders the component without using Shadow DOM
 export const register_box = {registerOrUpdate, trueWebComponentMode, elementConnected, initialRender, openAuthenticator, updateOrgDataList}

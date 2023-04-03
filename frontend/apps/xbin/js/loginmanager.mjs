@@ -21,8 +21,9 @@ async function signin(id, pass, otp) {
         session.set(APP_CONSTANTS.USERID, resp.id); 
         session.set(APP_CONSTANTS.USERNAME, resp.name);
         session.set(APP_CONSTANTS.USERORG, resp.org);
-        session.set("__org_telemeet_cuser_pass", pass);
+        session.set("__org_monkshu_cuser_pass", pass);
         session.set(APP_CONSTANTS.USER_NEEDS_VERIFICATION, resp.verified);
+        session.set(APP_CONSTANTS.USERORGDOMAIN, resp.domain);
         securityguard.setCurrentRole(resp.role);
         LOG.info(`Login succeeded for ${id}.`);
         return resp.verified?loginmanager.ID_OK:loginmanager.ID_OK_NOT_YET_VERIFIED;
@@ -44,14 +45,14 @@ async function signin(id, pass, otp) {
 const reset = id => apiman.rest(APP_CONSTANTS.API_RESET, "GET", {id, lang: i18n.getSessionLang()});
 
 async function registerOrUpdate(old_id, name, id, pass, org, totpSecret, totpCode, role, approved) {
-    const pwph = `${id} ${pass||session.get("__org_telemeet_cuser_pass")}`;
+    const pwph = `${id} ${pass||session.get("__org_telemeet_cuser_pass")}`, isUpdate = old_id?true:false;
 
-    const req = {old_id, name, id: (old_id && session.get(APP_CONSTANTS.USERID))?session.get(APP_CONSTANTS.USERID):id, 
-        pwph, org, totpSecret, totpCode, role, approved, lang: i18n.getSessionLang(), new_id: old_id?id:undefined}; 
-    const resp = await apiman.rest(old_id?APP_CONSTANTS.API_UPDATE:APP_CONSTANTS.API_REGISTER, "POST", req, old_id?true:false, true);
-    if (!resp) {LOG.error(`${old_id?"Update":"Registration"} failed for ${id} due to internal error. Null response.`); return loginmanager.ID_INTERNAL_ERROR;}
+    const req = {old_id, name, id: (isUpdate && session.get(APP_CONSTANTS.USERID))?session.get(APP_CONSTANTS.USERID):id, 
+        pwph, org, totpSecret, totpCode, role, approved, lang: i18n.getSessionLang(), new_id: isUpdate?id:undefined}; 
+    const resp = await apiman.rest(isUpdate?APP_CONSTANTS.API_UPDATE:APP_CONSTANTS.API_REGISTER, "POST", req, isUpdate?true:false, true);
+    if (!resp) {LOG.error(`${isUpdate?"Update":"Registration"} failed for ${id} due to internal error. Null response.`); return loginmanager.ID_INTERNAL_ERROR;}
     else if (!resp.result) {    // registration failed, reasons can be bad OTP, ID exists or some internal error
-        LOG.error(`${old_id?"Update":"Registration"} failed for ${id} due to ${resp.reason}.`); 
+        LOG.error(`${isUpdate?"Update":"Registration"} failed for ${id} due to ${resp.reason}.`); 
         return resp.reason=="exists"?loginmanager.ID_FAILED_EXISTS:resp.reason=="otp"?loginmanager.ID_FAILED_OTP:
         resp.reason=="securityerror"?loginmanager.ID_SECURITY_ERROR:resp.reason=="domainerror"?loginmanager.ID_DOMAIN_ERROR:
         loginmanager.ID_INTERNAL_ERROR;
@@ -59,12 +60,14 @@ async function registerOrUpdate(old_id, name, id, pass, org, totpSecret, totpCod
         session.set(APP_CONSTANTS.USERID, id); 
         session.set(APP_CONSTANTS.USERNAME, name);
         session.set(APP_CONSTANTS.USERORG, org);
+        session.set(APP_CONSTANTS.USERORGDOMAIN, resp.domain);
         session.set(APP_CONSTANTS.USER_NEEDS_VERIFICATION, resp.needs_verification);
-        session.set("__org_telemeet_cuser_pass", pass);
+        session.set("__org_monkshu_cuser_pass", pass);
         securityguard.setCurrentRole(resp.role);
+        LOG.info(`${isUpdate?"Update":"Registration"} succeeded ${id}.`);
         return loginmanager.ID_OK;
     } else if (resp.result && (!resp.approved)) {   // registration/update succeeded but no token, so approval is probably pending
-        LOG.warn(`${old_id?"Update":"Registration"} done but not approved yet for ${id}.`); 
+        LOG.warn(`${isUpdate?"Update":"Registration"} finished successfully but not approved yet for ${id}.`); 
         return loginmanager.ID_OK_NOT_YET_APPROVED;
     } 
 }

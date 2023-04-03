@@ -158,7 +158,10 @@ export const i18n = {
 "EditErrorSecurityError": "Failed due security error, please contact your support team.",
 "EditErrorDomainError": "Failed due the domain for the new ID being not allowed. Please contact your support team.",
 "EditErrorIDNotExistForUpdateError": "Failed due to bad ID for update. Please contact your support team.",
-"AddError": "Failed due to a backend error, please contact your support team.",
+"AddErrorInternal": "Failed due to an internal error, please contact your support team.",
+"AddErrorExits": "The ID already exits. Please retry with a different ID.",
+"AddErrorSecurity": "Failed due to a security error, please contact your support team.",
+"AddErrorDomain": "Failed due to domain error. Please recheck the domain of the ID.",
 "GenericBackendError": "Failed due to a backend error, please contact your support team.",
 "AddEmailError": "Account created, initial login email failed. Please ask the user {{name}} with email {{id}} to login using this URL <br> {{loginurl}}",
 "ResetError": "Can't reset the user {{name}} with email {{id}}, backend returned with an error.",
@@ -177,5 +180,15 @@ export const i18n = {
 "OpenGoogleAuthenticator": "Open Authenticator",
 "EmailVerified": "Email successfully verified.",
 "EmailNotVerified": "Email verification failed.",
-"ClickHereToContinueLogin": "Click here to continue to login."
+"ClickHereToContinueLogin": "Click here to continue to login.",
+"OrgName": "Organization name",
+"OrgAddress": "Organization address",
+"OrgContactName": "Contact name", 
+"OrgContactEmail": "Contact email",
+"OrgMainDomain": "Main domain",
+"AlternateName": "Alternate name",
+"AlternateDomain": "Alternate domain",
+"OrgEditErrorInternal": "Error updating, internal error. Please retry later or contact support for help.",
+"OrgEditErrorDomain": "Error updating the new domain is not allowed. Please contact support for help.",
+"OrgFetchError": "Unable to get organization details. Please retry later or contact support for help."
 }

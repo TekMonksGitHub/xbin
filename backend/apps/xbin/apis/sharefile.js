@@ -5,8 +5,11 @@ const path = require("path");
 const crypto = require("crypto");
 const cms = require(`${API_CONSTANTS.LIB_DIR}/cms.js`);
 const CONF = require(`${API_CONSTANTS.CONF_DIR}/xbin.json`);
+const userid = require(`${APP_CONSTANTS.LIB_DIR}/userid.js`);
 const db = require(`${API_CONSTANTS.LIB_DIR}/xbindb.js`).getDB();
 const uploadfile = require(`${API_CONSTANTS.API_DIR}/uploadfile.js`);
+
+exports.init = _ => userid.addIDDeletionListener(deleteSharesForID);
 
 exports.doService = async (jsonReq, _, headers) => {
 	if (!validateRequest(jsonReq)) {LOG.error("Validation failure."); return CONSTANTS.FALSE_RESULT;}
@@ -29,6 +32,13 @@ exports.doService = async (jsonReq, _, headers) => {
 			return {result: true, id: jsonReq.id};
 		}
 	} catch (err) {LOG.error(`Error sharing  path: ${fullpath}, error is: ${err}`); return CONSTANTS.FALSE_RESULT;}
+}
+
+async function deleteSharesForID(id) {
+	const deleteDrops = [{cmd:"DELETE FROM shares WHERE id = ?", params: [id]}, 
+		{cmd:"DELETE FROM quotas WHERE id = ?", params: [id]}];
+
+	return await db.runTransaction(deleteDrops);
 }
 
 const validateRequest = jsonReq => (jsonReq && (jsonReq.path || (jsonReq.id && jsonReq.expiry)));

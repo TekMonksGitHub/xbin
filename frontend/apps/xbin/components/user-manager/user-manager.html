@@ -131,11 +131,22 @@ span#header > button {min-width: 7em;}
 
 <div id="container">
     <span id="header">
-        <img src="{{componenturl}}/img/search.svg">
+        <img src="{{COMPONENT_PATH}}/img/search.svg">
         <input id="searchbox" type="text" placeholder="{{i18n.Search}}" onkeyup='monkshu_env.components["user-manager"].searchModified(this)'>
         <button id="add" title="Add user" onclick='monkshu_env.components["user-manager"].addUser(this)'>{{i18n.AddUser}}</button>
     </span>
     <div id="userlist">
+        <div id="org" class="user" title="{{org}}&#10;{{orgdomain}}" ontouchend='event.preventDefault(); event.stopPropagation();
+                    event.pageY = event.changedTouches[0].pageY; event.pageX = event.changedTouches[0].pageX; oncontextmenu(event)'
+                oncontextmenu='event.preventDefault(); event.stopPropagation(); monkshu_env.components["user-manager"].orgMenuClicked(
+                    event, this, "{{org}}");'
+                ondblclick='event.preventDefault(); event.stopPropagation();  monkshu_env.components["user-manager"].editOrg(
+                    "{{org}}", this)'>
+            
+            <img src="{{COMPONENT_PATH}}/img/org.svg">
+            <span>{{org}}</span>
+            <span>{{orgdomain}}</span>
+        </div>
         {{#users}}
         <div id="{{id}}" class="user" title="{{name}}&#10;{{id}}" ontouchend='event.preventDefault(); event.stopPropagation();
                     event.pageY = event.changedTouches[0].pageY; event.pageX = event.changedTouches[0].pageX; oncontextmenu(event)'
@@ -143,7 +154,7 @@ span#header > button {min-width: 7em;}
                     event, this, "{{name}}", "{{id}}", "{{org}}", "{{role}}", "{{approved}}");'
                 ondblclick='event.preventDefault(); event.stopPropagation();  monkshu_env.components["user-manager"].editUser(
                     "{{name}}", "{{id}}","{{role}}", "{{approved}}", this)'>
-            <img src="{{componenturl}}/img/user.svg">
+            <img src="{{COMPONENT_PATH}}/img/user.svg">
             <span>{{name}}</span>
             <span>{{id}}</span>
         </div>

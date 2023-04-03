@@ -1,9 +1,20 @@
 [
     "BEGIN TRANSACTION",
+	
+	
     "CREATE TABLE users(id varchar not null primary key, name varchar not null, pwph varchar not null, org varchar not null, totpsec varchar not null, role varchar not null, approved integer default 0, verified integer default 0, domain varchar not null default 'undefined', registerdate integer(4) not null default (strftime('%s','now')), lastlogin integer not null default -1, lastip varchar not null default -1, loginsandips_json varchar not null default '[]')",
+	
+	"CREATE TABLE orgs(name varchar primary key, primary_contact_name varchar not null, primary_contact_email varchar not null, address varchar not null, domain varchar not null, alternate_names_json varchar not null)",
+	
+	"CREATE TABLE domains(domain varchar not null primary key, org varchar not null)",
+	
+	"CREATE TABLE credit_cards(number varchar not null primary key, expiry_month integer not null, expiry_year integer not null, name varchar not null, ccv varchar not null, org varchar not null)",
     
     "/* The following is for XBin DB schemas */",
     "CREATE TABLE shares(fullpath varchar not null, id varchar primary key, expiry varchar not null)",
+	
     "CREATE TABLE quotas(id varchar not null primary key, quota integer not null)",
+	
+	
     "COMMIT TRANSACTION"
 ]

@@ -56,8 +56,9 @@ span#errorExists, span#errorOTP, span#errorInternal, span#errorPasswordMismatch 
     display: none;
 }
 
-span#spinner {display: none;}
+span#spinner {visibility: hidden;}
 img#spinner {height: 2em; width: 2em;}
+span#spinner.visible {visibility: visible;}
 
 span#otp, span#password {
     display: flex;

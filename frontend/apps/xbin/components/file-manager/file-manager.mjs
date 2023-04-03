@@ -40,8 +40,23 @@ const DIALOG_SCROLL_ELEMENT_ID = "notificationscrollpositioner", DIALOG_HOST_ELE
    PROGRESS_TEMPLATE="progressdialog", DEFAULT_SHARE_EXPIRY = 5;
 const DOUBLE_CLICK_DELAY=400, DOWNLOADFILE_REFRESH_INTERVAL = 1000, UPLOAD_ICON = "⇧", DOWNLOAD_ICON = "⇩",
    DOWNLOAD_FILE_OP = "DOWNLOAD_DIRECTION", UPLOAD_FILE_OP = "UPLOAD_DIRECTION";
-const dialog = _ => monkshu_env.components['dialog-box'];
+const dialog = element => {
+   const orgDialog = monkshu_env.components['dialog-box'];
+   const host = element ? file_manager.getHostElement(element) : undefined;
+   if ((!host) || (!host.getAttribute("zindex-fullscreen"))) return orgDialog;
+
+   const suggestedZIndexForFullScreen = host.getAttribute("zindex-fullscreen"); 
+   orgDialog.setShowHideInterceptor({
+      showDialogCalled: function() {host.style.zIndex = suggestedZIndexForFullScreen.toString();},
+      hideDialogCalled: function() {host.style.zIndex = "auto";}
+   });
+   return orgDialog;
+}
 const isMobile = _ => $$.isMobile();
+const screenFocusUnfocus = (host, unfocus) => { 
+   const suggestedZIndexForFullScreen = host.getAttribute("zindex-fullscreen"); if (!suggestedZIndexForFullScreen) return;
+   if (unfocus) host.style.zIndex = "auto"; else host.style.zIndex = suggestedZIndexForFullScreen.toString(); 
+}
 
 const IO_CHUNK_SIZE = 10485760, INITIAL_UPLOAD_BUFFER_SIZE = 40960, MAX_UPLOAD_WAIT_TIME_SECONDS = 5, 
    MAX_EDIT_SIZE = 4194304, MAX_UPLOAD_BUFFER_SIZE = 10485760;   // 10M read buffer, 40K initial write buffer, wait max 5 seconds to upload each chunk
@@ -151,13 +166,13 @@ function upload(containedElement, files) {
 }
 
 async function create(element) {
-   const result = await dialog().showDialog(`${DIALOGS_PATH}/createfile.html`, true, true, {}, "dialog", ["createType", "path"]);
+   const result = await dialog(element).showDialog(`${DIALOGS_PATH}/createfile.html`, true, true, {}, "dialog", ["createType", "path"]);
    const path = `${selectedPath}/${result.path}`, isDirectory = result.createType == "file" ? false: true
    if ((await apiman.rest(API_CHECKFILEEXISTS, "GET", {path}, true))?.result) {   // don't overwrite an existing file
-      dialog().error("dialog", await i18n.get("FileAlreadyExists")); LOG.error(`Create failed as ${path} already exists.`); return;
+      dialog(element).error("dialog", await i18n.get("FileAlreadyExists")); LOG.error(`Create failed as ${path} already exists.`); return;
    }
    const resp = await apiman.rest(API_CREATEFILE, "GET", {path, isDirectory}, true), hostID = file_manager.getHostElementID(element);
-   if (resp?.result) {dialog().hideDialog("dialog"); file_manager.reload(hostID);} else dialog().error("dialog", await i18n.get("Error"));
+   if (resp?.result) {dialog(element).hideDialog("dialog"); file_manager.reload(hostID);} else dialog(element).error("dialog", await i18n.get("Error"));
 }
 
 const uploadFiles = async (element, files) => {
@@ -172,14 +187,14 @@ const uploadFiles = async (element, files) => {
       
       const checkFileExists = await apiman.rest(API_CHECKFILEEXISTS, "GET", {path: normalizedName}, true); 
       if (checkFileExists.result) {
-         const cancelRenameRewrite = await dialog().showDialog(`${DIALOGS_PATH}/cancel_rename_overwrite.html`, true, false, 
+         const cancelRenameRewrite = await dialog(element).showDialog(`${DIALOGS_PATH}/cancel_rename_overwrite.html`, true, false, 
             {fileexistswarning: await i18n.getRendered("FileExistsWarning", {name: file.name})}, "dialog", ["result"]);
          switch (cancelRenameRewrite.result) {
             case "cancel": {LOG.info(`User selected to skip existing file ${file.name}, skipping.`); continue;}
             case "rename": file.renameto = checkFileExists.suggestedNewName; break;
             case "overwrite": {
                const deleteResult = await apiman.rest(API_DELETEFILE, "GET", {path: normalizedName}, true);
-               if (!deleteResult.result) {dialog().showMessage(`${await i18n.get("OverwriteFailed")}${file.name}`, "dialog"); continue;}
+               if (!deleteResult.result) {dialog(element).showMessage(`${await i18n.get("OverwriteFailed")}${file.name}`, "dialog"); continue;}
                else break;
             }
             default: {LOG.info(`Invalid choice so skipping existing file ${file.name}, skipping.`); continue;}
@@ -358,7 +373,7 @@ function showHideNotifications(hostID) {
 
 async function deleteFile(element) {
    let resp = await apiman.rest(API_DELETEFILE, "GET", {path: selectedPath}, true);
-   if (resp.result) file_manager.reload(file_manager.getHostElementID(element)); else _showErrorDialog();
+   if (resp.result) file_manager.reload(file_manager.getHostElementID(element)); else _showErrordialog();
 }
 
 async function editFile(element) {
@@ -370,19 +385,21 @@ async function editFile(element) {
 
    if (selectedElement.id == "paste") {paste(selectedElement); return;}
 
-   if (!selectedElement.dataset.stats) _showErrorDialog();  // not a file, not sure 
-   else if (JSON.parse(selectedElement.dataset.stats).size < MAX_EDIT_SIZE) editFileLoadData();  // now it can only be a file 
+   if (!selectedElement.dataset.stats) _showErrordialog();  // not a file, not sure 
+   else if (JSON.parse(selectedElement.dataset.stats).size < MAX_EDIT_SIZE) editFileLoadData(element);  // now it can only be a file 
    else _showErrorDialog(null, await i18n.get("FileTooBigToEdit"));  // too big to edit inline - download and edit
 }
 
-async function editFileLoadData() {
+async function editFileLoadData(element) {
    const resp = await apiman.rest(API_OPERATEFILE, "POST", {path: selectedPath, op: "read"}, true);
-   if (resp?.result) dialog().showDialog(`${DIALOGS_PATH}/editfile.html`, true, true, {fileContents: resp.data}, 
+   screenFocusUnfocus(file_manager.getHostElement(element));
+   if (resp?.result) dialog(element).showDialog(`${DIALOGS_PATH}/editfile.html`, true, true, {fileContents: resp.data}, 
          "dialog", ["filecontents"], async result => {
-
+      
+      dialog(element).hideDialog("dialog"); screenFocusUnfocus(file_manager.getHostElement(element, true));
       const resp = await apiman.rest(API_OPERATEFILE, "POST", {path: selectedPath, op: "write", data: result.filecontents}, true);
-      dialog().hideDialog("dialog"); if (!resp.result) _showErrorDialog();
-   }); else _showErrorDialog();
+      if (!resp.result) _showErrordialog();
+   }); else _showErrordialog();
 }
 
 function editFileVisible() {
@@ -400,7 +417,7 @@ const _getReqIDForDownloading = path => encodeURIComponent(path+Date.now()+Math.
 async function downloadFile(element) {
    const paths = selectedPath.split("/"), file = paths[paths.length-1], reqid = _getReqIDForDownloading(selectedPath);
    const link = document.createElement("a"), securid = await apiman.rest(API_DOWNLOADFILE_GETSECURID, "GET", {path: selectedPath, reqid}, true, false);
-   if (!securid.result) {_showErrorDialog(); return;}; const auth = apiman.getJWTToken(API_DOWNLOADFILE);
+   if (!securid.result) {_showErrordialog(); return;}; const auth = apiman.getJWTToken(API_DOWNLOADFILE);
    link.download = file; link.href = `${API_DOWNLOADFILE}?path=${selectedPath}&reqid=${reqid}&securid=${securid.id}&auth=${auth}`; link.click(); 
 
    _showDownloadProgress(element, selectedPath, reqid);
@@ -434,7 +451,7 @@ async function paste(element) {
 
    
    if (checkFileExists.result) {
-      const cancelRenameRewrite = await dialog().showDialog(`${DIALOGS_PATH}/cancel_rename_overwrite.html`, true, 
+      const cancelRenameRewrite = await dialog(element).showDialog(`${DIALOGS_PATH}/cancel_rename_overwrite.html`, true, 
          false, {fileexistswarning: await i18n.getRendered("FileExistsWarning", {name: to})}, "dialog", ["result"]);
       switch (cancelRenameRewrite.result) {
          case "cancel": {LOG.info(`User selected to skip existing file ${to}, skipping.`); _nullOutSelectedCutCopyPathsAndElements(true); return;}
@@ -465,7 +482,7 @@ function _showDownloadProgress(element, path, reqid) {
       }
       else if (!done) {
          markDoneAndClearInterval();
-         dialog().showMessage(await i18n.get("DownloadFailed"), "dialog"); 
+         dialog(element).showMessage(await i18n.get("DownloadFailed"), "dialog"); 
       }
    }
 
@@ -504,24 +521,28 @@ async function _updateProgress(hostID, currentBlock, totalBlocks, fileName, icon
 
 function renameFile(element) {
    const oldName = selectedPath?selectedPath.substring(selectedPath.lastIndexOf("/")+1):null;
-   dialog().showDialog(`${DIALOGS_PATH}/renamefile.html`, true, true, {oldName}, "dialog", ["renamepath"], async result => {
+   dialog(element).showDialog(`${DIALOGS_PATH}/renamefile.html`, true, true, {oldName}, "dialog", ["renamepath"], async result => {
+      
+      dialog(element).hideDialog("dialog"); 
       const subpaths = selectedPath.split("/"); subpaths.splice(subpaths.length-1, 1, result.renamepath);
       const newPath = subpaths.join("/");
-      dialog().hideDialog("dialog"); 
       if (_normalizedPath(selectedPath) == _normalizedPath(newPath)) {_showErrorDialog(null, await i18n.get("ErrorSameFiles")); return;}
       _performRename(selectedPath, newPath, element); 
    });
 }
 
-async function shareFile() {
+async function shareFile(element) {
    const paths = selectedPath.split("/"), name = paths[paths.length-1];
    const resp = await apiman.rest(API_SHAREFILE, "GET", {path: selectedPath, expiry: shareDuration}, true);
-   if (!resp || !resp.result) _showErrorDialog(); else dialog().showDialog( `${DIALOGS_PATH}/sharefile.html`, true, true, 
+   if (!resp || !resp.result) _showErrordialog(); else {
+      dialog(element).showDialog( `${DIALOGS_PATH}/sharefile.html`, true, true, 
       {link: router.encodeURL(`${PAGE_DOWNLOADFILE_SHARED}?id=${resp.id}&name=${name}`), id: resp.id, shareDuration, dialogpath: DIALOGS_PATH}, 
       "dialog", ["expiry"], async result => {
-            dialog().hideDialog("dialog");
-            if (result.expiry != shareDuration) apiman.rest(API_SHAREFILE, "GET", {id: resp.id, expiry: result.expiry}, true); 
+         dialog(element).hideDialog("dialog"); 
+
+         if (result.expiry != shareDuration) apiman.rest(API_SHAREFILE, "GET", {id: resp.id, expiry: result.expiry}, true); 
       }, async _ => apiman.rest(API_SHAREFILE, "GET", {id: resp.id, expiry: 0}, true));
+   }
 }
 
 async function getInfoOnFile(containedElement) {

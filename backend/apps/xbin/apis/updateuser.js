@@ -27,7 +27,7 @@ exports.doService = async (jsonReq, _, headers) => {
 		return {...CONSTANTS.FALSE_RESULT, reason: register.REASONS.ID_DOESNT_EXIST};
 	}
 
-	if (jsonReq.new_id && (!(await register.allowDomain(jsonReq, "new_id")))) {	// new domain is not allowed
+	if (jsonReq.new_id && (!(await register.shouldAllowDomain(jsonReq, "new_id")))) {	// new domain is not allowed
 		LOG.error(`Unable to update: ${idEntry.name}, ID: ${jsonReq.old_id}, to new ID: ${jsonReq.new_id}. The new domain is not allowed.`);
 		return {...CONSTANTS.FALSE_RESULT, reason: register.REASONS.DOMAIN_ERROR};
 	}
