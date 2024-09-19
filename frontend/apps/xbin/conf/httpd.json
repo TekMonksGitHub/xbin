@@ -31,8 +31,8 @@
         "Cache-Control": "max-age=604800, must-revalidate, private"
     },
     "ssl": true,
-    "sslKeyFile": "C:\\Users\\rvkapoor\\source\\etc\\dnsip_privkey.pem",
-    "sslCertFile": "C:\\Users\\rvkapoor\\source\\etc\\dnsip_fullchain.pem",
+    "sslKeyFile": "/Users/rvkapoor/Documents/Programs/source/etc/dnsip_privkey.pem",
+    "sslCertFile": "/Users/rvkapoor/Documents/Programs/source/etc/dnsip_fullchain.pem",
     "port": 443,
     "host": "{{{hostname}}}"
 }

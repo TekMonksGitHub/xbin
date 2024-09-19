@@ -18,4 +18,4 @@ exports.doService = async (jsonReq, _servObject, headers, _url) => {
     return {result: result.result, quota: result.quota, currentsize: result.currentsize};
 }
 
-const validateRequest = jsonReq => (jsonReq && jsonReq.bytestowrite);
+const validateRequest = jsonReq => (jsonReq && jsonReq.bytestowrite !== undefined);

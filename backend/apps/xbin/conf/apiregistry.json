@@ -1,6 +1,6 @@
 {
     "/apps/{{app}}/getfiles" : "/apis/getfiles.js?get=true&keys=fheiwu98237hjief8923ydewjidw834284hwqdnejwr79389&needsToken=user,admin",
-    "/apps/{{app}}/uploadfile" : "/apis/uploadfile.js?keys=fheiwu98237hjief8923ydewjidw834284hwqdnejwr79389&needsToken=user,admin",
+    "/apps/{{app}}/uploadfile" : "/apis/uploadfile.js?keys=fheiwu98237hjief8923ydewjidw834284hwqdnejwr79389&needsToken=user,admin&reloadOnDebug=false",
     "/apps/{{app}}/deletefile" : "/apis/deletefile.js?get=true&keys=fheiwu98237hjief8923ydewjidw834284hwqdnejwr79389&needsToken=user,admin",
     "/apps/{{app}}/createfile" : "/apis/createfile.js?get=true&keys=fheiwu98237hjief8923ydewjidw834284hwqdnejwr79389&needsToken=user,admin",
     "/apps/{{app}}/checkfileexists" : "/apis/checkfileexists.js?get=true&keys=fheiwu98237hjief8923ydewjidw834284hwqdnejwr79389&needsToken=user,admin",

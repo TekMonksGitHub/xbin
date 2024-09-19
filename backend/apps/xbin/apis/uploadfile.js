@@ -21,8 +21,8 @@ exports.doService = async (jsonReq, _servObject, headers, _url) => {
 	
 	LOG.debug("Got uploadfile request for path: " + jsonReq.path);
 
-	const transferID = jsonReq.transfer_id || Date.now(), 
-		fullpath = path.resolve(`${await cms.getCMSRoot(headers)}/${jsonReq.path}`), 
+	const transferID = jsonReq.transfer_id || Date.now(), cmsroot = await cms.getCMSRoot(headers),
+		fullpath = path.resolve(`${cmsroot}/${jsonReq.path}`), 
 		temppath = path.resolve(`${fullpath}${transferID}${API_CONSTANTS.XBIN_TEMP_FILE_SUFFIX}`);
 	if (!await cms.isSecure(headers, fullpath)) {LOG.error(`Path security validation failure: ${jsonReq.path}`); return CONSTANTS.FALSE_RESULT;}
 

@@ -8,11 +8,11 @@
         "Access-Control-Expose-Headers": "*",
         "Access-Control-Max-Age": 86400
     },
-    "host" : "::",
-    "port" : 9090,
+    "host": "::",
+    "port": 9090,
     "ipblacklistRefresh": 5000,
     "ipwhitelistRefresh": 5000,
     "ssl": true,
-    "sslKeyFile":"C:/Users/rvkapoor/source/etc/192.168.1.8_privkey.pem",
-	"sslCertFile":"C:/Users/rvkapoor/source/etc/192.168.1.8_fullchain.pem"
+    "sslKeyFile": "/Users/rvkapoor/Documents/Programs/source/etc/dnsip_privkey.pem",
+    "sslCertFile": "/Users/rvkapoor/Documents/Programs/source/etc/dnsip_fullchain.pem"
 }

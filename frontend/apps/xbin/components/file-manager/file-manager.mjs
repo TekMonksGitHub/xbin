@@ -18,6 +18,7 @@ import {monkshu_component} from "/framework/js/monkshu_component.mjs";
 let user, mouseX, mouseY, menuOpen, timer, selectedPath, currentlyActiveFolder, selectedIsDirectory, selectedElement, 
    filesAndPercents = {}, selectedCutPath, selectedCopyPath, selectedCutCopyElement, shareDuration, showNotification, 
    currentWriteBufferSize, uploadTransferIDs = {}, MIMES;
+const SERVER_ID_CACHE = {};
 
 const API_GETFILES = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/getfiles";
 const API_COPYFILE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/copyfile";
@@ -58,7 +59,7 @@ const screenFocusUnfocus = (host, unfocus) => {
    if (unfocus) host.style.zIndex = "auto"; else host.style.zIndex = suggestedZIndexForFullScreen.toString(); 
 }
 
-const IO_CHUNK_SIZE = 10485760, INITIAL_UPLOAD_BUFFER_SIZE = 40960, MAX_UPLOAD_WAIT_TIME_SECONDS = 5, 
+const IO_CHUNK_SIZE = 10485760, INITIAL_UPLOAD_BUFFER_SIZE = 40960, MAX_UPLOAD_WAIT_TIME_SECONDS = 5, SERVER_ID_HEADER = "x_monkshu_serverid",
    MAX_EDIT_SIZE = 4194304, MAX_UPLOAD_BUFFER_SIZE = 10485760;   // 10M read buffer, 40K initial write buffer, wait max 5 seconds to upload each chunk
 
 async function elementConnected(host) {
@@ -274,20 +275,22 @@ async function _uploadChunkAtOptimumSpeed(data, remotePath, chunkNumber, isLastC
 
    const _bufferToBase64URL = buffer => "data:;base64,"+btoa(new Uint8Array(buffer).reduce((acc, i) => acc += String.fromCharCode.apply(null, [i]), ''));
 
-   let bytesWritten = 0, lastResp, subchunknumber = 0, transferID = transfer_id; while (bytesWritten < data.byteLength) {  // TODO: Send 4 streams here concurrently to increase speed, recombine on backend
+   let bytesWritten = 0, lastResp, subchunknumber = 0, transferID = transfer_id; while (bytesWritten < data.byteLength) {  // TODO: Send 4 streams here concurrently to increase speed, recombine on the backend
       const bytesToSend = bytesWritten + currentWriteBufferSize > data.byteLength ? data.byteLength - bytesWritten : currentWriteBufferSize;
       const dataToSend = data.slice(bytesWritten, bytesWritten+bytesToSend), isLastSubChunk = isLastChunk && 
          (bytesWritten+bytesToSend == data.byteLength), isFirstSubChunk = chunkNumber == 0 && bytesWritten == 0;
       LOG.info(`Starting upload of subchunk ${subchunknumber} of chunk ${chunkNumber} to path ${remotePath} with length ${bytesToSend} with transfer ID ${transferID}.`);
-      const startTime = Date.now();
-      lastResp = await apiman.rest(API_UPLOADFILE, "POST", {data: _bufferToBase64URL(dataToSend), path: remotePath, user, 
-         startOfFile: isFirstSubChunk, endOfFile: isLastSubChunk, transfer_id: transferID}, true);
+      const startTime = Date.now(), headers = {}; if (SERVER_ID_CACHE[transferID]) headers[SERVER_ID_HEADER] = SERVER_ID_CACHE[transferID];
+      const fullResponse = await apiman.rest({url: API_UPLOADFILE, type: "POST", req: {
+            data: _bufferToBase64URL(dataToSend), path: remotePath, user, startOfFile: isFirstSubChunk, 
+            endOfFile: isLastSubChunk, transfer_id: transferID
+         }, sendToken:true, headers, provideHeaders: true}); lastResp = fullResponse?.response;
       const timeTakenToPost = Date.now() - startTime;
       if (!lastResp.result) {
          LOG.error(`Upload of subchunk ${subchunknumber} of chunk ${chunkNumber} to path ${remotePath} failed, with transfer ID ${transferID}, sending back error, the response is ${JSON.stringify(lastResp)}.`);
          return lastResp;   // failed
       }
-      transferID = lastResp.transfer_id; bytesWritten += bytesToSend;
+      transferID = lastResp.transfer_id; bytesWritten += bytesToSend; SERVER_ID_CACHE[transferID] = fullResponse.headers[SERVER_ID_HEADER]; 
       LOG.info(`Ended upload of ${subchunknumber} of chunk ${chunkNumber} to path ${remotePath} transfer ID ${transferID}, with length ${bytesToSend}, time taken = ${timeTakenToPost/1000} seconds.`);
       const netSpeedBytesPerSecond = bytesToSend / (timeTakenToPost/1000);
       currentWriteBufferSize = Math.min(MAX_UPLOAD_BUFFER_SIZE, Math.round(netSpeedBytesPerSecond * MAX_UPLOAD_WAIT_TIME_SECONDS));  // max wait should not execeed this

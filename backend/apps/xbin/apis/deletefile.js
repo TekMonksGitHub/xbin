@@ -16,9 +16,13 @@ exports.doService = async (jsonReq, _, headers) => {
 	if (!await cms.isSecure(headers, fullpath)) {LOG.error(`Path security validation failure: ${jsonReq.path}`); return CONSTANTS.FALSE_RESULT;}
 
 	try {
+		await fspromises.access(fullpath);
 		await rmrf(fullpath); 
 		return CONSTANTS.TRUE_RESULT;
-	} catch (err) {LOG.error(`Error deleting  path: ${fullpath}, error is: ${err}`); return CONSTANTS.FALSE_RESULT;}
+	} catch (err) {
+		if (err.code == "ENOENT") return CONSTANTS.TRUE_RESULT;	// no such file exists
+		else {LOG.error(`Error deleting  path: ${fullpath}, error is: ${err}`); return CONSTANTS.FALSE_RESULT;}
+	}
 }
 
 async function rmrf(path) {
