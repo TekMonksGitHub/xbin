@@ -59,8 +59,9 @@ const screenFocusUnfocus = (host, unfocus) => {
    if (unfocus) host.style.zIndex = "auto"; else host.style.zIndex = suggestedZIndexForFullScreen.toString(); 
 }
 
-const IO_CHUNK_SIZE = 10485760, INITIAL_UPLOAD_BUFFER_SIZE = 40960, MAX_UPLOAD_WAIT_TIME_SECONDS = 5, SERVER_ID_HEADER = "x_monkshu_serverid",
-   MAX_EDIT_SIZE = 4194304, MAX_UPLOAD_BUFFER_SIZE = 10485760;   // 10M read buffer, 40K initial write buffer, wait max 5 seconds to upload each chunk
+const IO_CHUNK_SIZE = 10485760, INITIAL_UPLOAD_BUFFER_SIZE = 40960, MAX_UPLOAD_WAIT_TIME_SECONDS = 5, 
+   SERVER_ID_HEADER = "x_monkshu_serverid",  APIMAN_RETRIES = 3, MAX_EDIT_SIZE = 4194304, 
+   MAX_UPLOAD_BUFFER_SIZE = 10485760;   // 10M read buffer, 40K initial write buffer, wait max 5 seconds to upload each chunk
 
 async function elementConnected(host) {
    menuOpen = false; user = host.getAttribute("user"); MIMES = await $$.requireJSON(`${COMPONENT_PATH}/conf/mimes.json`);
@@ -284,7 +285,7 @@ async function _uploadChunkAtOptimumSpeed(data, remotePath, chunkNumber, isLastC
       const fullResponse = await apiman.rest({url: API_UPLOADFILE, type: "POST", req: {
             data: _bufferToBase64URL(dataToSend), path: remotePath, user, startOfFile: isFirstSubChunk, 
             endOfFile: isLastSubChunk, transfer_id: transferID
-         }, sendToken:true, headers, provideHeaders: true}); lastResp = fullResponse?.response;
+         }, sendToken:true, headers, provideHeaders: true, retries: APIMAN_RETRIES}); lastResp = fullResponse?.response;
       const timeTakenToPost = Date.now() - startTime;
       if (!lastResp.result) {
          LOG.error(`Upload of subchunk ${subchunknumber} of chunk ${chunkNumber} to path ${remotePath} failed, with transfer ID ${transferID}, sending back error, the response is ${JSON.stringify(lastResp)}.`);
