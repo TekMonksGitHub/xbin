@@ -1,0 +1,9 @@
+[
+    "BEGIN TRANSACTION",
+	
+    "CREATE TABLE shares(fullpath varchar not null, id varchar primary key, expiry varchar not null)",
+	
+    "CREATE TABLE quotas(id varchar not null primary key, quota integer not null)",
+	
+    "COMMIT TRANSACTION"
+]
