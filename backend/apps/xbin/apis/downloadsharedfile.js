@@ -2,8 +2,8 @@
  * API for downloading a shared file.
  * (C) 2020 TekMonks. All rights reserved.
  */
-const db = require(`${API_CONSTANTS.LIB_DIR}/xbindb.js`).getDB();
-const downloadfile = require(`${API_CONSTANTS.API_DIR}/downloadfile.js`);
+const db = require(`${XBIN_CONSTANTS.LIB_DIR}/xbindb.js`).getDB();
+const downloadfile = require(`${XBIN_CONSTANTS.API_DIR}/downloadfile.js`);
 
 exports.handleRawRequest = async (jsonReq, servObject, headers, url) => {
 	if (!validateRequest(jsonReq)) {LOG.error("Validation failure."); _sendError(servObject); return;}

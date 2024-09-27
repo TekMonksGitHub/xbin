@@ -2,7 +2,7 @@
  * (C) 2020 TekMonks. All rights reserved.
  */
 const path = require("path");
-const db = require(`${API_CONSTANTS.LIB_DIR}/xbindb.js`).getDB();
+const db = require(`${XBIN_CONSTANTS.LIB_DIR}/xbindb.js`).getDB();
 
 exports.doService = async jsonReq => {
 	if (!validateRequest(jsonReq)) {LOG.error("Validation failure."); return CONSTANTS.FALSE_RESULT;}

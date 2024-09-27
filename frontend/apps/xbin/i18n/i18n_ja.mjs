@@ -95,7 +95,7 @@ export const i18n = {
 "Logout" : "Logout",
 "Back" : "Back",
 "Home" : "Go Home",
-"LoginMsg": "Login",
+"LoginMsg": "Sign in with Tekmonks",
 "Timeout_Error": "You have been logged out due to inactivity.",
 "Relogin": "Relogin here",
 "RegisterMsg": "Registration",

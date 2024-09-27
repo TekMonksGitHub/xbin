@@ -1,15 +1,10 @@
 /* 
  * (C) 2020 TekMonks. All rights reserved.
  */
-const path = require("path");
 const crypto = require("crypto");
-const cms = require(`${API_CONSTANTS.LIB_DIR}/cms.js`);
-const CONF = require(`${API_CONSTANTS.CONF_DIR}/xbin.json`);
-const userid = require(`${APP_CONSTANTS.LIB_DIR}/userid.js`);
-const db = require(`${API_CONSTANTS.LIB_DIR}/xbindb.js`).getDB();
-const uploadfile = require(`${API_CONSTANTS.API_DIR}/uploadfile.js`);
-
-exports.init = _ => userid.addIDDeletionListener(deleteSharesForID);
+const cms = require(`${XBIN_CONSTANTS.LIB_DIR}/cms.js`);
+const db = require(`${XBIN_CONSTANTS.LIB_DIR}/xbindb.js`).getDB();
+const uploadfile = require(`${XBIN_CONSTANTS.API_DIR}/uploadfile.js`);
 
 exports.doService = async (jsonReq, _, headers) => {
 	if (!validateRequest(jsonReq)) {LOG.error("Validation failure."); return CONSTANTS.FALSE_RESULT;}
@@ -18,11 +13,11 @@ exports.doService = async (jsonReq, _, headers) => {
 		if (jsonReq.path) {	// create initial share
 			LOG.debug("Got share file request for path: " + jsonReq.path);
 
-			const fullpath = path.resolve(`${await cms.getCMSRoot(headers)}/${jsonReq.path}`);
-			if (!await cms.isSecure(headers, fullpath)) {LOG.error(`Path security validation failure: ${jsonReq.path}`); return CONSTANTS.FALSE_RESULT;}
+			const fullpath = await cms.getFullPath(headers, jsonReq.path, jsonReq.extraInfo);
+			if (!await cms.isSecure(headers, fullpath, jsonReq.extraInfo)) {LOG.error(`Path security validation failure: ${jsonReq.path}`); return CONSTANTS.FALSE_RESULT;}
 			if (!await uploadfile.isFileConsistentOnDisk(fullpath)) {LOG.error(`Path is not consistent on the disk ${jsonReq.path}`); return CONSTANTS.FALSE_RESULT;}
 
-			const expiry = Date.now()+((jsonReq.expiry||CONF.DEFAULT_SHARED_FILE_EXPIRY)*86400000);	
+			const expiry = Date.now()+((jsonReq.expiry||XBIN_CONSTANTS.CONF.DEFAULT_SHARED_FILE_EXPIRY)*86400000);	
 			const id = crypto.createHash("sha512").update(fullpath+expiry+(Math.random()*(1000000 - 1)+1)).digest("hex");
 			await db.runCmd("INSERT INTO shares(fullpath, id, expiry) VALUES (?,?,?)", [fullpath,id,expiry]);
 			return {result: true, id};

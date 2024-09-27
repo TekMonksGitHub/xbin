@@ -1,57 +1,62 @@
-/* 
+/** 
  * (C) 2015 TekMonks. All rights reserved.
- * License: See enclosed license.txt file.
+ * License: See the enclosed LICENSE file.
  */
 
-import {util} from "/framework/js/util.mjs";
-import {router} from "/framework/js/router.mjs";
-import {session} from "/framework/js/session.mjs";
-import {securityguard} from "/framework/js/securityguard.mjs";
-import {apimanager as apiman} from "/framework/js/apimanager.mjs";
 import {APP_CONSTANTS as AUTO_APP_CONSTANTS} from "./constants.mjs";
 
 const init = async hostname => {
-	window.monkshu_env.apps[AUTO_APP_CONSTANTS.APP_NAME] = {};
-
-	const mustache = await router.getMustache();
+	window.APP_CONSTANTS = (await import ("./constants.mjs")).APP_CONSTANTS; 
+	window.monkshu_env.apps[AUTO_APP_CONSTANTS.APP_NAME] = AUTO_APP_CONSTANTS.ENV;
+	const mustache = await $$.librouter.getMustache();
 	window.APP_CONSTANTS = JSON.parse(mustache.render(JSON.stringify(AUTO_APP_CONSTANTS), {hostname}));
+	await _readConfig(); 
 
-	window.LOG = window.monkshu_env.frameworklibs.log;
+	window.LOG = (await import ("/framework/js/log.mjs")).LOG;
 
-	if (!session.get($$.MONKSHU_CONSTANTS.LANG_ID)) session.set($$.MONKSHU_CONSTANTS.LANG_ID, "en");
+	// setup language
+	if (!$$.libsession.get($$.MONKSHU_CONSTANTS.LANG_ID)) $$.libsession.set($$.MONKSHU_CONSTANTS.LANG_ID, "en");
+	
+	// setup permissions and roles
+	$$.libsecurityguard.setPermissionsMap(APP_CONSTANTS.PERMISSIONS_MAP);
+	$$.libsecurityguard.setCurrentRole($$.libsecurityguard.getCurrentRole() || APP_CONSTANTS.GUEST_ROLE);
 
-	securityguard.setPermissionsMap(APP_CONSTANTS.PERMISSIONS_MAP);
-	securityguard.setCurrentRole(securityguard.getCurrentRole() || APP_CONSTANTS.GUEST_ROLE);
+	// register backend API keys
+	$$.libapimanager.registerAPIKeys(APP_CONSTANTS.API_KEYS, APP_CONSTANTS.KEY_HEADER); 	
 
-	apiman.registerAPIKeys(APP_CONSTANTS.API_KEYS, APP_CONSTANTS.KEY_HEADER); 
+	// setup debug mode for the framework
+	if (APP_CONSTANTS.INSECURE_DEVELOPMENT_MODE) $$.MONKSHU_CONSTANTS.setDebugLevel($$.MONKSHU_CONSTANTS.DEBUG_LEVELS.refreshOnReload);
+
+	// setup remote logging
 	const API_GETREMOTELOG = APP_CONSTANTS.API_PATH+"/getremotelog", API_REMOTELOG = APP_CONSTANTS.API_PATH+"/log";
-	const remoteLogResponse = (await apiman.rest(API_GETREMOTELOG, "GET")), remoteLogFlag = remoteLogResponse?remoteLogResponse.remote_log:false;
+	let remoteLogResponse = false; try {remoteLogResponse = await $$.libapimanager.rest(API_GETREMOTELOG, "GET")} catch (err) {};
+	const remoteLogFlag = remoteLogResponse?remoteLogResponse.remote_log:false;
 	LOG.setRemote(remoteLogFlag, API_REMOTELOG);
 }
 
-const main = async (desiredURL, desiredData) => {
-	await _addPageLoadInterceptors(); await _readConfig();
-	const decodedURL = new URL(desiredURL || router.decodeURL(window.location.href)), justURL = util.baseURL(decodedURL);
+const main = async (desiredURL=window.location.href, desiredData={}) => {
+	await _addPageLoadInterceptors(); await _registerComponents();
 
-	if (justURL == APP_CONSTANTS.INDEX_HTML) router.loadPage(APP_CONSTANTS.REGISTER_HTML);
-	else if (securityguard.isAllowed(justURL)) {
-		if (router.getLastSessionURL() && (decodedURL.toString() == router.getLastSessionURL().toString())) router.reload();
-		else router.loadPage(decodedURL.href, desiredData);
-	} else router.loadPage(APP_CONSTANTS.REGISTER_HTML);
+	const decodedURL = new URL($$.librouter.decodeURL(desiredURL)), justURL = $$.libutil.baseURL(decodedURL);
+	if ($$.libsecurityguard.isAllowed(justURL)) $$.librouter.loadPage(decodedURL, desiredData);
+	else $$.librouter.loadPage(APP_CONSTANTS.LOGIN_HTML);
 }
 
-const interceptPageLoadData = _ => router.addOnLoadPageData("*", async (data, _url) => {
+const interceptPageLoadData = _ => $$.librouter.addOnLoadPageData("*", async (data, _url) => {
 	data.APP_CONSTANTS = APP_CONSTANTS; 
-	data.headers = await $$.requireText(APP_CONSTANTS.APP_PATH+"/conf/headers.html");
+	data["APP_ENV"] = _ => (key, render) => $$.libutil.getObjProperty(APP_CONSTANTS.ENV, render(key));
 });
 
 async function _readConfig() {
-	const conf = await(await fetch(`${APP_CONSTANTS.APP_PATH}/conf/app.json`)).json();
+	const conf = await $$.requireJSON(`${APP_CONSTANTS.CONF_PATH}/app.json`);
 	for (const key of Object.keys(conf)) APP_CONSTANTS[key] = conf[key];
 }
 
+const _registerComponents = async _ => { for (const component of APP_CONSTANTS.COMPONENTS||[]) 
+	await import(`${APP_CONSTANTS.APP_PATH}/${component}/${component.substring(component.lastIndexOf("/")+1)}.mjs`); }
+
 async function _addPageLoadInterceptors() {
-	const interceptors = await(await fetch(`${APP_CONSTANTS.APP_PATH}/conf/pageLoadInterceptors.json`)).json();
+	const interceptors = await $$.requireJSON(`${APP_CONSTANTS.CONF_PATH}/pageLoadInterceptors.json`);
 	for (const interceptor of interceptors) {
 		const modulePath = interceptor.module, functionName = interceptor.function;
 		let module = await import(`${APP_CONSTANTS.APP_PATH}/${modulePath}`); module = module[Object.keys(module)[0]];

@@ -6,16 +6,16 @@
  */
 const path = require("path");
 const fspromises = require("fs").promises;
-const cms = require(`${API_CONSTANTS.LIB_DIR}/cms.js`);
-const uploadfile = require(`${API_CONSTANTS.API_DIR}/uploadfile.js`);
+const cms = require(`${XBIN_CONSTANTS.LIB_DIR}/cms.js`);
+const uploadfile = require(`${XBIN_CONSTANTS.API_DIR}/uploadfile.js`);
 
 exports.doService = async (jsonReq, _, headers) => {
     if (!validateRequest(jsonReq)) {LOG.error("Validation failure."); return CONSTANTS.FALSE_RESULT;}
     
     LOG.debug("Got checkfile request for path: " + jsonReq.path);
 
-    const fullpath = path.resolve(`${await cms.getCMSRoot(headers)}/${jsonReq.path}`);
-    if (!await cms.isSecure(headers, fullpath)) {LOG.error(`Path security validation failure: ${jsonReq.path}`); return CONSTANTS.FALSE_RESULT;}
+    const fullpath = await cms.getFullPath(headers, jsonReq.path, jsonReq.extraInfo);
+    if (!await cms.isSecure(headers, fullpath, jsonReq.extraInfo)) {LOG.error(`Path security validation failure: ${jsonReq.path}`); return CONSTANTS.FALSE_RESULT;}
 
     try {
         if (!(await uploadfile.isFileConsistentOnDisk(fullpath))) return CONSTANTS.FALSE_RESULT;

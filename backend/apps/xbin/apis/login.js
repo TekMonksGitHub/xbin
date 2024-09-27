@@ -1,87 +1,63 @@
 /**
- * Logs a user in. 
- * (C) 2015 TekMonks. All rights reserved.
+ * Needs Tekmonks Unified Login to work.
+ * 
+ * Operations are
+ *  op - getotk - Returns one time key which can be passed to Unified login 
+ *  op - verify - Verifies the incoming JWT. This needs the following params
+ *      op: "verify", jwt: "the JWT token from unified login"
+ * (C) 2023 TekMonks. All rights reserved.
  */
-const utils = require(`${CONSTANTS.LIBDIR}/utils.js`);
-const totp = require(`${APP_CONSTANTS.LIB_DIR}/totp.js`);
-const CONF = require(`${APP_CONSTANTS.CONF_DIR}/app.json`);
-const userid = require(`${APP_CONSTANTS.LIB_DIR}/userid.js`);
-const register = require(`${APP_CONSTANTS.API_DIR}/register.js`);
-const jwttokenmanager = APIREGISTRY.getExtension("JWTTokenManager");
-const queueExecutor = require(`${CONSTANTS.LIBDIR}/queueExecutor.js`);
 
-const DEFAULT_QUEUE_DELAY = 500, REASONS = {BAD_PASSWORD: "badpw", BAD_ID: "badid", BAD_OTP: "badotp", 
-	BAD_APPROVAL: "notapproved", OK: "allok", UNKNOWN: "unknown", DOMAIN_ERROR: "domainerror"};
+const serverutils = require(`${CONSTANTS.LIBDIR}/utils.js`);
+const httpClient = require(`${CONSTANTS.LIBDIR}/httpClient.js`);
 
-exports.init = _ => {
-	jwttokenmanager.addListener((event, object) => {
-		if (event == "token_generated") try {
-			const token = ("Bearer "+object.token).toLowerCase(); 
-			const logins = CLUSTER_MEMORY.get("__org_monkshu_loginapp_logins") || {};
-			logins[token] = {id: object.response.id, org: object.response.org, name: object.response.name, role: object.response.role}; 
-			CLUSTER_MEMORY.set("__org_monkshu_loginapp_logins", logins);
-		} catch (err) {LOG.error(`Could not init home for the user with ID ${object.response.id}, name ${object.response.name}, error was: ${err}`);}
-
-		if (event == "token_expired") {
-			const logins = CLUSTER_MEMORY.get("__org_monkshu_loginapp_logins") || {};
-			const token = ("Bearer "+object.token).toLowerCase();
-			delete logins[token]; CLUSTER_MEMORY.set("__org_monkshu_loginapp_logins", logins);
-		}
-	});
-}
-
-exports.doService = async (jsonReq, servObject) => {
+exports.doService = async jsonReq => {
 	if (!validateRequest(jsonReq)) {LOG.error("Validation failure."); return CONSTANTS.FALSE_RESULT;}
-	
-	LOG.debug(`Got login request for ID ${jsonReq.id}`);
-
-	if (!(await register.shouldAllowDomain(jsonReq, "id"))) {	// domain is not allowed, don't check anything else
-		LOG.error(`Unable to login: ${jsonReq.name}, ID: ${jsonReq.id}, domain is not allowed.`);
-		return {...CONSTANTS.FALSE_RESULT, reason: REASONS.DOMAIN_ERROR};
-	}
-
-	const result = await userid.checkPWPH(jsonReq.id, jsonReq.pwph); 
-
-	result.tokenflag = false; 	// default assume login failed no JWT token will be generated
-	if (result.result && result.approved) {	// perform second factor
-		result.result = totp.verifyTOTP(result.totpsec, jsonReq.otp); 
-		if (!result.result) {LOG.error(`Bad OTP given for: ${result.id}.`); result.reason = REASONS.BAD_OTP;}
-		else {result.tokenflag = true; result.reason = REASONS.OK;}	// ID is OK, password is OK, OTP is OK, and user is approved
-	} else if (result.result && (!result.approved)) {LOG.info(`User not approved, ${result.id}.`); result.reason = REASONS.BAD_APPROVAL;}
-	else {
-		result.reason = result.reason == userid.NO_ID ? REASONS.BAD_ID : result.reason == userid.BAD_PASSWORD ? REASONS.BAD_PASSWORD : REASONS.UNKNOWN;
-		LOG.error(`${result.reason == REASONS.BAD_ID?"Bad id":result.reason == REASONS.BAD_PASSWORD?"Bad password":"Unknown reason for login failure"} for login request for ID: ${jsonReq.id}.`);
-	}
-
-	if (result.tokenflag) {	// tokenflag means geenrate JWT, meaning login succeeded
-		LOG.info(`User logged in: ${result.id}${CONF.verify_email_on_registeration?`, email verification status is ${result.verified}.`:"."}`); 
-		const remoteIP = utils.getClientIP(servObject.req);	// api end closes the socket so when the queue task runs remote IP is lost.
-		queueExecutor.add(async _=>{	// update login stats don't care much if it fails
-			try { await userid.updateLoginStats(jsonReq.id, Date.now(), remoteIP), undefined, true, CONF.login_update_delay||DEFAULT_QUEUE_DELAY } 
-			catch(err) {LOG.error(`Error updating login stats for ID ${jsonReq.id}. Error is ${err}.`);}
-		});	
-	} else LOG.error(`Bad login or not approved for ID: ${jsonReq.id}.`);
-
-	return {...result, verified: result.verified==1?true:false};
+    
+    if (jsonReq.op == "getotk") return _getOTK(jsonReq);
+    else if (jsonReq.op == "verify") return await _verifyJWT(jsonReq);
+    else return CONSTANTS.FALSE_RESULT;
 }
 
-exports.getID = headers => {
-	if (!headers["authorization"]) return null; const logins = CLUSTER_MEMORY.get("__org_monkshu_loginapp_logins") || {};
-	return logins[headers["authorization"].toLowerCase()]?logins[headers["authorization"].toLowerCase()].id:null;
+exports.isValidLogin = headers => APIREGISTRY.getExtension("JWTTokenManager").checkToken(exports.getToken(headers));
+exports.getID = headers => APIREGISTRY.getExtension("JWTTokenManager").getClaims(headers).id;
+exports.getRole = headers => APIREGISTRY.getExtension("JWTTokenManager").getClaims(headers).role;
+exports.getOrg = headers => APIREGISTRY.getExtension("JWTTokenManager").getClaims(headers).org;
+exports.getJWT = headers => APIREGISTRY.getExtension("JWTTokenManager").getToken(headers);
+exports.getToken = headers => exports.getJWT(headers);
+
+function _getOTK(_jsonReq) {
+    return {...CONSTANTS.TRUE_RESULT, otk: serverutils.generateUUID(false)};
 }
 
-exports.getOrg = headers => {
-	if (!headers["authorization"]) return null; const logins = CLUSTER_MEMORY.get("__org_monkshu_loginapp_logins") || {};
-	return logins[headers["authorization"].toLowerCase()]?logins[headers["authorization"].toLowerCase()].org:null;
+async function _verifyJWT(jsonReq) {
+    let tokenValidationResult; try {
+        tokenValidationResult = await httpClient.fetch(`${XBIN_CONSTANTS.CONF.TEKMONKS_LOGIN_API}?jwt=${jsonReq.jwt}`);
+    } catch (err) {
+        LOG.error(`Network error validating JWT token ${jsonReq.jwt}, validation failed. Error is ${err}`);
+        return CONSTANTS.FALSE_RESULT;
+    }
+
+	if (!tokenValidationResult.ok) {
+        LOG.error(`Fetch error validating JWT token ${jsonReq.jwt}, validation failed.`);
+        return CONSTANTS.FALSE_RESULT;
+    }
+
+    const responseJSON = await tokenValidationResult.json();
+    if ((!responseJSON.result) || (responseJSON.jwt != jsonReq.jwt)) {
+        LOG.error(`Validation error when validating JWT token ${jsonReq.jwt}.`);
+        return CONSTANTS.FALSE_RESULT;
+    }
+
+    try {
+        const _decodeBase64 = string => Buffer.from(string, "base64").toString("utf8");
+        const jwtClaims = JSON.parse(_decodeBase64(jsonReq.jwt.split(".")[1]));
+        const finalResult = {...jwtClaims , role: jwtClaims.role, ...CONSTANTS.TRUE_RESULT};
+        return finalResult;
+    } catch (err) {
+        LOG.error(`Bad JWT token passwed for login ${jsonReq.jwt}, validation succeeded but decode failed. Error is ${err}`);
+        return CONSTANTS.FALSE_RESULT;
+    }
 }
 
-exports.getRole = headers => {
-	if (!headers["authorization"]) return null; const logins = CLUSTER_MEMORY.get("__org_monkshu_loginapp_logins") || {};
-	return logins[headers["authorization"].toLowerCase()]?logins[headers["authorization"].toLowerCase()].role:null;
-}
-
-exports.isAdmin = headers => (exports.getRole(headers))?.toLowerCase() == APP_CONSTANTS.ROLES.ADMIN.toLowerCase();
-
-exports.REASONS = REASONS;
-
-const validateRequest = jsonReq => (jsonReq && jsonReq.pwph && jsonReq.otp && jsonReq.id);
+const validateRequest = jsonReq => jsonReq && ((jsonReq.op=="verify" && jsonReq.jwt) || jsonReq.op=="getotk");

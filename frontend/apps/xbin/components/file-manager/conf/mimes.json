@@ -10,6 +10,7 @@
         "archive": [".gz", ".zip", ".rar", ".7z", ".tar"],
         "code": [".c", ".cpp", ".js", ".mjs", ".py", ".hpp", ".h", ".java", ".pl", ".php", ".swift"],
         "html": [".html", ".htm"],
+        "yaml": [".yaml", ".yml"],
         "css": [".css"],
         "executable": [".sh", ".bat", ".exe", ".ps1", ".apk", ".jar", ".dmg"],
         "generic": []
@@ -25,6 +26,7 @@
         "archive": "img/archive.svg",
         "code": "img/code.svg",
         "html": "img/html.svg",
+        "yaml": "img/yaml.svg",
         "css": "img/css.svg",
         "executable": "img/executable.svg",
         "generic":"img/file.svg",

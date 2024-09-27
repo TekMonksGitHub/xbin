@@ -1,7 +1,7 @@
 <!--
 /* 
  * (C) 2018 TekMonks. All rights reserved.
- * License: MIT - see enclosed license.txt file.
+ * License: See enclosed LICENSE file.
  */
  -->
 
@@ -35,6 +35,7 @@ div#filemanager {
     position: relative;
     padding-top: 2.5em;
     box-sizing: border-box;
+    container-type: inline-size;
 }
 
 bread-crumbs#filepathcrumbs {
@@ -87,6 +88,8 @@ div#filelistingscontainer {
     align-content: flex-start;
     flex: 1;
     width: 100%;
+    overflow: auto;
+    padding-bottom: 1em;
 }
 
 div#filelistingscontainer div#operations {
@@ -105,11 +108,12 @@ div#filelistingscontainer div.filemanagerentries {
     height: fit-content;
     display: flex;
     flex-direction: column;
-    padding: 0em 1em 0.5em 1em;
+    padding: {{style.fmPadding}};
     align-items: center;
     justify-content: center;
     width: 5em;
     text-align: center;
+    font-size: {{style.fmFontSize}};
 }
 
 div#filelistingscontainer div.filemanagerentries:focus, div#filelistingscontainer div.filemanagerentries:hover {
@@ -118,13 +122,14 @@ div#filelistingscontainer div.filemanagerentries:focus, div#filelistingscontaine
     outline: none;
 }
 
-div#filelistingscontainer div.filemanagerentries > img {width: 5em;}
+div#filelistingscontainer div.filemanagerentries > img {width: {{style.fmIconSize}};}
 
 div#filelistingscontainer div.filemanagerentries > span {
     display: inline-block;
     text-overflow: ellipsis;
     overflow: hidden;
     width: 100%;
+    white-space: nowrap;
 }
 
 div#informationbox {
@@ -148,7 +153,8 @@ div#informationbox table {
     color: inherit;
     width: 100%;
 }
-div#informationbox table td {padding: 0 0.5em 0.4em 0}
+div#informationbox table td {padding: 0 0.5em 0.4em 0;}
+div#informationbox table tr {word-break: break-all;}
 div#informationbox span#comments {margin-top: 2em; margin-bottom: 0.5em; width: 100%;}
 div#informationbox textarea#filecomments, div#informationbox textarea#filecomments:focus {
     border: 1px solid #9BC1D7;
@@ -258,6 +264,7 @@ div#progress > span#name {
     overflow: hidden;
     text-overflow: ellipsis;
     display: inline-block;
+    white-space: nowrap;
 }
 div#progress > span#bar, div#progress > span#bar > span#percent {
     width: 55%;
@@ -307,7 +314,7 @@ span.button {
     margin-top: 2em;
 }
 
-@media (max-width:960px) {	
+@container (max-width:960px) {	
 	div#notificationscrollpositioner {  /* On small screens widen notifications */
         width: 100%;
         left: 0%;
@@ -323,14 +330,10 @@ span.button {
         bottom: 0;
         width: 100%;
         margin: 0em;
+        height: calc(100% - 1em);
     }
 }
 </style>
-
-<script type="module">
-    import {dialog_box} from "{{{COMPONENT_PATH}}}/../dialog-box/dialog-box.mjs";
-    import {bread_crumbs} from "{{{COMPONENT_PATH}}}/../bread-crumbs/bread-crumbs.mjs";
-</script>
 
 {{{styleBody}}}
 
@@ -360,6 +363,7 @@ span.button {
     {{/operations}}
     </div>
     {{#entries}}
+    {{^skip}}
     <div tabindex="0" class="filemanagerentries"
         onkeyup='event.preventDefault(); event.stopPropagation(); if (event.key == "Enter" || event.keyCode == 13) {
                 monkshu_env.components["file-manager"].handleClick(this, "{{path}}", "{{#stats.directory}}true{{/stats.directory}}{{#stats.home}}true{{/stats.home}}{{#stats.back}}true{{/stats.back}}", true, true);
@@ -373,6 +377,7 @@ span.button {
             ondragend="monkshu_env.components['file-manager'].showDownloadProgress('{{path}}', this)">
         <span>{{name}}</span>
     </div>
+    {{/skip}}
     {{/entries}}
     <input id="upload" type="file" multiple onchange='monkshu_env.components["file-manager"].uploadFiles(this, this.files)' onclick="event.stopPropagation(); this.value = null;">
 </div>
@@ -407,7 +412,7 @@ span.button {
 <div id="progresscontainer">
     {{#files}}
     <div id="progress">
-        <span id="name">{{name}}</span>
+        <span id="name" title="{{name}}">{{name}}</span>
         <span id="bar" {{#cancelled}}class="cancelled"{{/cancelled}} {{#lastoperror}}class="cancelled"{{/lastoperror}}>
             {{^cancelled}}{{^lastoperror}}
                 <span id="percent" style="width: {{percent}}%!important"></span>
@@ -441,9 +446,9 @@ span.button {
 
     <span class="button" onclick='event.preventDefault(); event.stopPropagation(); 
         this.parentNode.classList.remove("visible"); 
-        monkshu_env.components["file-manager"].updateFileEntryCommentIfModified("{{{path}}}", "{{{comment}}}", 
+        monkshu_env.components["file-manager"].updateFileEntryCommentIfModified(this, "{{{path}}}", "{{{comment}}}", 
             this.parentNode.querySelector("textarea#filecomments")?.value)'>{{i18n.Close}}</span>
 <%={{ }}=%> -->
 </template>
 
-<dialog-box id="dialog"></dialog-box>
+<dialog-box id="fmdialog"></dialog-box>

@@ -2,8 +2,6 @@
 (C) 2020 TekMonks. All rights reserved.
 -->
 <style>
-@import url('./fonts/appfonts.css');
-
 body::-webkit-scrollbar {
     width: 0.5em !important;
     height: 0.5em !important;
@@ -30,6 +28,7 @@ body, html {
 	min-width: 880px;
 	min-height: 640px;
 	overflow: overlay;
+	font-family: arial;
 }
 
 body::after {
@@ -82,15 +81,6 @@ span#desktopheader > span#rightheader > span#greeting {
 	display: flex;
     align-items: center;
 }
-span#desktopheader > span#rightheader > span#greeting > span-with-menu#status {
-	border-radius: 50%;
-	box-shadow: 1px 1px 20px -3px #41cf70;
-}
-span#desktopheader > span#rightheader > span#greeting > span-with-menu#status.working {box-shadow: 1px 1px 20px -3px #41cf70}
-span#desktopheader > span#rightheader > span#greeting > span-with-menu#status.break {box-shadow: 1px 1px 20px -3px #bdbd00}
-span#desktopheader > span#rightheader > span#greeting > span-with-menu#status.offline {box-shadow: 1px 1px 20px -3px #cc0000}
-span#desktopheader > span#rightheader > span#greeting > span#name {margin-left: 1.5em;}
-span#desktopheader > span#rightheader > span#diskquota {width: 15%; height: 1.8em;} span#mobilediskquota {display: none;}
 
 div#maincontent {
 	background-color: transparent;
@@ -135,7 +125,7 @@ file-manager#fm {height: 100%;}
 	body, html {min-width: 0; min-height: 0;}
 	span#desktopheader {display: none;}
 	span#rightheader {width: 100% !important;}
-	img#textlogo, span#greeting, span-with-menu#gear, span#signoff {display: none !important;}
+	img#textlogo, span#greeting, span#signoff {display: none !important;}
 	div#maincontent {height: calc(100% - 5em);; margin: 0; padding: 1em 1em 0em 1em;}
 	div#lowercontent {height: auto; flex-direction: column-reverse;}
 	span#mobilefooter {display: flex;}
@@ -146,7 +136,9 @@ file-manager#fm {height: 100%;}
 <html>
 <head>
 	<meta charset="UTF-8">
-	{{{headers}}}
+	<meta name="apple-mobile-web-app-capable" content="yes"/>
+    <meta name="mobile-web-app-capable" content="yes"/>
+    <link rel="apple-touch-icon" href="./img/logob.png">
 
 	<link href="./img/favicon.ico" rel="icon" type="image/x-icon">
 
@@ -156,7 +148,6 @@ file-manager#fm {height: 100%;}
 	import "./components/span-with-menu/span-with-menu.mjs";
 	import "./components/file-manager/file-manager.mjs";
 	import {blackboard} from "/framework/js/blackboard.mjs";
-	import "./components/progress-bar/progress-bar.mjs";
 	import {monkshu_component} from "/framework/js/monkshu_component.mjs";
 	blackboard.registerListener(monkshu_component.BLACKBOARD_MESSAGE_COMPONENT_RENDERED, component => {
 		if (component == "file-manager#fm") main.showLoginMessages(); });	// rendering needs to be complete as filemanager has it's own dialog which onconnect clears memory etc
@@ -178,16 +169,6 @@ file-manager#fm {height: 100%;}
 		progresstextsize="0.8em" textfont="Arial" roundedprogressbar="false" value="0"></progress-bar></span>
 	<span id="refresh"><img src="./img/reload.svg" onclick="location.reload()"></span>
 	<span id="notifications"><img src="./img/bell.svg" onclick="monkshu_env.components['file-manager'].showHideNotifications('fm')"></span>
-	<span-with-menu id="gear" styleBody="url(./pages/menu.stylebody.css)"><img src="./img/settings.svg" style="height: 2em;width: 2em;vertical-align: middle;">
-		<menu-item onclick="monkshu_env.apps[APP_CONSTANTS.APP_NAME].main.changePassword(this)" 
-			label="{{i18n.ChangePassword}}" icon="./img/changepassword_menu.svg"></menu-item>
-		<menu-item onclick="monkshu_env.apps[APP_CONSTANTS.APP_NAME].main.showOTPQRCode(this)" 
-			label="{{i18n.ChangePhone}}" icon="./img/changephone_menu.svg"></menu-item>
-		<menu-item onclick="monkshu_env.apps[APP_CONSTANTS.APP_NAME].main.changeProfile(this)" 
-			label="{{i18n.ChangeProfile}}" icon="./img/changeprofile_menu.svg"></menu-item>
-		{{#admin}}<menu-item onclick="monkshu_env.frameworklibs.router.navigate(APP_CONSTANTS.MANAGE_HTML)" 
-			label="{{i18n.ManageUsers}}" icon="./img/manageusers_menu.svg"></menu-item>{{/admin}}
-	</span-with-menu>
 	<span id="signoff"><img src="./img/poweroff.svg" onclick="monkshu_env.apps[APP_CONSTANTS.APP_NAME].main.logoutClicked()"></span>
 	</span>
 </span>
@@ -204,16 +185,6 @@ file-manager#fm {height: 100%;}
 		progresstextsize="0.55em" textfont="Arial" roundedprogressbar="false" value="0" isvertical="true"></progress-bar></span>
 	<img src="./img/mobilefooter_reload.svg" onclick="location.reload()">
 	<img src="./img/mobilefooter_bell.svg" onclick="monkshu_env.components['file-manager'].showHideNotifications('fm')">
-	<span-with-menu id="gearmobile" bottommenu="true" styleBody="url(./pages/menu.stylebody.css)"><img src="./img/mobilefooter_settings.svg">
-		<menu-item onclick="monkshu_env.apps[APP_CONSTANTS.APP_NAME].main.changePassword(this)" 
-			label="{{i18n.ChangePassword}}" icon="./img/changepassword_menu.svg"></menu-item>
-		<menu-item onclick="monkshu_env.apps[APP_CONSTANTS.APP_NAME].main.showOTPQRCode(this)" 
-			label="{{i18n.ChangePhone}}" icon="./img/changephone_menu.svg"></menu-item>
-		<menu-item onclick="monkshu_env.apps[APP_CONSTANTS.APP_NAME].main.changeProfile(this)" 
-			label="{{i18n.ChangeProfile}}" icon="./img/changeprofile_menu.svg"></menu-item>
-		{{#admin}}<menu-item onclick="monkshu_env.frameworklibs.router.navigate(APP_CONSTANTS.MANAGE_HTML)" 
-			label="{{i18n.ManageUsers}}" icon="./img/manageusers_menu.svg"></menu-item>{{/admin}}
-	</span-with-menu>
 	<img src="./img/mobilefooter_logout.svg" onclick="monkshu_env.apps[APP_CONSTANTS.APP_NAME].main.logoutClicked()">
 </span>
 

@@ -5,15 +5,11 @@
 
 const fs = require("fs");
 const mustache = require("mustache");
+const XBIN_CONSTANTS = require(`${__dirname}/xbinconstants.js`);
 
-exports.initSync = _appName => {
-    global.API_CONSTANTS = require(`${__dirname}/../apis/lib/xbinconstants.js`);
-    API_CONSTANTS.HOSTNAME = APP_CONSTANTS.HOSTNAME;
-    const xbinjsonconf = mustache.render(fs.readFileSync(`${global.API_CONSTANTS.CONF_DIR}/xbin.json`, "utf8"), 
-        global.API_CONSTANTS).replace(/\\/g, "\\\\");   // escape windows paths
-    global.API_CONSTANTS.CONF = JSON.parse(xbinjsonconf);
-    require(`${APP_CONSTANTS.LIB_DIR}/cms.js`).init();    // init cms which inits our ID change listeners
-    require(`${APP_CONSTANTS.API_DIR}/login.js`).init();    // init login which inits our JWT listeners
-    require(`${APP_CONSTANTS.API_DIR}/sharefile.js`).init();    // init the file sharing subsystem
-    require(`${APP_CONSTANTS.LIB_DIR}/userid.js`).initDB();   // inits the DB, will throw an error on failure
+exports.initSync = _ => {
+    const xbinson = mustache.render(fs.readFileSync(`${XBIN_CONSTANTS.CONF_DIR}/xbin.json`, "utf8"), 
+        XBIN_CONSTANTS).replace(/\\/g, "\\\\");   // escape windows paths
+    XBIN_CONSTANTS.CONF = JSON.parse(xbinson);
+    global.XBIN_CONSTANTS = XBIN_CONSTANTS;
 }
