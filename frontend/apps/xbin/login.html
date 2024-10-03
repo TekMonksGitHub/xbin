@@ -77,6 +77,15 @@ div#lgbox img {height: 4em; width: 100%;}
 	font-size: 11px;
 }
 </style>
+{{{APP_CONSTANTS.MOBILE_MEDIA_QUERY_PORTRAIT_START}}}
+	body {flex-direction: column; justify-content: space-around; }
+	div#lgbox {margin-right: 0;}
+	div#advtextbox {margin-left: 0; padding:0;}
+	div#advtextbox h2 {display: none;}
+	div#advtextbox h1 {font-size: larger;}
+	div#advtextbox span.button {display: none}
+	.langbox {position: unset;}
+{{{APP_CONSTANTS.MOBILE_MEDIA_QUERY_PORTRAIT_END}}}
 
 <!doctype html>
 <html>
@@ -97,8 +106,8 @@ div#lgbox img {height: 4em; width: 100%;}
 <div id="advtextbox">
 	<img id="logo" src="./img/xbin.png">
 	<h1>{{i18n.logintagline}}</h1>
-	<h2>{{i18n.loginsubtag}}</h2>
-	<span class="button" onclick="window.open('http://teleworkr.com', '_blank')">{{i18n.learn}}</span>
+	<h2 id="advh2">{{i18n.loginsubtag}}</h2>
+	<span id="advlearnmore" class="button" onclick="window.open('http://teleworkr.com', '_blank')">{{i18n.learn}}</span>
 </div>
 
 <div id="lgbox" onclick='monkshu_env.apps[APP_CONSTANTS.APP_NAME].tkmlogin.login("{{{i18n.Title}}}",
