@@ -64,13 +64,16 @@ exports.downloadFile = async (fileReq, servObject, headers, url) => {
 
 exports.readUTF8File = async function (headers, inpath, extraInfo) {
 	const fullpath = await cms.getFullPath(headers, inpath, extraInfo);
-	if (!await cms.isSecure(headers, fullpath, extraInfo)) throw `Path security validation failure: ${fullpath}`;
-	const zippable = uploadfile.isZippable(fullpath);
-
-	let dataRead = await fspromises.readFile(fullpath); 
-	if (uploadfile.isEncryptable(fullpath)) dataRead = await _readEncryptedUTF8Data(dataRead, zippable);
-	else dataRead = dataRead.toString("utf8");
-	return dataRead;
+	const readstream = exports.getReadStream(fullpath);
+    return new Promise((resolve, reject) => {
+        const contents = [];
+        readstream.on("data", chunk => contents.push(chunk));
+        readstream.on("close", _ => {
+			const utfContents = Buffer.concat(contents).toString("utf8"); 
+			resolve(utfContents);
+		});
+        readstream.on("error", err => reject(err));
+    });
 }
 
 exports.getReadStream = function(fullpath, pathIsATemporarilyZippedFolderForDownloading) {
@@ -82,16 +85,6 @@ exports.getReadStream = function(fullpath, pathIsATemporarilyZippedFolderForDown
 	if (encrypted) readStream = readStream.pipe(crypt.getDecipher(XBIN_CONSTANTS.CONF.SECURED_KEY)); // decrypt the file before sending if it is encrypted
 	if (zippable) readStream = readStream.pipe(zlib.createGunzip());	// gunzip if zipped
 	return readStream;
-}
-
-function _readEncryptedUTF8Data(buffer, zippable) {
-	return new Promise((resolve, reject) => {
-		const buffersRead = []; let readStream = stream.Readable.from(buffer).pipe(crypt.getDecipher(XBIN_CONSTANTS.CONF.SECURED_KEY));
-		if (zippable) readStream = readStream.pipe(zlib.createGunzip()); 
-		readStream.on("data", chunk => buffersRead.push(chunk));
-		readStream.on("finish", _ => resolve(Buffer.concat(buffersRead).toString("utf8")));
-		readStream.on("error", error => reject(error));
-	});
 }
 
 function _sendError(servObject, unauthorized) {
