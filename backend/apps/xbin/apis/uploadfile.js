@@ -7,6 +7,7 @@ const path = require("path");
 const zlib = require("zlib");
 const fspromises = fs.promises;
 const stream = require("stream");
+const cyrptomod = require("crypto");
 const utils = require(`${CONSTANTS.LIBDIR}/utils.js`);
 const crypt = require(`${CONSTANTS.LIBDIR}/crypt.js`);
 const cms = require(`${XBIN_CONSTANTS.LIB_DIR}/cms.js`);
@@ -26,7 +27,7 @@ exports.doService = async (jsonReq, _servObject, headers, _url) => {
 	const headersOrLoginIDAndOrg = jsonReq.id && jsonReq.org ? 
 		{xbin_id: jsonReq.id, xbin_org: jsonReq.org, headers} : headers;
 	const fullpath = await cms.getFullPath(headersOrLoginIDAndOrg, jsonReq.path, jsonReq.extraInfo),
-		transferID = jsonReq.transfer_id || `${fullpath}.${Date.now()}`;
+		transferID = jsonReq.transfer_id || _md5Hash(`${fullpath}.${Date.now()}`);
 	if (!await cms.isSecure(headersOrLoginIDAndOrg, fullpath, jsonReq.extraInfo)) {LOG.error(`Path security validation failure: ${jsonReq.path}`); return CONSTANTS.FALSE_RESULT;}
 	
 	LOG.debug(`Resolved full path for upload file: ${fullpath}. Transfer ID is ${transferID}`);
@@ -86,7 +87,7 @@ exports.uploadFile = async function(xbin_id, xbin_org, readstreamOrContents, cms
 
 exports.writeChunk = async function(headersOrLoginIDAndOrg, transferid, fullpath, chunk, startOfFile, 
 		endOfFile, comment, extraInfo, noevent) {
-	const temppath = path.resolve(`${fullpath}${transferid}${XBIN_CONSTANTS.XBIN_TEMP_FILE_SUFFIX}`);
+	const temppath = path.resolve(`${fullpath}.${transferid}${XBIN_CONSTANTS.XBIN_TEMP_FILE_SUFFIX}`);
 	const cmspath = await cms.getCMSRootRelativePath(headersOrLoginIDAndOrg, fullpath, extraInfo);
 
 	if (startOfFile) {	// delete the old files if they exist
@@ -348,6 +349,8 @@ function _appendOrWrite(inpath, buffer, startOfFile, endOfFile, isZippable) {
 		if (endOfFile) _existing_streams[inpath].addablestream.end(); 
 	});
 }
+
+const _md5Hash = text => cyrptomod.createHash("md5").update(text).digest("hex");
 
 const validateRequest = jsonReq => (jsonReq && jsonReq.path && jsonReq.data && 
 	(jsonReq.startOfFile !== undefined) && (jsonReq.endOfFile  !== undefined) && (jsonReq.startOfFile || jsonReq.transfer_id));
