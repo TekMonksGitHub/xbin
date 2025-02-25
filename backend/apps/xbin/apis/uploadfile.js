@@ -25,8 +25,8 @@ exports.doService = async (jsonReq, _servObject, headers, _url) => {
 	LOG.debug("Got uploadfile request for path: " + jsonReq.path);
 	const headersOrLoginIDAndOrg = jsonReq.id && jsonReq.org ? 
 		{xbin_id: jsonReq.id, xbin_org: jsonReq.org, headers} : headers;
-	const transferID = jsonReq.transfer_id || Date.now(), 
-		fullpath = await cms.getFullPath(headersOrLoginIDAndOrg, jsonReq.path, jsonReq.extraInfo);
+	const fullpath = await cms.getFullPath(headersOrLoginIDAndOrg, jsonReq.path, jsonReq.extraInfo),
+		transferID = jsonReq.transfer_id || `${fullpath}.${Date.now()}`;
 	if (!await cms.isSecure(headersOrLoginIDAndOrg, fullpath, jsonReq.extraInfo)) {LOG.error(`Path security validation failure: ${jsonReq.path}`); return CONSTANTS.FALSE_RESULT;}
 	
 	LOG.debug(`Resolved full path for upload file: ${fullpath}. Transfer ID is ${transferID}`);
