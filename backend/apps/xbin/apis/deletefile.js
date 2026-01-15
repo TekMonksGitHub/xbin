@@ -64,7 +64,7 @@ async function rmrf(path, id, org, ip, extraInfo, noevent) {
 
 	if ((await fspromises.stat(path)).isFile()) { await _deleteFile(path); return; }
 
-	const entries = await fspromises.readdir(path);
+	const entries = (await fspromises.readdir(path)).filter(item=>!item.includes(XBIN_CONSTANTS.STATS_EXTENSION));
 	for (const entry of entries) {
 		const stats = await uploadfile.getFileStats(`${path}/${entry}`);
 		if (stats.xbintype == XBIN_CONSTANTS.XBIN_FILE) await _deleteFile(`${path}/${entry}`); 
@@ -79,3 +79,4 @@ async function unlinkFileAndRemoveFromDB(path) {
 }
 
 const validateRequest = jsonReq => (jsonReq && jsonReq.path);
+
