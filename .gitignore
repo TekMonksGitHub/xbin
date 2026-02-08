@@ -7,3 +7,4 @@ backend/apps/xbin/logs/remotelog.ndjson
 backend/apps/xbin/db/xbin.db*
 backend/apps/**/cms/*
 .DS_Store
+**/webbundle/*

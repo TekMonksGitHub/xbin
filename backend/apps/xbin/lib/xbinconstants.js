@@ -11,7 +11,6 @@ exports.APP_ROOT = APP_ROOT;
 exports.API_DIR = `${APP_ROOT}/apis`;
 exports.CONF_DIR = `${APP_ROOT}/conf`;
 exports.LIB_DIR = `${APP_ROOT}/lib`;
-exports.DB_DIR = `${APP_ROOT}/db`;
 exports.XBIN_TEMP_FILE_SUFFIX = "._____________xbin__________temp_file";
 exports.MEM_KEY_UPLOADFILE = "__org_monkshu_xbin_uploadfile_memory";
 exports.STATS_EXTENSION = "._____________xbin__________ignore_stats";

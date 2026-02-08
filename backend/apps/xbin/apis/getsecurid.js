@@ -14,14 +14,14 @@ exports.doService = async jsonReq => {
 
 exports.getSecurID = jsonReq => {
     return new Promise(resolve =>{
-    const token = crypt.encrypt(jsonReq.path+decodeURIComponent(jsonReq.reqid)+Math.random());
+        const token = crypt.encrypt(jsonReq.path+decodeURIComponent(jsonReq.reqid)+Math.random());
 
-	const securids = CLUSTER_MEMORY.get("__org_xbin_securids") || [];
-    securids.push(token);
-    CLUSTER_MEMORY.set("__org_xbin_securids", securids);
-    setTimeout(_=>{ // expire it quickly
-        const securids = CLUSTER_MEMORY.get("__org_xbin_securids");
-        securids.splice(securids.indexOf(token),1); CLUSTER_MEMORY.set("__org_xbin_securids", securids);
+        const securids = CLUSTER_MEMORY.get("__org_xbin_securids") || [];
+        securids.push(token);
+        CLUSTER_MEMORY.set("__org_xbin_securids", securids);
+        setTimeout(_=>{ // expire it quickly
+            const securids = CLUSTER_MEMORY.get("__org_xbin_securids");
+            securids.splice(securids.indexOf(token),1); CLUSTER_MEMORY.set("__org_xbin_securids", securids);
         }, 1000000000);//CLUSTER_SYNC_TIME+(XBIN_CONSTANTS.CONF.SECURID_EXPIRY||2000));
         setTimeout(_=>resolve(token), CLUSTER_SYNC_TIME);   // this ensures the secure ID has replicated
     });  

@@ -151,6 +151,7 @@ file-manager#fm {height: 100%;}
 	<script type="module">
 	import {main} from "./js/main.mjs"; monkshu_env.apps[APP_CONSTANTS.APP_NAME].main = main; 
 	import "./components/dialog-box/dialog-box.mjs";
+	import "./components/bread-crumbs/bread-crumbs.mjs";
 	import "./components/span-with-menu/span-with-menu.mjs";
 	import "./components/file-manager/file-manager.mjs";
 	import "./components/progress-bar/progress-bar.mjs";
@@ -182,7 +183,8 @@ file-manager#fm {height: 100%;}
 
 <div id="maincontent">
 	<file-manager id="fm" defaultShareDuration="5" zindex-fullscreen="51"
-		user="{{#_org_monkshu_session}}id{{/_org_monkshu_session}}" downloadpage="./download.html" quotabarids="quotabar,quotabarmobile"></file-manager>
+		user="{{#_org_monkshu_session}}id{{/_org_monkshu_session}}" 
+		downloadpage="./download.html" quotabarids="quotabar,quotabarmobile"></file-manager>
 </div>
 
 <span id="mobilefooter">

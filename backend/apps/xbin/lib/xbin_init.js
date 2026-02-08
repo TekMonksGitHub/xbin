@@ -12,4 +12,6 @@ exports.initSync = _ => {
         XBIN_CONSTANTS).replace(/\\/g, "\\\\");   // escape windows paths
     XBIN_CONSTANTS.CONF = JSON.parse(xbinson);
     global.XBIN_CONSTANTS = XBIN_CONSTANTS;
+    const cms = require(`${XBIN_CONSTANTS.LIB_DIR}/cms.js`);
+    if (!cms.getLoginModule()) cms.setLoginModule(require(`${XBIN_CONSTANTS.API_DIR}/login.js`));
 }

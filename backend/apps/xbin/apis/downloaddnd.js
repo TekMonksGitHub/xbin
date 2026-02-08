@@ -10,7 +10,7 @@ exports.handleRawRequest = async (jsonReq, servObject, headers, url, _apiconf) =
 	if (!await jwtTokenManager.checkToken(jsonReq.auth)) {LOG.error("Validation failure, wrong AUTH."); _sendError(servObject, "Validation failure."); return;}
 	
 	LOG.debug("Got DND downloadfile request for path: " + jsonReq.path);
-	const securid = getsecurid.getSecurID(jsonReq);
+	const securid = await getsecurid.getSecurID(jsonReq);
     downloadfile.handleRawRequest({...jsonReq, securid}, servObject, headers, url);
 }
 

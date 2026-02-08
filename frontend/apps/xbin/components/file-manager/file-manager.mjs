@@ -102,8 +102,8 @@ async function elementConnected(host) {
    const pathSplits = path.split("/"); for (const [i, pathElement] of pathSplits.entries()) if (pathElement.trim()) pathcrumbs.push(
       {action: `monkshu_env.components['file-manager'].changeToPath('${host.id}','${pathSplits.slice(0, i+1).join("/")}')`, name: pathElement});
 
-   const style = {fmFontSize: host.getAttribute("fontsize")||"normal", 
-      fmIconSize: host.getAttribute("iconsize")||"5em", fmPadding: host.getAttribute("padding")||"0em 1em 0.5em 1em"};
+   const style = {fmFontSize: host.getAttribute("fontsize"), 
+      fmIconSize: host.getAttribute("iconsize")||"5em", fmPadding: host.getAttribute("padding")};
    const data = {operations: folder_ops, entries: resp.entries, hostID: host.id, COMPONENT_PATH, 
       pathcrumbs: JSON.stringify(pathcrumbs), style};
 
@@ -162,7 +162,8 @@ function _fileListingEntrySelected(containedElement, stats) {
    if (stats.birthtime) stats.birthTimestampLocale = new Date(stats.birthtime).toLocaleString(); 
    if (stats.mtime) stats.modifiedTimestampLocale = new Date(stats.mtime).toLocaleString(); 
    const arrayForBreadcrumbs = selectedPath.trim().replace(/^\/+/, "").split("/").slice(0, -1); arrayForBreadcrumbs.unshift("Home");
-   stats.path = selectedPath; stats.pathBreadcrumbs = arrayForBreadcrumbs.join(" > "); if (!stats.name) stats.name = containedElement.innerText;
+   stats.path = selectedPath; stats.pathBreadcrumbs = arrayForBreadcrumbs.join(" > "); 
+   if (!stats.name) stats.name = containedElement.innerText;
    _renderTemplateOnElement("informationboxDivContents", stats, informationbox);
 }
 
@@ -455,6 +456,7 @@ async function downloadFile(element) {
 function getDragAndDropDownloadURL(path, element) {
    const reqid = _getReqIDForDownloading(path), auth = apiman.getJWTToken(API_DOWNLOADFILE); element["data-reqid"] = reqid;
    const url = `${API_DOWNLOADFILE_DND}?path=${path}&reqid=${reqid}&auth=${auth}`;
+   showDownloadProgress(path, element);
    return url;
 }
 

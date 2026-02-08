@@ -9,6 +9,7 @@
     "UPLOAD_STREAM_MAX_WAIT": 120000,
     "IGNORE_FILE_EXTENSIONS": [],
     "DEFAULT_CMS_ROOT": "{{{APP_ROOT}}}/../cms",
+    "DB_DIR": "{{{APP_ROOT}}}/db",
     "DEFAULT_QUOTA": 1073741824,
     "DISK_COMPRESSED": false, 
     "DISK_SECURED": false,

@@ -5,6 +5,10 @@
  *  op - getotk - Returns one time key which can be passed to Unified login 
  *  op - verify - Verifies the incoming JWT. This needs the following params
  *      op: "verify", jwt: "the JWT token from unified login"
+ * 
+ * A replacement login module must implement
+ *  isValidLogin, getID, getRole, getOrg, getJWT, getToken, isAPIKeySecure
+ * 
  * (C) 2023 TekMonks. All rights reserved.
  */
 
@@ -25,6 +29,10 @@ exports.getRole = headers => APIREGISTRY.getExtension("JWTTokenManager").getClai
 exports.getOrg = headers => APIREGISTRY.getExtension("JWTTokenManager").getClaims(headers).org;
 exports.getJWT = headers => APIREGISTRY.getExtension("JWTTokenManager").getToken(headers);
 exports.getToken = headers => exports.getJWT(headers);
+
+exports.isAPIKeySecure = async function(_headers, _org) {
+	return true;    // we use the default key checker in Monkshu
+}
 
 function _getOTK(_jsonReq) {
     return {...CONSTANTS.TRUE_RESULT, otk: serverutils.generateUUID(false)};
