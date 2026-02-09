@@ -10,6 +10,15 @@ Step 4: Start frontend using `<monkshu>/frontend/server/server.sh`
 Step 5: Start backed using `<monkshu>/backed/server/server.sh`  
 Step 6: Browse to `https://<your IP>/apps/xbin/index.html`  
 
+Embedding Guide
+===============
+- Copy filemanager, and other components to front-end of the app
+- Replace APP_CONSTANTS with right one that can provide API paths etc inside filemanager.mjs
+- Create a HTML to embed file manager and add its element there
+- On the app backend - copy the entire xbin backend app to a folder inside it. Eg xbin.
+- In your app's app.js require xbin/lib/xbin_init.js and call xbin_init.initSync there to initialize xbin
+- Xbin and associated comoponents need window.LOG. So define it in application.mjs if needed.
+
 Optional Step
 =============
 Modify `/frontend/framework/conf/default_app.json` to "xbin" and then `https://<your IP>` should auto redirect.
