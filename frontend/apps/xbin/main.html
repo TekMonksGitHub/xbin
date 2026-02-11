@@ -95,6 +95,7 @@ div#maincontent {
 	display: flex;
 	flex-direction: column;
 	overflow: hidden;
+	color: #00649c;
 }
 
 div#lowercontent {
@@ -182,9 +183,12 @@ file-manager#fm {height: 100%;}
 </span>
 
 <div id="maincontent">
-	<file-manager id="fm" defaultShareDuration="5" zindex-fullscreen="51"
+	<file-manager id="fm" defaultShareDuration="5" zindex-fullscreen="51" fmiconsize="3rem"
 		user="{{#_org_monkshu_session}}id{{/_org_monkshu_session}}" 
-		downloadpage="./download.html" quotabarids="quotabar,quotabarmobile"></file-manager>
+		apipath="{{{APP_CONSTANTS.BACKEND}}}/apps/{{{APP_CONSTANTS.APP_NAME}}}" 
+		apppath="{{{APP_CONSTANTS.FRONTEND}}}/apps/{{{APP_CONSTANTS.APP_NAME}}}"
+		downloadpage="./download.html" quotabarids="quotabar,quotabarmobile">
+	</file-manager>
 </div>
 
 <span id="mobilefooter">

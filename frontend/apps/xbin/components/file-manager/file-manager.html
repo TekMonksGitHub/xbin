@@ -10,7 +10,7 @@
  
 ::-webkit-scrollbar-thumb {
     border-radius: 100px;
-    background: #cdeaf2; 
+    background: color-mix(in srgb, currentColor, white 90%); 
     box-shadow: inset 0 0 6px rgba(0,0,0,0.3); 
 }
 
@@ -45,12 +45,12 @@ bread-crumbs#filepathcrumbs {
 }
 
 div#notificationscrollpositioner {
-    border-top: 0.5px solid #2f94ad;
-    border: 0.5px solid #2f94ad;
+    border-top: 0.5px solid;
+    border: 0.5px solid;
     border-radius: 10px 10px 0px 0px;
     padding: 3px;
     box-sizing: border-box;
-    background: #f3fafc;
+    background: color-mix(in srgb, currentColor, white 98%);
     display: none;
     z-index: 1;
     opacity: 0.7;
@@ -83,7 +83,7 @@ div#notification.visible {
 div#filelistingscontainer {
     display: flex;
     flex-flow: row wrap;
-    color: #168cd0;
+    color: inherit;
     row-gap: 2em;
     align-content: flex-start;
     flex: 1;
@@ -96,8 +96,8 @@ div#filelistingscontainer div#operations {
     display: flex;
     flex-direction: row;
     height: fit-content;
-    background: #FAFAFB;
-    border: 1px solid #C8CDD1;
+    background: color-mix(in srgb, currentColor, white 98%);
+    border: 1px solid color-mix(in srgb, currentColor, white 50%);
     border-radius: 0.5em;
     max-width: 100%;
     box-sizing: border-box;
@@ -119,20 +119,26 @@ div#filelistingscontainer div.filemanagerentries {
 }
 
 div#filelistingscontainer div.filemanageroperations {
-    height: 3rem;
+    height: {{#style.fmIconSize}}{{.}}{{/style.fmIconSize}}{{^style.fmIconSize}}5rem{{/style.fmIconSize}};
     font-size: 0.7rem;
 }
-div#filelistingscontainer div.filemanageroperations img {
-    height: 2rem;
+div#filelistingscontainer div.filemanageroperations span.icon {
+    width: calc({{#style.fmIconSize}}{{.}}{{/style.fmIconSize}}{{^style.fmIconSize}}5rem{{/style.fmIconSize}} - 1rem) !important;
+    height: calc({{#style.fmIconSize}}{{.}}{{/style.fmIconSize}}{{^style.fmIconSize}}5rem{{/style.fmIconSize}} - 1rem) !important;
 }
+div#filelistingscontainer div.filemanageroperations span.icon > svg {width: 100%; height: 100%;}
 
 div#filelistingscontainer div.filemanagerentries:focus, div#filelistingscontainer div.filemanagerentries:hover {
     border-radius: 10px;
-    background-color: #cdeaf260;
+    background-color: color-mix(in srgb, currentColor, white 95%);
     outline: none;
 }
 
-div#filelistingscontainer div.filemanagerentries > img {width: {{style.fmIconSize}};}
+div#filelistingscontainer div.filemanagerentries span.icon {
+    width: {{#style.fmIconSize}}{{.}}{{/style.fmIconSize}}{{^style.fmIconSize}}5rem{{/style.fmIconSize}};
+    height: {{#style.fmIconSize}}{{.}}{{/style.fmIconSize}}{{^style.fmIconSize}}5rem{{/style.fmIconSize}};
+}
+div#filelistingscontainer div.filemanagerentries span.icon > svg {width: 100%; height: 100%;}
 
 div#filelistingscontainer div.filemanagerentries > span {
     display: inline-block;
@@ -145,15 +151,15 @@ div#filelistingscontainer div.filemanagerentries > span {
 div#informationbox {
     height: calc(100% - 2px - 4em);
     width: 40%;
-    border: 1px solid #168cd0;
+    border: 1px solid {{{fmFontColor}}};
     border-radius: 1em;
-    color: #168cd0;
+    color: inherit;
     padding: 2em;
     box-sizing: border-box;
     display: none;
     flex-direction: column;
     align-items: center;
-    overflow: auto;
+    overflow: hidden;
     margin-left: 2em;
     z-index: 2;
     background-color: #ffffff;
@@ -167,7 +173,7 @@ div#informationbox table td {padding: 0 0.5em 0.4em 0;}
 div#informationbox table tr {word-break: break-all;}
 div#informationbox span#comments {margin-top: 2em; margin-bottom: 0.5em; width: 100%;}
 div#informationbox textarea#filecomments, div#informationbox textarea#filecomments:focus {
-    border: 1px solid #9BC1D7;
+    border: 1px solid color-mix(in srgb, currentColor, white 50%);
     border-radius: 1em;
     flex-grow: 1;
     resize: none;
@@ -175,7 +181,7 @@ div#informationbox textarea#filecomments, div#informationbox textarea#filecommen
     padding: 1em;
     font: inherit;
     color: inherit;
-    width: 100%;
+    width: calc(100% - 2em);
     min-height: 5em;
 }
 div#informationbox.visible {display: flex !important;}
@@ -258,7 +264,7 @@ div#progresscontainer {
     flex-flow: column;
     box-sizing: border-box;
     justify-content: flex-start;
-    background: #f3fafc;
+    background: color-mix(in srgb, currentColor, white 98%);
     overflow-y: auto;
     overflow-x: hidden;
 }
@@ -349,7 +355,7 @@ span.button {
 
 <div id="filemanager">
 <bread-crumbs id="filepathcrumbs" value='{{pathcrumbs}}'
-    styleBody="body{--font-color: #168cd0;} span.crumb{font-size: 0.8em;}" 
+    styleBody="body{--font-color: {{{fmFontColor}}};} span.crumb{font-size: 0.8em;}" 
     crumbicon="{{COMPONENT_PATH}}/img/crumbicon_folder.svg"
     crumbiconhover="{{COMPONENT_PATH}}/img/crumbicon_folder_hover.svg"></bread-crumbs>
 <div id="filelistingscontainer" ondragover="event.preventDefault(); event.dataTransfer.dropEffect='copy';"
@@ -367,7 +373,12 @@ span.button {
         {{#stats.json}}data-stats='{{{.}}}'{{/stats.json}}
         title="{{name}}">
 
-        <img src="{{{icon}}}">
+        <span class="icon" draggable="true" ondragstart="event.dataTransfer.setData(
+                    'DownloadURL',`application/octet-stream:{{name}}:${monkshu_env.components['file-manager'].getDragAndDropDownloadURL('{{{path}}}', this)}`)"
+                ondragend="monkshu_env.components['file-manager'].showDownloadProgress('{{path}}', this)"
+                ondrop="monkshu_env.components['file-manager'].showDownloadProgress('{{path}}', this)">
+            {{{svg}}}
+        </span>
         <span>{{name}}</span>
     </div>
     {{/operations}}
@@ -383,10 +394,12 @@ span.button {
         oncontextmenu='if (monkshu_env.components["file-manager"].isMobile()) return; event.preventDefault(); event.stopPropagation(); monkshu_env.components["file-manager"].handleClick(this, "{{path}}", "{{#stats.directory}}true{{/stats.directory}}{{#stats.file}}false{{/stats.file}}", false, false, event);'
         {{#stats.json}}data-stats='{{{.}}}'{{/stats.json}} 
         title="{{name}}">
-        <img src="{{{icon}}}" draggable="true" ondragstart="event.dataTransfer.setData(
-                'DownloadURL',`application/octet-stream:{{name}}:${monkshu_env.components['file-manager'].getDragAndDropDownloadURL('{{{path}}}', this)}`)"
-            ondragend="monkshu_env.components['file-manager'].showDownloadProgress('{{path}}', this)"
-            ondrop="monkshu_env.components['file-manager'].showDownloadProgress('{{path}}', this)">
+        <span class="icon" draggable="true" ondragstart="event.dataTransfer.setData(
+                    'DownloadURL',`application/octet-stream:{{name}}:${monkshu_env.components['file-manager'].getDragAndDropDownloadURL('{{{path}}}', this)}`)"
+                ondragend="monkshu_env.components['file-manager'].showDownloadProgress('{{path}}', this)"
+                ondrop="monkshu_env.components['file-manager'].showDownloadProgress('{{path}}', this)">
+            {{{svg}}}
+        </span>
         <span>{{name}}</span>
     </div>
     {{/skip}}

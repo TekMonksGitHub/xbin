@@ -15,28 +15,29 @@ import {blackboard} from "/framework/js/blackboard.mjs";
 import {apimanager as apiman} from "/framework/js/apimanager.mjs";
 import {monkshu_component} from "/framework/js/monkshu_component.mjs";
 
-let user, mouseX, mouseY, menuOpen, timer, selectedPath, currentlyActiveFolder, selectedIsDirectory, selectedElement, 
-   selectedCutPath, selectedCopyPath, selectedCutCopyElement, shareDuration, showNotification, 
-   currentWriteBufferSize, MIMES;
+let user, mouseX, mouseY, menuOpen, timer, selectedPath, currentlyActiveFolder, selectedIsDirectory, 
+   selectedElement, selectedCutPath, selectedCopyPath, selectedCutCopyElement, SHARE_DURATION, 
+   showNotification, currentWriteBufferSize, MIMES, API_PATH, APP_PATH;
 
 const FILES_AND_PERCENTS = {}, UPLOAD_TRANSFER_IDs = {}, SERVER_ID_CACHE = {};
 
-const API_GETFILES = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/getfiles";
-const API_COPYFILE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/copyfile";
-const API_SHAREFILE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/sharefile";
-const API_UPLOADFILE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/uploadfile";
-const API_DELETEFILE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/deletefile";
-const API_CREATEFILE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/createfile";
-const API_RENAMEFILE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/renamefile";
-const API_CHECKQUOTA = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/checkquota";
-const API_OPERATEFILE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/operatefile";
-const API_DOWNLOADFILE = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/downloadfile";
+const API_GETFILES = _ => API_PATH+"/getfiles";
+const API_COPYFILE = _ => API_PATH+"/copyfile";
+const API_SHAREFILE = _ => API_PATH+"/sharefile";
+const API_UPLOADFILE = _ => API_PATH+"/uploadfile";
+const API_DELETEFILE = _ => API_PATH+"/deletefile";
+const API_CREATEFILE = _ => API_PATH+"/createfile";
+const API_RENAMEFILE = _ => API_PATH+"/renamefile";
+const API_CHECKQUOTA = _ => API_PATH+"/checkquota";
+const API_OPERATEFILE = _ => API_PATH+"/operatefile";
+const API_DOWNLOADFILE = _ => API_PATH+"/downloadfile";
 const COMPONENT_PATH = util.getModulePath(import.meta), DIALOGS_PATH = `${COMPONENT_PATH}/dialogs`;
-const API_CHECKFILEEXISTS = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/checkfileexists";
-const API_DOWNLOADFILE_GETSECURID = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/getsecurid";
-const API_DOWNLOADFILE_STATUS = APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/getdownloadstatus";
-const API_DOWNLOADFILE_DND = APP_CONSTANTS.FRONTEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/proxiedapis/downloaddnd";
-let PAGE_DOWNLOADFILE_SHARED = `${APP_CONSTANTS.BACKEND+"/apps/"+APP_CONSTANTS.APP_NAME+"/downloadsharedfile"}`;
+const API_CHECKFILEEXISTS = _ => API_PATH+"/checkfileexists";
+const API_DOWNLOADFILE_GETSECURID = _ => API_PATH+"/getsecurid";
+const API_DOWNLOADFILE_STATUS = _ => API_PATH+"/getdownloadstatus";
+const API_DOWNLOADFILE_DND = _ => APP_PATH+"/proxiedapis/downloaddnd";
+let PAGE_DOWNLOADFILE_SHARED = COMPONENT_PATH+"/downloadshared.html", ENCODE_URL = true;
+const LOG = $$.LOG;
 
 const DIALOG_SCROLL_ELEMENT_ID = "notificationscrollpositioner", DIALOG_HOST_ELEMENT_ID = "notification", 
    PROGRESS_TEMPLATE="progressdialog", DEFAULT_SHARE_EXPIRY = 5;
@@ -65,8 +66,11 @@ const IO_CHUNK_SIZE = 10485760, INITIAL_UPLOAD_BUFFER_SIZE = 40960, MAX_UPLOAD_W
    APIMAN_RETRIES = 3;
 
 async function elementConnected(host) {
-   menuOpen = false; user = host.getAttribute("user"); MIMES = await $$.requireJSON(`${COMPONENT_PATH}/conf/mimes.json`);
-
+   menuOpen = false; user = host.getAttribute("user"); 
+   MIMES = await $$.requireJSON(`${COMPONENT_PATH}/conf/mimes.json`);
+   API_PATH = host.getAttribute("apipath"); APP_PATH = host.getAttribute("apppath");
+   ENCODE_URL = host.getAttribute("encodeurls") ? host.getAttribute("encodeurls").toLowerCase() == "true" : ENCODE_URL;
+ 
    i18n.addPath(COMPONENT_PATH); // add our i18n bundle
 
    const path = host.getAttribute("path") || (file_manager.getSessionMemory(host.id))["__lastPath"] || "/",
@@ -75,7 +79,7 @@ async function elementConnected(host) {
       hiddenFilesPatterns = hiddenFilesPatternsArray.map(value => value.trim()).map(patternString => new RegExp(patternString)),
       genStats = host.getAttribute("genstats")?.toLowerCase() == "true";
    selectedPath = path.replace(/[\/]+/g,"/"); selectedIsDirectory = true; currentlyActiveFolder = selectedPath;
-   const resp = await apiman.rest(API_GETFILES, "GET", _addExtraInfo({path, genStatsIfNeeded: genStats}, host), true); 
+   const resp = await apiman.rest(API_GETFILES(), "GET", _addExtraInfo({path, genStatsIfNeeded: genStats}, host), true); 
    if (!resp || !resp.result) return; 
 
    for (const entry of resp.entries) {
@@ -102,13 +106,16 @@ async function elementConnected(host) {
    const pathSplits = path.split("/"); for (const [i, pathElement] of pathSplits.entries()) if (pathElement.trim()) pathcrumbs.push(
       {action: `monkshu_env.components['file-manager'].changeToPath('${host.id}','${pathSplits.slice(0, i+1).join("/")}')`, name: pathElement});
 
-   const style = {fmFontSize: host.getAttribute("fontsize"), 
-      fmIconSize: host.getAttribute("iconsize")||"5em", fmPadding: host.getAttribute("padding")};
+   const computedStyle = window.getComputedStyle(host);
+   const style = {fmFontSize: computedStyle.fontSize, fmFontColor: computedStyle.color,
+      fmBackgroundColor: computedStyle.backgroundColor, fmIconSize: host.getAttribute("fmiconsize"), 
+      fmPadding: host.getAttribute("fmpadding")};
+   await _readIcons(folder_ops); await _readIcons(resp.entries); 
    const data = {operations: folder_ops, entries: resp.entries, hostID: host.id, COMPONENT_PATH, 
       pathcrumbs: JSON.stringify(pathcrumbs), style};
 
    if (host.getAttribute("styleBody")) data.styleBody = `<style>${host.getAttribute("styleBody")}</style>`;
-   shareDuration = host.getAttribute("defaultShareDuration") || DEFAULT_SHARE_EXPIRY; 
+   SHARE_DURATION = host.getAttribute("defaultShareDuration") || DEFAULT_SHARE_EXPIRY; 
    
    file_manager.setData(host.id, data);
 
@@ -122,9 +129,12 @@ function _getIconForEntry(entry) {
    if (!extension) return `${COMPONENT_PATH}/${MIMES.icons.generic}`;
 
    let categoryFound = "generic";
-   for (const category of Object.keys(MIMES.categories)) if (MIMES.categories[category].includes(extension.toLowerCase())) {categoryFound = category; break;}
+   for (const category of Object.keys(MIMES.categories)) if (MIMES.categories[category].includes(
+      extension.toLowerCase())) {categoryFound = category; break;}
    return `${COMPONENT_PATH}/${MIMES.icons[categoryFound]}`;
 }
+
+const _readIcons = async entries => {for (const entry of entries) entry.svg = await $$.requireText(entry.icon);}
 
 async function elementRendered(host) {
    const hostID = host.getAttribute("id"), shadowRoot = file_manager.getShadowRootByHostId(hostID);
@@ -172,7 +182,7 @@ async function updateFileEntryCommentIfModified(element, path, oldComment, newCo
 
    if (_getStringTrimmedValueOrNull(oldComment) != _getStringTrimmedValueOrNull(newComment)) {
       selectedElement.dataset.stats = JSON.stringify({...JSON.parse(selectedElement.dataset.stats), comment: newComment});
-      await apiman.rest(API_OPERATEFILE, "POST", _addExtraInfo({path, op: "updatecomment", 
+      await apiman.rest(API_OPERATEFILE(), "POST", _addExtraInfo({path, op: "updatecomment", 
          comment: JSON.parse(selectedElement.dataset.stats).comment}, element), true);
    }
 }
@@ -185,12 +195,12 @@ function upload(containedElement, files) {
 async function create(element) {
    const result = await dialog(element).showDialog(`${DIALOGS_PATH}/createfile.html`, true, true, {}, FMDIALOG_ID, ["createType", "path"]);
    const path = `${selectedPath}/${result.path}`, isDirectory = result.createType == "file" ? false: true
-   if ((await apiman.rest(API_CHECKFILEEXISTS, "GET", _addExtraInfo({path}, element), true))?.result) {   // don't overwrite an existing file
+   if ((await apiman.rest(API_CHECKFILEEXISTS(), "GET", _addExtraInfo({path}, element), true))?.result) {   // don't overwrite an existing file
       dialog(element).error(FMDIALOG_ID, await i18n.get("FileAlreadyExists")); LOG.error(`Create failed as ${path} already exists.`); return;
    }
-   const resp = await apiman.rest(API_CREATEFILE, "GET", _addExtraInfo({path, isDirectory}, element), true), 
+   const resp = await apiman.rest(API_CREATEFILE(), "GET", _addExtraInfo({path, isDirectory}, element), true), 
       hostID = file_manager.getHostElementID(element);
-   if (resp?.result) {dialog(element).hideDialog(FMDIALOG_ID); file_manager.reload(hostID);}
+   if (resp?.result) {dialog(element).hideDialog(FMDIALOG_ID); router.reload(!ENCODE_URL, false);}
    else dialog(element).error(FMDIALOG_ID, await i18n.get("Error"));
 }
 
@@ -205,7 +215,7 @@ const uploadFiles = async (element, files) => {
          LOG.info(`Skipped ${file.name}, already being uploaded.`); continue; 
       }  // already being uploaded
       
-      const checkFileExists = await apiman.rest(API_CHECKFILEEXISTS, "GET", _addExtraInfo({path: normalizedName}, element), true); 
+      const checkFileExists = await apiman.rest(API_CHECKFILEEXISTS(), "GET", _addExtraInfo({path: normalizedName}, element), true); 
       if (checkFileExists.result) {
          const cancelRenameRewrite = await dialog(element).showDialog(`${DIALOGS_PATH}/cancel_rename_overwrite.html`, true, false, 
             {fileexistswarning: await i18n.getRendered("FileExistsWarning", {name: file.name})}, FMDIALOG_ID, ["result"]);
@@ -213,7 +223,7 @@ const uploadFiles = async (element, files) => {
             case "cancel": {LOG.info(`User selected to skip existing file ${file.name}, skipping.`); continue;}
             case "rename": file.renameto = checkFileExists.suggestedNewName; break;
             case "overwrite": {
-               const deleteResult = await apiman.rest(API_DELETEFILE, "GET", _addExtraInfo({path: normalizedName}, element), true);
+               const deleteResult = await apiman.rest(API_DELETEFILE(), "GET", _addExtraInfo({path: normalizedName}, element), true);
                if (!deleteResult.result) {dialog(element).showMessage(`${await i18n.get("OverwriteFailed")}${file.name}`, FMDIALOG_ID); continue;}
                else break;
             }
@@ -250,7 +260,7 @@ async function _uploadAFile(element, file) {
          if (!resp.result) {
             LOG.info(`Failed to write chunk number ${chunkNumber} from local file ${fileToRead.name}, to the server at path ${filePath}.`); 
             _updateProgress(hostID, chunkNumber, totalChunks, filePath, UPLOAD_ICON, true);
-            apiman.rest(API_DELETEFILE, "GET", _addExtraInfo({path: filePath}, element), true); // delete remotely as it errored out
+            apiman.rest(API_DELETEFILE(), "GET", _addExtraInfo({path: filePath}, element), true); // delete remotely as it errored out
             delete UPLOAD_TRANSFER_IDs[normalizedPath];
             _rejectReadPromises("Error writing to the server."); 
          } else {
@@ -263,7 +273,7 @@ async function _uploadAFile(element, file) {
             if (filesAndPercentsObjectThisFile && filesAndPercentsObjectThisFile.cancelled) {
                filesAndPercentsObjectThisFile.transfer_id
                delete _rejectReadPromises(`User cancelled upload of ${fileToRead.name}`);
-               await apiman.rest(API_DELETEFILE, "GET", _addExtraInfo({path: filePath}, element), true); // has been cancelled, so delete remotely 
+               await apiman.rest(API_DELETEFILE(), "GET", _addExtraInfo({path: filePath}, element), true); // has been cancelled, so delete remotely 
             } else {
                resolve();
                if (waitingReadersForThisFile.length) (waitingReadersForThisFile.pop())();  // issue next chunk read if queued reads
@@ -300,7 +310,7 @@ async function _uploadChunkAtOptimumSpeed(element, data, remotePath, chunkNumber
          (bytesWritten+bytesToSend == data.byteLength), isFirstSubChunk = chunkNumber == 0 && bytesWritten == 0;
       LOG.info(`Starting upload of subchunk ${subchunknumber} of chunk ${chunkNumber} to path ${remotePath} with length ${bytesToSend} with transfer ID ${transferID}.`);
       const startTime = Date.now(), headers = {}; if (SERVER_ID_CACHE[transferID]) headers[SERVER_ID_HEADER] = SERVER_ID_CACHE[transferID];
-      const fullResponse = await apiman.rest({url: API_UPLOADFILE, type: "POST", req: {..._addExtraInfo(
+      const fullResponse = await apiman.rest({url: API_UPLOADFILE(), type: "POST", req: {..._addExtraInfo(
          {data: _bufferToBase64URL(dataToSend), element, path: remotePath, user, startOfFile: isFirstSubChunk, 
             endOfFile: isLastSubChunk, transfer_id: transferID}, element)}, sendToken:true, headers, 
             provideHeaders: true, retries: APIMAN_RETRIES}); lastResp = fullResponse?.response;
@@ -400,8 +410,8 @@ function showHideNotifications(hostID) {
 }
 
 async function deleteFile(element) {
-   let resp = await apiman.rest(API_DELETEFILE, "GET", _addExtraInfo({path: selectedPath}, element), true);
-   if (resp.result) file_manager.reload(file_manager.getHostElementID(element)); else _showErrorDialog();
+   let resp = await apiman.rest(API_DELETEFILE(), "GET", _addExtraInfo({path: selectedPath}, element), true);
+   if (resp.result) router.reload(!ENCODE_URL, false); else _showErrorDialog();
 }
 
 async function editFile(element) {
@@ -419,13 +429,13 @@ async function editFile(element) {
 }
 
 async function editFileLoadData(element) {
-   const resp = await apiman.rest(API_OPERATEFILE, "POST", _addExtraInfo({path: selectedPath, op: "read"}, element), true);
+   const resp = await apiman.rest(API_OPERATEFILE(), "POST", _addExtraInfo({path: selectedPath, op: "read"}, element), true);
    screenFocusUnfocus(file_manager.getHostElement(element));
    if (resp?.result) dialog(element).showDialog(`${DIALOGS_PATH}/editfile.html`, true, true, {fileContents: resp.data}, 
          FMDIALOG_ID, ["filecontents"], async result => {
       
       dialog(element).hideDialog(FMDIALOG_ID); screenFocusUnfocus(file_manager.getHostElement(element, true));
-      const resp = await apiman.rest(API_OPERATEFILE, "POST", _addExtraInfo({path: selectedPath, op: "write", 
+      const resp = await apiman.rest(API_OPERATEFILE(), "POST", _addExtraInfo({path: selectedPath, op: "write", 
          data: result.filecontents}, element), true);
       if (!resp.result) _showErrordialog();
    }); else _showErrordialog();
@@ -438,24 +448,24 @@ function editFileVisible() {
 
 function changeToPath(hostid, path) {
    const host = file_manager.getHostElementByID(hostid); host.setAttribute("path", path); 
-   (file_manager.getSessionMemory(hostid))["__lastPath"] = path; file_manager.reload(host.id); return;
+   (file_manager.getSessionMemory(hostid))["__lastPath"] = path; router.reload(!ENCODE_URL, false);   // ideally should be file-manager.reload but that for some reason breaks SVG with currentColor
 }
 
 const _getReqIDForDownloading = path => encodeURIComponent(path+Date.now()+Math.random());
 
 async function downloadFile(element) {
    const paths = selectedPath.split("/"), file = paths[paths.length-1], reqid = _getReqIDForDownloading(selectedPath);
-   const link = document.createElement("a"), securid = await apiman.rest(API_DOWNLOADFILE_GETSECURID, "GET", 
+   const link = document.createElement("a"), securid = await apiman.rest(API_DOWNLOADFILE_GETSECURID(), "GET", 
       _addExtraInfo({path: selectedPath, reqid}, element), true, false);
-   if (!securid.result) {_showErrordialog(); return;}; const auth = apiman.getJWTToken(API_DOWNLOADFILE);
-   link.download = file; link.href = `${API_DOWNLOADFILE}?path=${selectedPath}&reqid=${reqid}&securid=${securid.id}&auth=${auth}`; link.click(); 
+   if (!securid.result) {_showErrordialog(); return;}; const auth = apiman.getJWTToken(API_DOWNLOADFILE());
+   link.download = file; link.href = `${API_DOWNLOADFILE()}?path=${selectedPath}&reqid=${reqid}&securid=${securid.id}&auth=${auth}`; link.click(); 
 
    _showDownloadProgress(element, selectedPath, reqid);
 }
 
 function getDragAndDropDownloadURL(path, element) {
-   const reqid = _getReqIDForDownloading(path), auth = apiman.getJWTToken(API_DOWNLOADFILE); element["data-reqid"] = reqid;
-   const url = `${API_DOWNLOADFILE_DND}?path=${path}&reqid=${reqid}&auth=${auth}`;
+   const reqid = _getReqIDForDownloading(path), auth = apiman.getJWTToken(API_DOWNLOADFILE()); element["data-reqid"] = reqid;
+   const url = `${API_DOWNLOADFILE_DND()}?path=${path}&reqid=${reqid}&auth=${auth}`;
    showDownloadProgress(path, element);
    return url;
 }
@@ -472,13 +482,13 @@ async function paste(element) {
    const _copyRequestedToItsOwnSubdirectory = (from, to) => {const pathSplits = to.split("/");
       for (const [i, _val] of pathSplits.entries()) if (pathSplits.slice(0, i).join("/")==from) return true; return false;}
    const _nullOutSelectedCutCopyPathsAndElements = (reload=true) => { selectedCutPath = null; selectedCopyPath = null; 
-      selectedCutCopyElement = null; if (reload) file_manager.reload(file_manager.getHostElementID(element)); }
+      selectedCutCopyElement = null; if (reload) router.reload(!ENCODE_URL, false); }
 
    const selectedPathToOperate = selectedCutPath?selectedCutPath:selectedCopyPath;
    const baseName = selectedPathToOperate.substring(selectedPathToOperate.lastIndexOf("/")+1);
    const from = _normalizedPath(selectedCutPath||selectedCopyPath); let to = _normalizedPath(`${currentlyActiveFolder}/${baseName}`);
    const _showErrorAndReset = async (errorKey="ErrorSameFiles") => {_showErrorDialog(null, await i18n.get(errorKey)); _nullOutSelectedCutCopyPathsAndElements();}
-   const checkFileExists = await apiman.rest(API_CHECKFILEEXISTS, "GET", _addExtraInfo({path: to}, element), true); 
+   const checkFileExists = await apiman.rest(API_CHECKFILEEXISTS(), "GET", _addExtraInfo({path: to}, element), true); 
 
    
    if (checkFileExists.result) {
@@ -505,7 +515,7 @@ function _showDownloadProgress(element, path, reqid) {
       
       const markDoneAndClearInterval = _ => {done=true; clearInterval(interval);};
 
-      const fileDownloadStatus = await apiman.rest(`${API_DOWNLOADFILE_STATUS}`, "GET", _addExtraInfo({reqid}, element), true, false);
+      const fileDownloadStatus = await apiman.rest(`${API_DOWNLOADFILE_STATUS()}`, "GET", _addExtraInfo({reqid}, element), true, false);
       if (fileDownloadStatus && fileDownloadStatus.result) {
          if (fileDownloadStatus.downloadStarted) _updateProgress(file_manager.getHostElementID(element), 
             fileDownloadStatus.bytesSent, fileDownloadStatus.size, path, DOWNLOAD_ICON);
@@ -547,7 +557,7 @@ async function _updateProgress(hostID, currentBlock, totalBlocks, fileName, icon
    const templateData = {files:[]}; for (const file of Object.keys(FILES_AND_PERCENTS)) templateData.files.unshift({...FILES_AND_PERCENTS[file]});
    
    await _showNotification(hostID, PROGRESS_TEMPLATE, templateData);
-   if (!justRerender && reloadFlag) file_manager.reload(hostID);
+   if (!justRerender && reloadFlag) router.reload(!ENCODE_URL, false);
 }
 
 function renameFile(element) {
@@ -564,17 +574,18 @@ function renameFile(element) {
 
 async function shareFile(element) {
    const paths = selectedPath.split("/"), name = paths[paths.length-1];
-   const resp = await apiman.rest(API_SHAREFILE, "GET", _addExtraInfo({path: selectedPath, expiry: shareDuration}, element), true);
-   if (!resp || !resp.result) _showErrordialog(); else {
-      dialog(element).showDialog( `${DIALOGS_PATH}/sharefile.html`, true, true, 
-      {link: router.encodeURL(`${PAGE_DOWNLOADFILE_SHARED}?id=${resp.id}&name=${name}`), id: resp.id, shareDuration, dialogpath: DIALOGS_PATH}, 
-      FMDIALOG_ID, ["expiry"], async result => {
+   const resp = await apiman.rest(API_SHAREFILE(), "GET", _addExtraInfo({path: selectedPath, expiry: SHARE_DURATION}, element), true);
+   const downloadlink = resp?`${PAGE_DOWNLOADFILE_SHARED}?id=${resp.id}&name=${name}&apipath=${API_PATH}`:null;
+   if (!resp || !resp.result) _showErrorDialog(); else dialog(element).showDialog( 
+      `${DIALOGS_PATH}/sharefile.html`, true, true, 
+      { link: ENCODE_URL ? router.encodeURL(downloadlink):downloadlink, id: resp.id, 
+         shareDuration: SHARE_DURATION, dialogpath: DIALOGS_PATH }, 
+      FMDIALOG_ID, ["expiry"], async result => {   // on OK clicked, next param is for cancel clicked
          dialog(element).hideDialog(FMDIALOG_ID); 
-
-         if (result.expiry != shareDuration) apiman.rest(API_SHAREFILE, "GET", _addExtraInfo(
+         if (result.expiry != SHARE_DURATION) apiman.rest(API_SHAREFILE(), "GET", _addExtraInfo(
             {id: resp.id, expiry: result.expiry}, element), true); 
-      }, async _ => apiman.rest(API_SHAREFILE, "GET", _addExtraInfo({id: resp.id, expiry: 0}, element), true));
-   }
+      }, async _ => apiman.rest(API_SHAREFILE(), "GET", _addExtraInfo({id: resp.id, expiry: 0}, element), true) 
+   );
 }
 
 async function getInfoOnFile(containedElement) {
@@ -615,21 +626,21 @@ const cancelFile = (file, element) => _updateProgress(file_manager.getHostElemen
    false, true);  // cancels and updates the view
 
 async function _performRename(oldPath, newPath, element) {
-   const resp = await apiman.rest(API_RENAMEFILE, "GET", _addExtraInfo({old: oldPath, new: newPath}, element), true), hostID = file_manager.getHostElementID(element);
-   if (!resp || !resp.result) _showErrorDialog(_=>file_manager.reload(hostID)); else file_manager.reload(hostID);
+   const resp = await apiman.rest(API_RENAMEFILE(), "GET", _addExtraInfo({old: oldPath, new: newPath}, element), true), hostID = file_manager.getHostElementID(element);
+   if (!resp || !resp.result) _showErrorDialog(_=>router.reload(!ENCODE_URL, false)); else router.reload(!ENCODE_URL, false);
 }
 
 async function _performCopy(fromPath, toPath, element) {
    const sizeOfCopy = JSON.parse(selectedCutCopyElement.dataset.stats).size; 
    if (!(await _checkQuotaAndReportError(element, sizeOfCopy))) return;
-   const resp = await apiman.rest(API_COPYFILE, "GET", _addExtraInfo({from: fromPath, to: toPath}, element), true), hostID = file_manager.getHostElementID(element)
-   if (!resp || !resp.result) _showErrorDialog(_=>file_manager.reload(hostID)); else file_manager.reload(hostID);
+   const resp = await apiman.rest(API_COPYFILE(), "GET", _addExtraInfo({from: fromPath, to: toPath}, element), true), hostID = file_manager.getHostElementID(element)
+   if (!resp || !resp.result) _showErrorDialog(_=>router.reload(!ENCODE_URL, false)); else router.reload(!ENCODE_URL, false);
 }
 
 const _roundToTwo = number => Math.round(number * 100)/100;
 
 const _checkQuotaAndReportError = async (element, uploadSize) => {
-   const uploadQuotaCheckResult = await apiman.rest(API_CHECKQUOTA, "GET", _addExtraInfo({bytestowrite: uploadSize}, element), true);
+   const uploadQuotaCheckResult = await apiman.rest(API_CHECKQUOTA(), "GET", _addExtraInfo({bytestowrite: uploadSize}, element), true);
    if ((!uploadQuotaCheckResult) || (!uploadQuotaCheckResult.result)) { // stop upload if it will exceed the quota
       if (uploadQuotaCheckResult) LOG.error(`Upload size exceeds quota. User ID is ${user}, upload size ${uploadSize}, quota is ${uploadQuotaCheckResult.quota} and the current user disk size is ${uploadQuotaCheckResult.currentsize}.`); 
       else LOG.error("Check quota call failed, unable to upload for user "+user);
@@ -641,7 +652,7 @@ const _checkQuotaAndReportError = async (element, uploadSize) => {
 }
 
 const _updateQuotaBars = async (element, quotabarIDs) => {
-   const quotaStats = await apiman.rest(API_CHECKQUOTA, "GET", _addExtraInfo({bytestowrite: 0}, element), true); 
+   const quotaStats = await apiman.rest(API_CHECKQUOTA(), "GET", _addExtraInfo({bytestowrite: 0}, element), true); 
    if (!quotaStats) return; // can't update
 
    const percentUsed = _roundToTwo(quotaStats.currentsize/quotaStats.quota), quotaGB = _roundToTwo(quotaStats.quota/(1024*1024*1024));
